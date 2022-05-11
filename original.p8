@@ -26,74 +26,88 @@ function _draw()
 	
 	--draw the player's sprite at
 	--p.x,p.y
-	spr(player.sprite,player.x,player.y)
-	
-	-- print('player x-1 '..player.x, 10, 10, 8)
-	-- print('player y '..player.y)
-	-- print('mapx '..map_x)
-	-- print('mapy '..map_y)
-	-- print("hello owen")
+	spr(p.sprite,p.x,p.y)
 end
 -->8
 --player functions
 
 function make_player()
-	player={}  --create empty table
+	p={}  --create empty table
 	
-	player.x = 24 --player's exact pixel
-	player.y = 24 --position on screen
+	p.x=24 --player's exact pixel
+	p.y=24 --position on screen
 	
-	-- track how much player trying to move left/right and up/down
-	-- old variables: dx+dy
-	player.direction_x = 0
-	player.direction_y = 0    
+	p.dx=0 --variables to track
+	p.dy=0 --how much the player
+	       --is trying to move 
+	       --left/right and up/down
 	
-	-- old variables: p.w, p.h
-	player.width = 7
-	player.height = 7
-
-	player.sprite = 5
+	p.w=7  --width of player
+	p.h=7  --height of player
+	 
+	p.sprite=5 --player sprite
 	
-	-- old variables: p.xspd, p.yspd
-	player.max_x_speed = 3
-	player.max_y_speed = 3	
+	--we need add a maximum player
+	--speed in both the x and y
+	--directions
+	p.xspd=3 --horizontal speed
+	p.yspd=3 --vertical speed
 	
-	-- old variables: p.a
-	player.acceleration = 1	
+	--when the player tries moving
+	--in a direction, how much
+	--speed should be added to the
+	--player's current speed? this
+	--is the player's acceleration.
+	p.a=1
 	
-	-- 1 = no slow down, 0 = instant halt
-	-- old variables: p.drg
-	player.drag = 0.85
+	--when the player stops moving,
+	--they shouldn't come to an
+	--immediate halt. they should
+	--instead slow down until they
+	--come to a full stop. this is
+	--friction, or drag.
+	--1 = no slow down
+	--0 = instant halt
+	p.drg=0.85
+	
 end
 
 function move_player()
-	--when the user tries to move, only add the acceleration to the current speed.
-	if (btn(⬅️)) player.direction_x -= player.acceleration
-	if (btn(➡️)) player.direction_x += player.acceleration
-	if (btn(⬆️)) player.direction_y -= player.acceleration
-	if (btn(⬇️)) player.direction_y += player.acceleration	
-	
-	-- max negative speed, player direction, max positive speed
-	-- quite clever. so if player.direction tries to exceed max, we refer to either - or + max instead
-	-- essentially we ignore what player trying to do, until speed reduces
- 	player.direction_x = mid(-player.max_x_speed,player.direction_x,player.max_x_speed)
- 	player.direction_y = mid(-player.max_y_speed,player.direction_y,player.max_y_speed)
 
+	--when the user tries to move,
+	--we only add the acceleration
+	--to the current speed.
+	if (btn(⬅️)) p.dx-=p.a
+	if (btn(➡️)) p.dx+=p.a
+	if (btn(⬆️)) p.dy-=p.a
+	if (btn(⬇️)) p.dy+=p.a
+	
+	--if we acceleration keeps
+	--getting added, they will just
+	--speed up forever. so we need
+	--to limit the speed to a max
+	--speed in both horizontal and
+	--vertical directions.
+ p.dx=mid(-p.xspd,p.dx,p.xspd)
+ p.dy=mid(-p.yspd,p.dy,p.yspd)
 
  --before doing any movement,
  --just check if they are next
  --to a wall, and if so, don't
  --let allow movement in that
  --direction.
- wall_check(player)
+ wall_check(p)
 
- -- check player isn't trying to move into a solid object
- if (can_move(player,player.direction_x,player.direction_y)) then
+ --before the player is moved,
+ --movement needs to be checked
+ --to see if the player actually
+ --can move in that direction.
+ if (can_move(p,p.dx,p.dy)) then
   
   --actually move the player to
   --the new location
-  player.x += player.direction_x
-  player.y += player.direction_y
+  p.x+=p.dx
+  p.y+=p.dy
   
  --but if the player cannot move
  --into that spot, find out how
@@ -104,22 +118,21 @@ function move_player()
   --create temporary variables
   --to store how far the player
   --is trying to move.
-  -- old varibales tdx, tdy
-  temp_direction_x = player.direction_x
-  temp_direction_y = player.direction_y
+  tdx=p.dx
+  tdy=p.dy
   
   --now we're going to make
   --tdx,tdy shorter and shorter
   --until we find a new position
   --that the player can move to.
-  while (not can_move(player,temp_direction_x,temp_direction_y)) do
+  while (not can_move(p,tdx,tdy)) do
   	
   	--if the amount of x movement
   	--has been shortened so much
   	--that it's practically 0,
   	--just set it to 0.
-  	if (abs(temp_direction_x) <= 0.1) then
-  	 temp_direction_x = 0
+  	if (abs(tdx)<=0.1) then
+  	 tdx=0
   	
   	--but if it's not too small,
   	--make it 90% of what it was
@@ -127,15 +140,15 @@ function move_player()
   	--amount the player is trying
   	--to move in that direction.)
   	else
-  	 temp_direction_x *= 0.9
+  	 tdx*=0.9
   	end
   	
   	--do the same thing for y
   	--movement.
-  	if (abs(temp_direction_y) <= 0.1) then
-  	 temp_direction_y = 0
+  	if (abs(tdy)<=0.1) then
+  	 tdy=0
   	else
-  	 temp_direction_y *= 0.9
+  	 tdy*=0.9
   	end
   	  	
   end
@@ -146,44 +159,45 @@ function move_player()
   --actually possible, actually
   --move the player to that new
   --shortened distance.
-  player.x += temp_direction_x
-  player.y += temp_direction_y
+  p.x+=tdx
+  p.y+=tdy
 
  end 
  
  --if the player's still moving,
  --then slow them down just a
  --bit using the drag amount.
- --this actually takes effect whilst player trying
- --to move, so i think it should only be
- --used if player not pressing a button otherwise
- --player cant reach top speed
- if (abs(player.direction_x) > 0) player.direction_x *= player.drag
- if (abs(player.direction_y) > 0) player.direction_y *= player.drag
+ if (abs(p.dx)>0) p.dx*=p.drg
+ if (abs(p.dy)>0) p.dy*=p.drg
  
  --if they are going slow enough
  --in a particular direction,
  --just bring them to a halt.
- if (abs(player.direction_x)<0.02) player.direction_x = 0
- if (abs(player.direction_y)<0.02) player.direction_y = 0
+ if (abs(p.dx)<0.02) p.dx=0
+ if (abs(p.dy)<0.02) p.dy=0
 	
 end
 -->8
 --collision functions
 
---this function takes an object and a speed in the x and y directions. it uses those
---to check the four corners of the object to see it can move into that spot. (a map tile
---marked as solid would prevent movement into that spot.)
-function can_move(object,direction_x,direction_y)
+--this function takes an object
+--and a speed in the x and y
+--directions. it uses those
+--to check the four corners of
+--the object to see it can move
+--into that spot. (a map tile
+--marked as solid would prevent
+--movement into that spot.)
+function can_move(a,dx,dy)
 	
 	--create variables for the
 	--left, right, top, and bottom
 	--coordinates of where the
 	--object is trying to be.
-	local nx_l = object.x + direction_x       --lft
-	local nx_r = object.x + direction_x + object.width   --rgt
-	local ny_t = object.y + direction_y       --top
-	local ny_b = object.y + direction_y + object.height   --btm
+	local nx_l=a.x+dx       --lft
+	local nx_r=a.x+dx+a.w   --rgt
+	local ny_t=a.y+dy       --top
+	local ny_b=a.y+dy+a.h   --btm
 
 	--now check each corner of
 	--where the object is trying to
@@ -209,9 +223,8 @@ end
 function solid(x,y)
 
  --pixel coords -> map coords
- -- ***** add local back to these ******
- map_x = flr(x/8)
- map_y = flr(y/8)
+ local map_x=flr(x/8)
+ local map_y=flr(y/8)
  
  --what sprite is at that spot?
  local map_sprite=mget(map_x,map_y)
@@ -227,63 +240,63 @@ end
 --player is next to a wall. if
 --so, don't let them try to move
 --in that direction.
-function wall_check(player)
+function wall_check(a)
  
  --going left?
- if (player.direction_x < 0) then
+ if (a.dx<0) then
   --check both left corners for
   --a wall.
-  local wall_top_left=solid(player.x-1,player.y)
-  local wall_btm_left=solid(player.x-1,player.y + player.height)
+  local wall_top_left=solid(a.x-1,a.y)
+  local wall_btm_left=solid(a.x-1,a.y+a.h)
 
   --if there is a wall in that
   --direction, set x movement
   --to 0.
   if (wall_top_left or wall_btm_left) then
-   player.direction_x = 0
+   a.dx=0
   end
   
  --going right?
- elseif (player.direction_x > 0) then
+ elseif (a.dx>0) then
   --check both right corners for
   --a wall.
-  local wall_top_right=solid(player.x+player.width+1,player.y)
-  local wall_btm_right=solid(player.x+player.width+1,player.y+player.height)
+  local wall_top_right=solid(a.x+a.w+1,a.y)
+  local wall_btm_right=solid(a.x+a.w+1,a.y+a.h)
 
   --if there is a wall in that
   --direction, set x movement
   --to 0.
   if (wall_top_right or wall_btm_right) then
-   player.direction_x = 0
+   a.dx=0
   end
  end
 
  --going up?
- if (player.direction_y < 0) then
+ if (a.dy<0) then
   --check both top corners for
   --a wall.
-  local wall_top_left=solid(player.x,player.y-1)
-  local wall_top_right=solid(player.x+player.width,player.y-1)
+  local wall_top_left=solid(a.x,a.y-1)
+  local wall_top_right=solid(a.x+a.w,a.y-1)
 
   --if there is a wall in that
   --direction, set y movement
   --to 0.
   if (wall_top_left or wall_top_right) then
-   player.direction_y = 0
+   a.dy=0
   end
   
  --going down?
- elseif (player.direction_y > 0) then
+ elseif (a.dy>0) then
   --check both bottom corners 
   --for a wall.
-  local wall_btm_left=solid(player.x,player.y+player.height+1)
-  local wall_btm_right=solid(player.x,player.y+player.height+1)
+  local wall_btm_left=solid(a.x,a.y+a.h+1)
+  local wall_btm_right=solid(a.x,a.y+a.h+1)
 
   --if there is a wall in that
   --direction, set y movement
   --to 0.
   if (wall_btm_right or wall_btm_left) then
-   player.direction_y = 0
+   a.dy=0
   end
  end
 
