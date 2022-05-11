@@ -62,8 +62,8 @@ function move_player()
  	player.direction_x = mid(-player.max_x_speed,player.direction_x,player.max_x_speed)
  	player.direction_y = mid(-player.max_y_speed,player.direction_y,player.max_y_speed)
 
- -- call wall_check function for collision before letting player move
- --wall_check(player)
+ -- call check_if_next_to_wall function for collision before letting player move
+ check_if_next_to_wall(player)
 
  -- check player isn't trying to move into a solid object
  if (can_move(player, player.direction_x, player.direction_y)) then
@@ -163,7 +163,7 @@ function solid(x,y)
 end
 
 --if player next to a wall stop them moving in that direction
-function wall_check(player)
+function check_if_next_to_wall(player)
  
  -- player moving left
  if (player.direction_x < 0) then
