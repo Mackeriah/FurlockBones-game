@@ -32,6 +32,7 @@ function _draw()
 	print('player y '..player.y)
 	print('mapx '..map_x)
 	print('mapy '..map_y)
+	print("hello owen")
 end
 -->8
 --player functions
