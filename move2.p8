@@ -27,6 +27,11 @@ function _draw()
 	--draw the player's sprite at
 	--p.x,p.y
 	spr(player.sprite,player.x,player.y)
+	
+	print('player x-1 '..player.x, 10, 10, 8)
+	print('player y '..player.y)
+	print('mapx '..map_x)
+	print('mapy '..map_y)
 end
 -->8
 --player functions
@@ -57,7 +62,7 @@ function make_player()
 	
 	-- 1 = no slow down, 0 = instant halt
 	-- old variables: p.drg
-	player.drag=0.5		
+	player.drag = 0.75
 end
 
 function move_player()
@@ -67,8 +72,9 @@ function move_player()
 	if (btn(⬆️)) player.direction_y -= player.acceleration
 	if (btn(⬇️)) player.direction_y += player.acceleration	
 	
-	-- prevent speed exceeding maximum
-	-- ** don't understand this yet **
+	-- max negative speed, player direction, max positive speed
+	-- quite clever. so if player.direction tries to exceed max, we refer to either - or + max instead
+	-- essentially we ignore what player trying to do, until speed reduces
  	player.direction_x = mid(-player.max_x_speed,player.direction_x,player.max_x_speed)
  	player.direction_y = mid(-player.max_y_speed,player.direction_y,player.max_y_speed)
 
@@ -80,10 +86,7 @@ function move_player()
  --direction.
  wall_check(player)
 
- --before the player is moved,
- --movement needs to be checked
- --to see if the player actually
- --can move in that direction.
+ -- check player isn't trying to move into a solid object
  if (can_move(player,player.direction_x,player.direction_y)) then
   
   --actually move the player to
@@ -150,6 +153,10 @@ function move_player()
  --if the player's still moving,
  --then slow them down just a
  --bit using the drag amount.
+ --this actually takes effect whilst player trying
+ --to move, so i think it should only be
+ --used if player not pressing a button otherwise
+ --player cant reach top speed
  if (abs(player.direction_x)>0) player.direction_x *= player.drag
  if (abs(player.direction_y)>0) player.direction_y *= player.drag
  
@@ -163,14 +170,9 @@ end
 -->8
 --collision functions
 
---this function takes an object
---and a speed in the x and y
---directions. it uses those
---to check the four corners of
---the object to see it can move
---into that spot. (a map tile
---marked as solid would prevent
---movement into that spot.)
+--this function takes an object and a speed in the x and y directions. it uses those
+--to check the four corners of the object to see it can move into that spot. (a map tile
+--marked as solid would prevent movement into that spot.)
 function can_move(object,direction_x,direction_y)
 	
 	--create variables for the
@@ -206,8 +208,8 @@ end
 function solid(x,y)
 
  --pixel coords -> map coords
- local map_x = flr(x/8)
- local map_y = flr(y/8)
+ map_x = flr(x/8)
+ map_y = flr(y/8)
  
  --what sprite is at that spot?
  local map_sprite=mget(map_x,map_y)
