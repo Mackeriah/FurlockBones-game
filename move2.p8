@@ -78,7 +78,7 @@ function move_player()
   temp_direction_x = player.direction_x
   temp_direction_y = player.direction_y
   
-  --make temp x,temp y shorter and shorter until we find a new position the player can move to
+  --make tempx,tempy shorter and shorter until we find a new position the player can move to
   while (not can_move(player,temp_direction_x,temp_direction_y)) do
   	
   	--if x movement has been shortened so much that it's practically 0, set it to 0
@@ -144,7 +144,7 @@ function can_move(object,direction_x,direction_y)
 	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
 end
 
---checks x,y of each player/objects next coordinates against the map to see if it marked as solid
+--checks x,y of player/object against the map to see if sprite marked as solid
 function solid(x,y)
 
  -- divide x,y by 8 to get map coordinates.
