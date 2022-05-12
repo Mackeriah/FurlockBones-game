@@ -9,7 +9,7 @@ __lua__
 --tab 2:collision functions
 
 function _init()
-	make_player()	
+	player()	
 end
 
 function _update()
@@ -28,7 +28,7 @@ function log(text,overwrite)
 		printh(text, "log", overwrite)	
 end
 
-function make_player()
+function player()
 	player={}  --create empty table
 	
 	-- I believe this is all stored in a table as it's using a dot operator
@@ -46,7 +46,7 @@ function make_player()
 	player.max_x_speed = 3
 	player.max_y_speed = 3	
 	player.acceleration = 1	
-	player.drag = 0.85 -- 1 = no slow down, 0 = instant halt
+	player.drag = 0.5 -- 1 = no slow down, 0 = instant halt
 end
 
 function move_player()
@@ -122,16 +122,27 @@ end
 --marked as solid would prevent movement into that spot.)
 function can_move(object,direction_x,direction_y)
 	
+	
+
 	-- store left, right, top and bottom corner coordinates of location the player/object wants to move
 	-- object.? is where they ARE, direction_? is where they want to move (based on key press)
-	-- Note: Not performant as occurs 30 times per second even if the player not moving or near an object
-	-- Note: Also this is missing bottom right coordinate but appears to be OK...?
+	-- Note: Not performant as occurs 30 times per second even if the player not moving or near an object because
+	-- it's being run whenever move_player runs, which is every frame. Maybe move player should only be called if
+	-- player tries to move?	
 
-	-- BUG: there is a bug where you get stuck on edge if moving diagonal down/left
+	-- BUG: there is a bug where you get stuck on edge if moving diagonal down/left (although it might be in the 
+	-- check_if_next_to_a_wall function possibly)
 	local next_left = object.x + direction_x	
 	local next_right = object.x + direction_x + object.width
 	local next_top = object.y + direction_y
 	local next_bottom = object.y + direction_y + object.height
+	-- Note: Technically this never checks bottom right coordinate but appears to be OK...?
+	-- that would be object.x + object.width + object.height
+	log("next left: "..next_left)
+	log("next right: "..next_right)
+	log("next top: "..next_top)
+	log("next bottom: "..next_bottom)
+
 
 	-- now check each corner of where the object is trying to move and check if solid
 	local top_left_solid = solid(next_left, next_top)
