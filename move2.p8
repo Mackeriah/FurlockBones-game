@@ -121,9 +121,6 @@ end
 --to check the four corners of the object to see it can move into that spot. (a map tile
 --marked as solid would prevent movement into that spot.)
 function can_move(object,direction_x,direction_y)
-	
-	
-
 	-- store left, right, top and bottom corner coordinates of location the player/object wants to move
 	-- object.? is where they ARE, direction_? is where they want to move (based on key press)
 	-- Note: Not performant as occurs 30 times per second even if the player not moving or near an object because
@@ -132,21 +129,22 @@ function can_move(object,direction_x,direction_y)
 
 	-- BUG: there is a bug where you get stuck on edge if moving diagonal down/left (although it might be in the 
 	-- check_if_next_to_a_wall function possibly)
+	-- (the below is basically to capture x and y coords)
 	local next_left = object.x + direction_x	
 	local next_right = object.x + direction_x + object.width
 	local next_top = object.y + direction_y
-	local next_bottom = object.y + direction_y + object.height
+	local next_bottom = object.y + direction_y + object.height	
 	-- Note: Technically this never checks bottom right coordinate but appears to be OK...?
 	-- that would be object.x + object.width + object.height
 	log("next left: "..next_left)
 	log("next right: "..next_right)
 	log("next top: "..next_top)
 	log("next bottom: "..next_bottom)
-
+	log("object.x "..object.x)
 
 	-- now check each corner of where the object is trying to move and check if solid
 	local top_left_solid = solid(next_left, next_top)
-	local btm_left_solid = solid(next_left, next_bottom)
+	local btm_left_solid = solid(next_left, next_bottom) -- <- is this the bug?
 	local top_right_solid = solid(next_right, next_top)
 	local btm_right_solid = solid(next_right, next_bottom)
 
@@ -158,18 +156,27 @@ end
 --checks x,y of player/object against the map to see if sprite marked as solid
 function solid(x,y)
 
- -- divide x,y by 8 to get map coordinates.
+ -- divide x,y by 8 to get map coordinates
  local map_x = flr(x/8)
  local map_y = flr(y/8)
  
  -- find what sprite is at that map x,y
  local map_sprite = mget(map_x,map_y)
+ --log("map_sprite: "..map_sprite)
  
  -- and get what flag it has set
- local flag = fget(map_sprite)
+ local flag = fget(map_sprite) 
 
- --if the flag is 1 return true as it's solid
- return flag == 1
+ -- if the flag is 1 return true as flag 1 is set as solid
+ -- if a sprite has no flags ticked at all, it always returns 0
+ -- otherwise it returns a value for the ticked flag in order. e.g. if first ticked then 1, 2nd then 2
+--  if (flag == 1) then
+-- 	log("solid")
+--  else
+-- 	log("NOT solid")
+--  end
+ return flag == 1 
+
  
 end
 
