@@ -32,8 +32,8 @@ function player()
 	player={}  --create empty table
 	
 	-- I believe this is all stored in a table as it's using a dot operator
-	player.x = 8 --player's exact pixel
-	player.y = 8 --position on screen	
+	player.x = 32 --player's exact pixel
+	player.y = 30 --position on screen	
 	
 	-- track how much player trying to move left/right and up/down
 	player.direction_x = 0
@@ -43,9 +43,9 @@ function player()
 	player.height = 7
 	player.sprite = 5
 	
-	player.max_x_speed = 3
-	player.max_y_speed = 3	
-	player.acceleration = 1	
+	player.max_x_speed = 5
+	player.max_y_speed = 5	
+	player.acceleration = 3	
 	player.drag = 0.5 -- 1 = no slow down, 0 = instant halt
 end
 
@@ -63,7 +63,9 @@ function move_player()
  	player.direction_y = mid(-player.max_y_speed,player.direction_y,player.max_y_speed)
 
  -- call check_if_next_to_wall function for collision before letting player move
- check_if_next_to_wall(player)
+ -- essentially this allows play to move diaganolly along a solid object, as without this
+ -- the can_move code prevents them moving
+ --check_if_next_to_wall(player)
 
  -- check player isn't trying to move into a solid object
  if (can_move(player, player.direction_x, player.direction_y)) then
@@ -121,30 +123,22 @@ end
 --to check the four corners of the object to see it can move into that spot. (a map tile
 --marked as solid would prevent movement into that spot.)
 function can_move(object,direction_x,direction_y)
-	-- store left, right, top and bottom corner coordinates of location the player/object wants to move
-	-- object.? is where they ARE, direction_? is where they want to move (based on key press)
-	-- Note: Not performant as occurs 30 times per second even if the player not moving or near an object because
-	-- it's being run whenever move_player runs, which is every frame. Maybe move player should only be called if
-	-- player tries to move?	
+	
+	
+	-- Note: Not performant as 30 times per frame even if player not moving as being called as part of 
+	-- move_player which is itself running every frame. Maybe only call if player wants to move?
 
-	-- BUG: there is a bug where you get stuck on edge if moving diagonal down/left (although it might be in the 
-	-- check_if_next_to_a_wall function possibly)
-	-- (the below is basically to capture x and y coords)
+	-- capture x,y coords for where trying to move
 	local next_left = object.x + direction_x	
 	local next_right = object.x + direction_x + object.width
 	local next_top = object.y + direction_y
 	local next_bottom = object.y + direction_y + object.height	
-	-- Note: Technically this never checks bottom right coordinate but appears to be OK...?
-	-- that would be object.x + object.width + object.height
-	log("next left: "..next_left)
-	log("next right: "..next_right)
-	log("next top: "..next_top)
-	log("next bottom: "..next_bottom)
-	log("object.x "..object.x)
+	-- BUG: getting stuck on edge if moving diagonal down/left (might be in check_if_next_to_a_wall)
 
-	-- now check each corner of where the object is trying to move and check if solid
+	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
+	-- map tile location and check if any solid sprites there
 	local top_left_solid = solid(next_left, next_top)
-	local btm_left_solid = solid(next_left, next_bottom) -- <- is this the bug?
+	local btm_left_solid = solid(next_left, next_bottom)
 	local top_right_solid = solid(next_right, next_top)
 	local btm_right_solid = solid(next_right, next_bottom)
 
@@ -177,11 +171,16 @@ function solid(x,y)
 --  end
  return flag == 1 
 
- 
 end
 
---if player next to a wall stop them moving in that direction
+-- if player next to a wall stop them moving in that direction
+-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
+-- what happens is that we ignore the left movement as it is set to zero meaning that we only
+-- apply the vertical movement. It's really just a player UX fix.
 function check_if_next_to_wall(player)
+
+log("player.direction_x: "..player.direction_x)
+log("player.direction_y: "..player.direction_y)
  
  -- player moving left
  if (player.direction_x < 0) then
@@ -191,6 +190,7 @@ function check_if_next_to_wall(player)
   -- if wall in that direction, set x movement to 0
   if (wall_top_left or wall_btm_left) then
    player.direction_x = 0
+   log("player.direction_x: "..player.direction_x)
   end
   
  -- player moving right
