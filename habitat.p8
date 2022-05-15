@@ -13,12 +13,17 @@ function _update60()
 end
 
 function _draw()
-	cls()	
-	--camera(player.x -64, player.y -64)	
+	cls()
+	logo()	
 	camera(camera_x,camera_y)
 	map(0,0,0,0,128,32)	
 	spr(player.sprite,player.x,player.y)	
 end
+
+function logo()
+	print("habitat",64,64,7)
+end
+
 -->8
 --player functions
 
