@@ -1,6 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
+--init and functions
 function _init()
 	debug_mode = false
 	player()
@@ -25,6 +26,22 @@ function log(text,overwrite)
 		printh(text, "log", overwrite)
 end
 
+function format_text_centred(array, colour)
+	height = 50
+	for i in all(array) do
+		print(i,64-#i*2, height, colour)
+		height += 6
+	end
+end
+
+function format_text_left(array, colour)
+	height = 50
+	for i in all(array) do
+		print(i,10, height, colour)
+		height += 6
+	end
+end
+
 function _update60()
 	toggle_debug_mode()
 	if game == true then
@@ -47,7 +64,8 @@ function _draw()
 		print("x: "..player.x,12,12,7)
 		print("y "..player.y)
 		print("x vel: "..player.velocity_x)
-		print("y vel: "..player.velocity_y)			
+		print("y vel: "..player.velocity_y)
+		print("sprite: "..player.sprite)
 	end	
 end
 
@@ -72,27 +90,10 @@ other_array[3] = "text"
 other_array[4] = "which is"
 other_array[5] = "aligned to the left"
 
-function format_text_centred(array, colour)
-	height = 50
-	for i in all(array) do
-		print(i,64-#i*2, height, colour)
-		height += 6
-	end
-end
-
-function format_text_left(array, colour)
-	height = 50
-	for i in all(array) do
-		print(i,10, height, colour)
-		height += 6
-	end
-end
-
 function start_game()
  camera(camera_x,camera_y)
  map(0,0,0,0,128,32)	
- --spr(1+player.sprite,player.x,player.y,1,1,player.direction==-1)
- spr(2,player.x,player.y,2,2,player.direction==-1)
+ spr(1+player.sprite,player.x,player.y,1,1,player.direction==-1)
  format_text_left(other_array, 1)
 end
 
@@ -125,7 +126,7 @@ function player()
 
 	player.width = 7
 	player.height = 7
-	player.sprite = 1
+	player.sprite = 0
 end
 
 function animate_player()
