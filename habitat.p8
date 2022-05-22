@@ -2,6 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
 function _init()
+	debug_mode = false
 	player()
 	camera_x = 0
 	camera_y = 0
@@ -11,12 +12,21 @@ function _init()
 	anim_wait = 0.1
 end
 
+function toggle_debug_mode()	
+	if (btnp(🅾️)) and (debug_mode == false) then
+		debug_mode = true	
+	elseif (btnp(🅾️)) and (debug_mode == true) then
+	  	debug_mode = false
+	end	
+end
+
 -- external logging file
 function log(text,overwrite)
 		printh(text, "log", overwrite)
 end
 
 function _update60()
+	toggle_debug_mode()
 	if game == true then
 	 move_player()	
 	 camera_control()		
@@ -28,28 +38,62 @@ function _update60()
 end
 
 function _draw()
-	cls()
+	cls()	
 	if menu == true then draw_menu() end
 	if game == true then start_game() end
 
 	-- debugging
-	print("x: "..player.x,12,12,7)
-	print("y "..player.y)
-	print("x vel: "..player.velocity_x)
-	print("y vel: "..player.velocity_y)		
+	if (debug_mode == true) then
+		print("x: "..player.x,12,12,7)
+		print("y "..player.y)
+		print("x vel: "..player.velocity_x)
+		print("y vel: "..player.velocity_y)			
+	end	
 end
 
 function draw_menu()
-	map(110,0,0,0,128,64)
-	print("by owen fitzgerald",50,100,7)
+	--map(110,0,0,0,128,64)	
+	format_text_centred(text_array, 7)	
+end
+
+text_array = {}
+text_array[1] = "furlock bones"
+text_array[2] = "the case of the lost animals"
+text_array[3] = ""
+text_array[4] = ""
+text_array[5] = ""
+text_array[6] = ""
+text_array[7] = "press x to start"
+
+other_array = {}
+other_array[1] = "this"
+other_array[2] = "is some other"
+other_array[3] = "text"
+other_array[4] = "which is"
+other_array[5] = "aligned to the left"
+
+function format_text_centred(array, colour)
+	height = 50
+	for i in all(array) do
+		print(i,64-#i*2, height, colour)
+		height += 6
+	end
+end
+
+function format_text_left(array, colour)
+	height = 50
+	for i in all(array) do
+		print(i,10, height, colour)
+		height += 6
+	end
 end
 
 function start_game()
  camera(camera_x,camera_y)
  map(0,0,0,0,128,32)	
  spr(1+player.sprite,player.x,player.y,1,1,player.direction==-1)
+ format_text_left(other_array, 1)
 end
-
 
 -->8
 --player functions
