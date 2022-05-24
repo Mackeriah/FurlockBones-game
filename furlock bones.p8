@@ -8,10 +8,13 @@ function _init()
 	char_dog()
 	camera_x = 0
 	camera_y = 0
-	game = false
+	activeGame = false
 	anim_time = 0
 	anim_wait = 0.1
 end
+
+--[[ CONTROL +K +J = unfold all
+CONTROL +K +1 = fold at level 1 ]]
 
 function toggle_debug_mode()	
 	if (btnp(🅾️)) and (debug_mode == false) then
@@ -50,42 +53,33 @@ function format_text_left(array, colour)
 	end
 end
 
-function game_state()
-	if game == true then
-		start_game()
-	 	move_player()
-	 	camera_follow_player()
-		return true
-	else		
-		if (btn(❎)) then game = true end
-		return false
-	end
-end
-
-function state_is_menu()
+function draw_menu()
 	format_text_centered(text_array, 7) -- display menu text
 end
 
-function start_game()
+function draw_game()
  	camera(camera_x,camera_y) -- maybe move this and 3 lines below INTO draw
- 	map(0,0,0,0,128,32)	
+ 	map(0,0,0,0,128,32)
  	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
 	spr(char_dog.sprite,char_dog.x,char_dog.y,1,1,-1) 	
- 	move_char()
 end
 
 function _update60()
-	game_state()
-	toggle_debug_mode()	
-	animate_player()
+	if activeGame == true  then 
+		toggle_debug_mode()	
+		animate_player()		
+		move_player() -- MUST be before camera_follow_player
+		camera_follow_player() -- MUST be after move_player
+		move_char()
+	else		
+		if (btn(❎)) then activeGame = true end
+	end	
 end
 
---[[ CONTROL +K +J = unfold all
-CONTROL +K +1 = fold at level 1 ]]
 function _draw()
 	cls()	
-	if game == false then state_is_menu() end
-	if game == true  then start_game() end
+	if activeGame == false then draw_menu() end
+	if activeGame == true  then draw_game() end
 	if (character_collision(player.x,player.y,char_dog.x,char_dog.y)) then
 		char_dog.speed = 0
 		print("press x to talk!",10,10,7)
