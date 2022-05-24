@@ -11,6 +11,7 @@ function _init()
 	activeGame = false
 	anim_time = 0
 	anim_wait = 0.1
+	dog_talking = no
 end
 
 --[[ CONTROL +K +J = unfold all
@@ -54,14 +55,16 @@ function format_text_left(array, colour)
 end
 
 function draw_menu()
-	format_text_centered(text_array, 7) -- display menu text
+	--[[ I'll have other stuff here later of course
+	which is why this currently looks a bit bare! ]]
+	format_text_centered(text_array, 7) -- display menu text	
 end
 
 function draw_game()
- 	camera(camera_x,camera_y) -- maybe move this and 3 lines below INTO draw
+ 	camera(camera_x,camera_y)
  	map(0,0,0,0,128,32)
  	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
-	spr(char_dog.sprite,char_dog.x,char_dog.y,1,1,-1) 	
+	spr(char_dog.sprite,char_dog.x,char_dog.y,1,1,char_dog.direction==-1) 	
 end
 
 function _update60()
@@ -70,7 +73,7 @@ function _update60()
 		animate_player()		
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
-		move_char()
+		move_char_dog()		
 	else		
 		if (btn(❎)) then activeGame = true end
 	end	
@@ -79,19 +82,18 @@ end
 function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
-	if activeGame == true  then draw_game() end
-	if (character_collision(player.x,player.y,char_dog.x,char_dog.y)) then
-		char_dog.speed = 0
-		print("press x to talk!",10,10,7)
-	end
-	-- debugging
+	if activeGame == true then
+		draw_game()
+		if (char_collision(player.x,player.y,char_dog.x,char_dog.y)) then end
+	end			
 	if (debug_mode == true) then
 		print("x: "..player.x,12,12,7)
 		print("y "..player.y)
 		print("x vel: "..player.velocity_x)
 		print("y vel: "..player.velocity_y)
 		print("sprite: "..player.sprite)
-		print("char_dog.x: "..char_dog.x)				
+		print("char_dog.x: "..char_dog.x)
+		print("dog_talking: "..dog_talking)
 	end	
 end
 
@@ -135,7 +137,7 @@ function move_player()
 	--when the user tries to move, only add the acceleration to the current speed.
 	if (btn(⬅️)) then 
 		player.velocity_x -= player.acceleration
-		player.direction = -1	
+		player.direction = -1
 	end
 	if (btn(➡️)) then 
 		player.velocity_x += player.acceleration
@@ -219,21 +221,21 @@ function char_dog()
 	char_dog.y = 24
 	char_dog.sprite = 6
 	char_dog.speed = 0.2
+	char_dog.direction = -1
 end
 
-function move_char()
+function move_char_dog()
 	if player.x < char_dog.x then
   		char_dog.x -= char_dog.speed
- 	end
- 
- 	if player.x > char_dog.x then
+		char_dog.direction = -1
+ 	end 
+ 	if player.x > char_dog.x then	 	
   		char_dog.x += char_dog.speed
- 	end
- 
+		char_dog.direction = 1
+ 	end 
  	if player.y < char_dog.y then
   		char_dog.y -= char_dog.speed
- 	end
- 
+ 	end 
  	if player.y > char_dog.y then
   		char_dog.y += char_dog.speed
  	end
@@ -242,10 +244,31 @@ end
 -->8
 -- collision functions
 
-function character_collision(ax,ay,bx,by)
-	if bx+8>ax and bx<ax+8 and by+8>ay and by<ay+8 then
-  		return true
+function choose_dog_convo()
+	if dog_talking == no then
+		--choice = flr(rnd(6))
+		choice = rnd{1,2,3,4,5}
+		dog_talking = yes
+	end	
+end
+
+dog_talk={}
+dog_talk[1] = "woof?"
+dog_talk[2] = "bark"
+dog_talk[3] = "*sniff sniff*"
+dog_talk[4] = "yip!"
+dog_talk[5] = "whimper..."
+
+function char_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+  		char_dog.speed = 0				
+		print(dog_talk[choice],char_dog.x,char_dog.y-10,7)
+		dog_talking = yes
+		return true		
  	else
+	 	char_dog.speed = 0.2
+		dog_talking = no
+		choose_dog_convo()
   		return false
  	end
 end
