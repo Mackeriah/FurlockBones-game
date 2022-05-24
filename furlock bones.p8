@@ -1,14 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
---init and functions
+--init and setup functions
 function _init()
 	debug_mode = false
 	player()
 	char_dog()
 	camera_x = 0
 	camera_y = 0
-	menu = true
 	game = false
 	anim_time = 0
 	anim_wait = 0.1
@@ -22,12 +21,20 @@ function toggle_debug_mode()
 	end	
 end
 
--- external logging file
-function log(text,overwrite)
+function log(text,overwrite) -- external logging file
 		printh(text, "log", overwrite)
 end
 
-function format_text_centred(array, colour)
+function camera_follow_player()
+	if player.x > 60 and player.x <= (312 -60) then 
+		camera_x = player.x - 60
+	end
+	if player.y > 60 and player.y <= (248-60) then
+		camera_y = player.y - 60
+	end
+end
+
+function format_text_centered(array, colour)
 	height = 50
 	for i in all(array) do
 		print(i,64-#i*2, height, colour)
@@ -43,35 +50,46 @@ function format_text_left(array, colour)
 	end
 end
 
-function _update60()
-	toggle_debug_mode()
-	game_state()
-	animate_player()
-	
-	-- check for collision with dog
- 	-- if character_collision(player.x,player.y,char_dog.x,char_dog.y) then
-  	-- 	stop()
- 	-- end
+function game_state()
+	if game == true then
+		start_game()
+	 	move_player()
+	 	camera_follow_player()
+		return true
+	else		
+		if (btn(❎)) then game = true end
+		return false
+	end
 end
 
--- you can comment blocks using [[ ]]
+function state_is_menu()
+	format_text_centered(text_array, 7) -- display menu text
+end
+
+function start_game()
+ 	camera(camera_x,camera_y) -- maybe move this and 3 lines below INTO draw
+ 	map(0,0,0,0,128,32)	
+ 	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
+	spr(char_dog.sprite,char_dog.x,char_dog.y,1,1,-1) 	
+ 	move_char()
+end
+
+function _update60()
+	game_state()
+	toggle_debug_mode()	
+	animate_player()
+end
+
 --[[ CONTROL +K +J = unfold all
 CONTROL +K +1 = fold at level 1 ]]
-
 function _draw()
 	cls()	
-	if menu == true then state_menu() end
-	if game == true then state_game() end
-
+	if game == false then state_is_menu() end
+	if game == true  then start_game() end
 	if (character_collision(player.x,player.y,char_dog.x,char_dog.y)) then
-		print("OUCH!")
 		char_dog.speed = 0
+		print("press x to talk!",10,10,7)
 	end
-
-	if game == true then
-		spr(char_dog.sprite,char_dog.x,char_dog.y,1,1,-1)
-	end
-
 	-- debugging
 	if (debug_mode == true) then
 		print("x: "..player.x,12,12,7)
@@ -83,42 +101,8 @@ function _draw()
 	end	
 end
 
-function state_menu()
-	--map(110,0,0,0,128,64)	
-	format_text_centred(text_array, 7)	
-end
-
-function game_state()
-	if game == true then
-	 move_player()	
-	 camera_control()
-	end
-	if (btn(❎)) then
-		game = true
-	end
-end
-
-
-function state_game()
- camera(camera_x,camera_y)
- map(0,0,0,0,128,32)	
- spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
- format_text_left(other_array, 1)
- move_char()
-end
-
 -->8
 --player functions
-
-function camera_control()
-	if player.x > 60 and player.x <= (312 -60) then 
-		camera_x = player.x - 60
-	end
-	if player.y > 60 and player.y <= (248-60) then
-		camera_y = player.y - 60
-	end
-end
-
 function player()
 	player={}  --create empty table
 	
@@ -136,32 +120,6 @@ function player()
 	player.width = 7
 	player.height = 7
 	player.sprite = 1
-end
-
-function char_dog()
-	char_dog={}
-	char_dog.x = 74
-	char_dog.y = 24
-	char_dog.sprite = 6
-	char_dog.speed = 0.2
-end
-
-function move_char()
-	if player.x < char_dog.x then
-  		char_dog.x -= char_dog.speed
- 	end
- 
- 	if player.x > char_dog.x then
-  		char_dog.x += char_dog.speed
- 	end
- 
- 	if player.y < char_dog.y then
-  		char_dog.y -= char_dog.speed
- 	end
- 
- 	if player.y > char_dog.y then
-  		char_dog.y += char_dog.speed
- 	end
 end
 
 function animate_player()
@@ -260,9 +218,36 @@ function move_player()
 end
 
 -->8
---collision functions
+-- character functions
+function char_dog()
+	char_dog={}
+	char_dog.x = 74
+	char_dog.y = 24
+	char_dog.sprite = 6
+	char_dog.speed = 0.2
+end
 
--- check for enemy collision
+function move_char()
+	if player.x < char_dog.x then
+  		char_dog.x -= char_dog.speed
+ 	end
+ 
+ 	if player.x > char_dog.x then
+  		char_dog.x += char_dog.speed
+ 	end
+ 
+ 	if player.y < char_dog.y then
+  		char_dog.y -= char_dog.speed
+ 	end
+ 
+ 	if player.y > char_dog.y then
+  		char_dog.y += char_dog.speed
+ 	end
+end
+
+-->8
+-- collision functions
+
 function character_collision(ax,ay,bx,by)
 	if bx+8>ax and bx<ax+8 and by+8>ay and by<ay+8 then
   		return true
@@ -356,7 +341,7 @@ function solid(x,y)
 end
 
 -->8
--- in game text
+-- game text
 
 text_array = {}
 text_array[1] = "furlock bones"
