@@ -12,6 +12,7 @@ function _init()
 	anim_time = 0
 	anim_wait = 0.1
 	dog_talking = no
+	init_text()
 end
 
 --[[ CONTROL +K +J = unfold all
@@ -95,6 +96,9 @@ function _draw()
 		print("char_dog.x: "..char_dog.x)
 		print("dog_talking: "..dog_talking)
 	end	
+	if text.active == true then
+		draw_text()
+	end
 end
 
 -->8
@@ -359,6 +363,33 @@ end
 
 -->8
 -- game text
+
+function init_text()
+	text = {}
+	text.active = true
+	text.str = {} -- array of strings
+	text.str = {"Hello", "How are you?"}
+end
+
+function draw_text()
+	-- define textbox (also used for border)
+	local textbox_x = 20
+	local textbox_y = 48
+	local textbox_width = 108
+	local textbox_height = 80
+
+	-- draw outer border text box
+	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 7)
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 8)
+
+	-- write text
+	for i=1, #text.str do  -- the # gets the legnth of the table 'text'
+		local txt = text.str[i]
+		local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		print(txt, tx, ty, 5)
+	end
+end
 
 text_array = {}
 text_array[1] = "furlock bones"
