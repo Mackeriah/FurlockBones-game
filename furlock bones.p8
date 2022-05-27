@@ -12,7 +12,7 @@ function _init()
 	anim_time = 0
 	anim_wait = 0.1
 	dog_talking = no
-	init_text()
+	init_text() -- used for text box
 end
 
 --[[ CONTROL +K +J = unfold all
@@ -36,22 +36,6 @@ function camera_follow_player()
 	end
 	if player.y > 60 and player.y <= (248-60) then
 		camera_y = player.y - 60
-	end
-end
-
-function format_text_centered(array, colour)
-	height = 50
-	for i in all(array) do
-		print(i,64-#i*2, height, colour)
-		height += 6
-	end
-end
-
-function format_text_left(array, colour)
-	height = 50
-	for i in all(array) do
-		print(i,10, height, colour)
-		height += 6
 	end
 end
 
@@ -364,28 +348,54 @@ end
 -->8
 -- game text
 
+function format_text_centered(array, colour)
+	height = 50
+	for i in all(array) do
+		print(i,64-#i*2, height, colour)
+		height += 6
+	end
+end
+
+function format_text_left(array, colour)
+	height = 50
+	for i in all(array) do
+		print(i,10, height, colour)
+		height += 6
+	end
+end
+
 function init_text()
 	text = {}
-	text.active = true
-	text.str = {} -- array of strings
-	text.str = {"Hello", "How are you?"}
+	text.active = true	
+	text.str = {"hello", "how are you?", "oh i'm very well thanks!"}
+	
+	
 end
 
 function draw_text()
-	-- define textbox (also used for border)
-	local textbox_x = 20
+	
+	local maxTextWidth = 0
+	for i=1, #text.str do 
+		if #text.str[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #text.str[i] -- set max width to longest element so box wide enough
+		end
+	end
+	
+	-- define textbox with border
+	local textbox_x = 64 - maxTextWidth *2-1 -- -1 for border
 	local textbox_y = 48
-	local textbox_width = 108
-	local textbox_height = 80
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #text.str * 6
 
 	-- draw outer border text box
 	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 7)
 	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 8)
 
 	-- write text
-	for i=1, #text.str do  -- the # gets the legnth of the table 'text'
+	for i=1, #text.str do  -- the # gets the legnth of the array 'text'
 		local txt = text.str[i]
-		local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
 		print(txt, tx, ty, 5)
 	end
