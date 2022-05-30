@@ -4,15 +4,15 @@ __lua__
 --init and setup functions
 function _init()
 	debug_mode = false
-	player()
-	char_dog()
+	create_player()
+	create_brian_dog()
 	camera_x = 0
 	camera_y = 0
 	activeGame = false
 	anim_time = 0
 	anim_wait = 0.1
 	dog_talking = no
-	init_text() -- used for text box
+	init_conversation_text() -- used for text box
 end
 
 --[[ CONTROL +K +J = unfold all
@@ -49,7 +49,7 @@ function draw_game()
  	camera(camera_x,camera_y)
  	map(0,0,0,0,128,32)
  	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
-	spr(char_dog.sprite,char_dog.x,char_dog.y,1,1,char_dog.direction==-1) 	
+	spr(brian_dog.sprite,brian_dog.x,brian_dog.y,1,1,brian_dog.direction==-1) 	
 end
 
 function _update60()
@@ -58,7 +58,7 @@ function _update60()
 		animate_player()		
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
-		move_char_dog()		
+		move_brian_dog()		
 	else		
 		if (btn(❎)) then activeGame = true end
 	end	
@@ -69,7 +69,7 @@ function _draw()
 	if activeGame == false then draw_menu() end
 	if activeGame == true then
 		draw_game()
-		if (char_collision(player.x,player.y,char_dog.x,char_dog.y)) then end
+		if (char_collision(player.x,player.y,brian_dog.x,brian_dog.y)) then end
 	end			
 	if (debug_mode == true) then
 		print("x: "..player.x,12,12,7)
@@ -77,17 +77,17 @@ function _draw()
 		print("x vel: "..player.velocity_x)
 		print("y vel: "..player.velocity_y)
 		print("sprite: "..player.sprite)
-		print("char_dog.x: "..char_dog.x)
+		print("brian_dog.x: "..brian_dog.x)
 		print("dog_talking: "..dog_talking)
 	end	
 	if text.active == true then
-		draw_text()
+		draw_conversation_text()
 	end
 end
 
 -->8
 --player functions
-function player()
+function create_player()
 	player={}  --create empty table
 	
 	player.x = 8 -- map location x8 for exact pixel location
@@ -203,58 +203,43 @@ end
 
 -->8
 -- character functions
-function char_dog()
-	char_dog={}
-	char_dog.x = 74
-	char_dog.y = 24
-	char_dog.sprite = 6
-	char_dog.speed = 0.2
-	char_dog.direction = -1
+function create_brian_dog()
+	brian_dog={}
+	brian_dog.x = 74
+	brian_dog.y = 24
+	brian_dog.sprite = 6
+	brian_dog.speed = 0.2
+	brian_dog.direction = -1
 end
 
-function move_char_dog()
-	if player.x < char_dog.x then
-  		char_dog.x -= char_dog.speed
-		char_dog.direction = -1
+function move_brian_dog()
+	if player.x < brian_dog.x then
+  		brian_dog.x -= brian_dog.speed
+		brian_dog.direction = -1
  	end 
- 	if player.x > char_dog.x then	 	
-  		char_dog.x += char_dog.speed
-		char_dog.direction = 1
+ 	if player.x > brian_dog.x then	 	
+  		brian_dog.x += brian_dog.speed
+		brian_dog.direction = 1
  	end 
- 	if player.y < char_dog.y then
-  		char_dog.y -= char_dog.speed
+ 	if player.y < brian_dog.y then
+  		brian_dog.y -= brian_dog.speed
  	end 
- 	if player.y > char_dog.y then
-  		char_dog.y += char_dog.speed
+ 	if player.y > brian_dog.y then
+  		brian_dog.y += brian_dog.speed
  	end
 end
 
 -->8
 -- collision functions
 
-function choose_dog_convo()
-	if dog_talking == no then
-		--choice = flr(rnd(6))
-		choice = rnd{1,2,3,4,5}
-		dog_talking = yes
-	end	
-end
-
-dog_talk={}
-dog_talk[1] = "woof?"
-dog_talk[2] = "bark"
-dog_talk[3] = "*sniff sniff*"
-dog_talk[4] = "yip!"
-dog_talk[5] = "whimper..."
-
 function char_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-  		char_dog.speed = 0				
-		print(dog_talk[choice],char_dog.x,char_dog.y-10,7)
+  		brian_dog.speed = 0				
+		print(dog_talk[choice],brian_dog.x,brian_dog.y-10,7)
 		dog_talking = yes
 		return true		
  	else
-	 	char_dog.speed = 0.2
+	 	brian_dog.speed = 0.2
 		dog_talking = no
 		choose_dog_convo()
   		return false
@@ -364,15 +349,27 @@ function format_text_left(array, colour)
 	end
 end
 
-function init_text()
+function init_conversation_text()
 	text = {}
 	text.active = true	
-	text.str = {"hello", "how are you?", "oh i'm very well thanks!"}
-	
-	
+	text.str = {"hello", "how are you?", "oh i'm very well thanks!"}	
 end
 
-function draw_text()
+function choose_dog_convo()
+	if dog_talking == no then		
+		choice = rnd{1,2,3,4,5}
+		dog_talking = yes
+	end	
+end
+
+dog_talk={}
+dog_talk[1] = "woof?"
+dog_talk[2] = "bark"
+dog_talk[3] = "*sniff sniff*"
+dog_talk[4] = "yip!"
+dog_talk[5] = "whimper..."
+
+function draw_conversation_text()
 	
 	local maxTextWidth = 0
 	for i=1, #text.str do 
