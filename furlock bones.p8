@@ -1,6 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
+
+--[[ CONTROL +K +J = unfold all
+CONTROL +K +1 = fold at level 1 ]]
+
 --init and setup functions
 function _init()
 	debug_mode = false
@@ -12,11 +16,8 @@ function _init()
 	anim_time = 0
 	anim_wait = 0.1
 	dog_talking = no
-	init_conversation_text() -- used for text box
+	init_conversation_text()
 end
-
---[[ CONTROL +K +J = unfold all
-CONTROL +K +1 = fold at level 1 ]]
 
 function toggle_debug_mode()	
 	if (btnp(🅾️)) and (debug_mode == false) then
@@ -59,9 +60,13 @@ function _update60()
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
 		move_brian_dog()		
-	else		
-		if (btn(❎)) then activeGame = true end
-	end	
+
+		if (btnp(❎)) then
+			new_conversation({"here is a text box", "oh hello!"})
+		end
+	else			
+		if (btnp(❎)) then activeGame = true end
+	end
 end
 
 function _draw()
@@ -69,8 +74,12 @@ function _draw()
 	if activeGame == false then draw_menu() end
 	if activeGame == true then
 		draw_game()
-		if (char_collision(player.x,player.y,brian_dog.x,brian_dog.y)) then end
-	end			
+		if (character_collision(player.x,player.y,brian_dog.x,brian_dog.y)) then end
+
+		-- draw player conversations
+		if text.active == true then draw_conversation()	end	
+	end
+
 	if (debug_mode == true) then
 		print("x: "..player.x,12,12,7)
 		print("y "..player.y)
@@ -78,11 +87,9 @@ function _draw()
 		print("y vel: "..player.velocity_y)
 		print("sprite: "..player.sprite)
 		print("brian_dog.x: "..brian_dog.x)
-		print("dog_talking: "..dog_talking)
-	end	
-	if text.active == true then
-		draw_conversation_text()
-	end
+		--print("dog_talking: "..dog_talking)
+		print(text.active)
+	end		
 end
 
 -->8
@@ -122,72 +129,76 @@ function animate_player()
 end
 
 function move_player()
-	--when the user tries to move, only add the acceleration to the current speed.
-	if (btn(⬅️)) then 
-		player.velocity_x -= player.acceleration
-		player.direction = -1
-	end
-	if (btn(➡️)) then 
-		player.velocity_x += player.acceleration
-		player.direction = 1
-	end
-	if (btn(⬆️)) then 
-		player.velocity_y -= player.acceleration		
-	end
-	if (btn(⬇️)) then 
-		player.velocity_y += player.acceleration		
-	end
+	
+	-- dont' allow player to move when talking, it's rude.
+	if (text.active == false) then
+		--when the user tries to move, only add the acceleration to the current speed.
+		if (btn(⬅️)) then 
+			player.velocity_x -= player.acceleration
+			player.direction = -1
+		end
+		if (btn(➡️)) then 
+			player.velocity_x += player.acceleration
+			player.direction = 1
+		end
+		if (btn(⬆️)) then 
+			player.velocity_y -= player.acceleration		
+		end
+		if (btn(⬇️)) then 
+			player.velocity_y += player.acceleration		
+		end
 
-	-- max negative speed, player direction, max positive speed
-	-- So if player.direction tries to exceed max, we refer to either - or + max instead
-	-- essentially we ignore what player trying to do, until speed reduces
- 	player.velocity_x = mid(-player.max_x_speed,player.velocity_x,player.max_x_speed)
- 	player.velocity_y = mid(-player.max_y_speed,player.velocity_y,player.max_y_speed)
+		-- max negative speed, player direction, max positive speed
+		-- So if player.direction tries to exceed max, we refer to either - or + max instead
+		-- essentially we ignore what player trying to do, until speed reduces
+		player.velocity_x = mid(-player.max_x_speed,player.velocity_x,player.max_x_speed)
+		player.velocity_y = mid(-player.max_y_speed,player.velocity_y,player.max_y_speed)
 
-	-- if player still moving
-	if (player.velocity_x != 0) or (player.velocity_y != 0) then
+		-- if player still moving
+		if (player.velocity_x != 0) or (player.velocity_y != 0) then
 
-		-- call check_if_next_to_wall function for collision before letting player move
-		-- essentially this allows play to move diaganolly along a solid object, as without this
-		-- the can_move code prevents them moving
-		check_if_next_to_wall(player)
+			-- call check_if_next_to_wall function for collision before letting player move
+			-- essentially this allows play to move diaganolly along a solid object, as without this
+			-- the can_move code prevents them moving
+			check_if_next_to_wall(player)
 
-		-- check player isn't trying to move into a solid object
-		if (can_move(player, player.velocity_x, player.velocity_y)) then
-			--actually move the player to the new location
-			player.x += player.velocity_x
-			player.y += player.velocity_y
-			
-		-- if player cannot move there, find out how close they can get and move them there instead.
-		else 
-			--create temporary variables to store how far the player is trying to move
-			temp_direction_x = player.velocity_x
-			temp_direction_y = player.velocity_y
-			
-			--make tempx,tempy shorter and shorter until we find a new position the player can move to
-			while (not can_move(player,temp_direction_x,temp_direction_y)) do
+			-- check player isn't trying to move into a solid object
+			if (can_move(player, player.velocity_x, player.velocity_y)) then
+				--actually move the player to the new location
+				player.x += player.velocity_x
+				player.y += player.velocity_y
 				
-				--if x movement has been shortened so much that it's practically 0, set it to 0
-				if (abs(temp_direction_x) <= 0.1) then
-					temp_direction_x = 0  	
-					--but if it's not too small, make it 90% of what it was before. 
-					-- this shortens the amount the player is trying to move in that direction.
-				else
-					temp_direction_x *= 0.9
+			-- if player cannot move there, find out how close they can get and move them there instead.
+			else 
+				--create temporary variables to store how far the player is trying to move
+				temp_direction_x = player.velocity_x
+				temp_direction_y = player.velocity_y
+				
+				--make tempx,tempy shorter and shorter until we find a new position the player can move to
+				while (not can_move(player,temp_direction_x,temp_direction_y)) do
+					
+					--if x movement has been shortened so much that it's practically 0, set it to 0
+					if (abs(temp_direction_x) <= 0.1) then
+						temp_direction_x = 0  	
+						--but if it's not too small, make it 90% of what it was before. 
+						-- this shortens the amount the player is trying to move in that direction.
+					else
+						temp_direction_x *= 0.9
+					end
+					
+					--do the same thing for y movement
+					if (abs(temp_direction_y) <= 0.1) then
+						temp_direction_y = 0
+					else
+						temp_direction_y *= 0.9
+					end  	  	
 				end
-				
-				--do the same thing for y movement
-				if (abs(temp_direction_y) <= 0.1) then
-					temp_direction_y = 0
-				else
-					temp_direction_y *= 0.9
-				end  	  	
-			end
 
-		--now we've found a distance the player can move, actually move them there
-		player.x += temp_direction_x
-		player.y += temp_direction_y
-		end 
+			--now we've found a distance the player can move, actually move them there
+			player.x += temp_direction_x
+			player.y += temp_direction_y
+			end 
+		end
 	end
  
 	-- if the player's still moving, then slow them down just a bit using the drag amount.
@@ -229,10 +240,7 @@ function move_brian_dog()
  	end
 end
 
--->8
--- collision functions
-
-function char_collision(playerx,playery,charx,chary)
+function character_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
   		brian_dog.speed = 0				
 		print(dog_talk[choice],brian_dog.x,brian_dog.y-10,7)
@@ -246,11 +254,13 @@ function char_collision(playerx,playery,charx,chary)
  	end
 end
 
--- if player next to a wall stop them moving in that direction
--- essentially this allows player to move along a wall holding two buttons. e.g. up and left
--- what happens is that we ignore the left movement as it is set to zero meaning that we only
--- apply the vertical movement. It's really just a player UX fix.
+-->8
+-- player collision functions
 function check_if_next_to_wall(player)
+	-- if player next to a wall stop them moving in that direction
+	-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
+	-- what happens is that we ignore the left movement as it is set to zero meaning that we only
+	-- apply the vertical movement. It's really just a player UX fix.
 	-- player moving left
 	if (player.velocity_x < 0) then
 		--check both left corners for a wall
@@ -295,10 +305,10 @@ function check_if_next_to_wall(player)
 	end 
 end
 
---this function takes an object (only player currently) and it's x,y speed. It uses these
---to check the four corners of the object to see it can move into that spot. (a map tile
---marked as solid would prevent movement into that spot.)
 function can_move(object,direction_x,direction_y)
+	--this function takes an object (only player currently) and it's x,y speed. It uses these
+	--to check the four corners of the object to see it can move into that spot. (a map tile
+	--marked as solid would prevent movement into that spot.)
 	-- capture x,y coords for where trying to move
 	local next_left = object.x + direction_x	
 	local next_right = object.x + direction_x + object.width
@@ -332,7 +342,6 @@ end
 
 -->8
 -- game text
-
 function format_text_centered(array, colour)
 	height = 50
 	for i in all(array) do
@@ -350,9 +359,42 @@ function format_text_left(array, colour)
 end
 
 function init_conversation_text()
-	text = {}
-	text.active = true	
-	text.str = {"hello", "how are you?", "oh i'm very well thanks!"}	
+	text = {} -- create empty array to store multiple strings
+	text.active = false -- initialise to false
+	text.string = {} -- empty array to store individual string?
+end
+
+function new_conversation(txt)
+	text.string = txt -- enter received string(s) into array
+	text.active = true -- set text as active so 
+end
+
+function draw_conversation()	
+	local maxTextWidth = 0
+	for i=1, #text.string do 
+		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
+		end
+	end
+	
+	-- define textbox with border
+	local textbox_x = 64 - maxTextWidth *2-1 -- -1 for border
+	local textbox_y = 48
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #text.string * 6
+
+	-- draw outer border text box
+	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 7)
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 8)
+
+	-- write text
+	for i=1, #text.string do  -- the # gets the legnth of the array 'text'
+		local txt = text.string[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		print(txt, tx, ty, 5)
+	end
 end
 
 function choose_dog_convo()
@@ -368,35 +410,6 @@ dog_talk[2] = "bark"
 dog_talk[3] = "*sniff sniff*"
 dog_talk[4] = "yip!"
 dog_talk[5] = "whimper..."
-
-function draw_conversation_text()
-	
-	local maxTextWidth = 0
-	for i=1, #text.str do 
-		if #text.str[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #text.str[i] -- set max width to longest element so box wide enough
-		end
-	end
-	
-	-- define textbox with border
-	local textbox_x = 64 - maxTextWidth *2-1 -- -1 for border
-	local textbox_y = 48
-	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #text.str * 6
-
-	-- draw outer border text box
-	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 7)
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 8)
-
-	-- write text
-	for i=1, #text.str do  -- the # gets the legnth of the array 'text'
-		local txt = text.str[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
-		local tx = 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		print(txt, tx, ty, 5)
-	end
-end
 
 text_array = {}
 text_array[1] = "furlock bones"
