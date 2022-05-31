@@ -2,7 +2,11 @@ pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
 --[[ CONTROL +K +J = unfold all
-CONTROL +K +1 = fold at level 1 ]]
+CONTROL +K +1 = fold at level 1 
+
+U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button)
+
+]]
 
 --init, update, draw and draw functions
 function _init()
@@ -13,10 +17,11 @@ function _init()
 	camera_y = 0
 	activeGame = false
 	anim_time = 0
-	anim_wait = 0.1
-	brian_talking = false
+	anim_wait = 0.1	
 	init_conversation_text()	
 	conversation_state = "level0"
+	talking_to = "nobody"	
+	poke(0x5f5c, 255) -- btnp repeat delay to never
 end
 
 function _update60()
@@ -40,14 +45,12 @@ function _draw()
 		-- stop Brian moving when touches player
 		if (brian_collision(player.x,player.y,brian_dog.x,brian_dog.y)) then end
 		-- draw player conversations when required
-		if text.active == true then draw_conversation()	end			
-
-		if conversation_state == "level2" then		
-			print(dog_talk[choice],brian_dog.x,brian_dog.y-10,7)			
-		end
+		if text.active == true then draw_conversation()	end
 	end	
 	if (debug_mode == true) then		
-		print("player y: "..player.y,player.x,player.y-10,8)		
+		print("player y: "..player.y,player.x,player.y-10,8)
+		print(conversation_state)
+		print("talking to: "..talking_to)
 	end		
 end
 
@@ -110,73 +113,76 @@ function animate_player()
 end
 
 function move_player()	
-	--when the user tries to move, only add the acceleration to the current speed.
-	if (btn(⬅️)) then 
-		player.velocity_x -= player.acceleration
-		player.direction = -1
-	end
-	if (btn(➡️)) then 
-		player.velocity_x += player.acceleration
-		player.direction = 1
-	end
-	if (btn(⬆️)) then 
-		player.velocity_y -= player.acceleration		
-	end
-	if (btn(⬇️)) then 
-		player.velocity_y += player.acceleration		
-	end
+	
+	if conversation_state != "level2" then	-- if talking then don't walk away, it's rude.
+		--when the user tries to move, only add the acceleration to the current speed.
+		if (btn(⬅️)) then 
+			player.velocity_x -= player.acceleration
+			player.direction = -1
+		end
+		if (btn(➡️)) then 
+			player.velocity_x += player.acceleration
+			player.direction = 1
+		end
+		if (btn(⬆️)) then 
+			player.velocity_y -= player.acceleration		
+		end
+		if (btn(⬇️)) then 
+			player.velocity_y += player.acceleration		
+		end
 
-	-- max negative speed, player direction, max positive speed
-	-- So if player.direction tries to exceed max, we refer to either - or + max instead
-	-- essentially we ignore what player trying to do, until speed reduces
-	player.velocity_x = mid(-player.max_x_speed,player.velocity_x,player.max_x_speed)
-	player.velocity_y = mid(-player.max_y_speed,player.velocity_y,player.max_y_speed)
+		-- max negative speed, player direction, max positive speed
+		-- So if player.direction tries to exceed max, we refer to either - or + max instead
+		-- essentially we ignore what player trying to do, until speed reduces
+		player.velocity_x = mid(-player.max_x_speed,player.velocity_x,player.max_x_speed)
+		player.velocity_y = mid(-player.max_y_speed,player.velocity_y,player.max_y_speed)
 
-	-- if player still moving
-	if (player.velocity_x != 0) or (player.velocity_y != 0) then
+		-- if player still moving
+		if (player.velocity_x != 0) or (player.velocity_y != 0) then
 
-		-- call check_if_next_to_wall function for collision before letting player move
-		-- essentially this allows play to move diaganolly along a solid object, as without this
-		-- the can_move code prevents them moving
-		check_if_next_to_wall(player)
+			-- call check_if_next_to_wall function for collision before letting player move
+			-- essentially this allows play to move diaganolly along a solid object, as without this
+			-- the can_move code prevents them moving
+			check_if_next_to_wall(player)
 
-		-- check player isn't trying to move into a solid object
-		if (can_move(player, player.velocity_x, player.velocity_y)) then
-			--actually move the player to the new location
-			player.x += player.velocity_x
-			player.y += player.velocity_y
-			
-		-- if player cannot move there, find out how close they can get and move them there instead.
-		else 
-			--create temporary variables to store how far the player is trying to move
-			temp_direction_x = player.velocity_x
-			temp_direction_y = player.velocity_y
-			
-			--make tempx,tempy shorter and shorter until we find a new position the player can move to
-			while (not can_move(player,temp_direction_x,temp_direction_y)) do
+			-- check player isn't trying to move into a solid object
+			if (can_move(player, player.velocity_x, player.velocity_y)) then
+				--actually move the player to the new location
+				player.x += player.velocity_x
+				player.y += player.velocity_y
 				
-				--if x movement has been shortened so much that it's practically 0, set it to 0
-				if (abs(temp_direction_x) <= 0.1) then
-					temp_direction_x = 0  	
-					--but if it's not too small, make it 90% of what it was before. 
-					-- this shortens the amount the player is trying to move in that direction.
-				else
-					temp_direction_x *= 0.9
+			-- if player cannot move there, find out how close they can get and move them there instead.
+			else 
+				--create temporary variables to store how far the player is trying to move
+				temp_direction_x = player.velocity_x
+				temp_direction_y = player.velocity_y
+				
+				--make tempx,tempy shorter and shorter until we find a new position the player can move to
+				while (not can_move(player,temp_direction_x,temp_direction_y)) do
+					
+					--if x movement has been shortened so much that it's practically 0, set it to 0
+					if (abs(temp_direction_x) <= 0.1) then
+						temp_direction_x = 0  	
+						--but if it's not too small, make it 90% of what it was before. 
+						-- this shortens the amount the player is trying to move in that direction.
+					else
+						temp_direction_x *= 0.9
+					end
+					
+					--do the same thing for y movement
+					if (abs(temp_direction_y) <= 0.1) then
+						temp_direction_y = 0
+					else
+						temp_direction_y *= 0.9
+					end  	  	
 				end
-				
-				--do the same thing for y movement
-				if (abs(temp_direction_y) <= 0.1) then
-					temp_direction_y = 0
-				else
-					temp_direction_y *= 0.9
-				end  	  	
-			end
 
-		--now we've found a distance the player can move, actually move them there
-		player.x += temp_direction_x
-		player.y += temp_direction_y
-		end 
-	end	
+			--now we've found a distance the player can move, actually move them there
+			player.x += temp_direction_x
+			player.y += temp_direction_y
+			end 
+		end	
+	end
  
 	-- if the player's still moving, then slow them down just a bit using the drag amount.
 	-- Note: this actually takes effect whilst player trying to move, so I think it should only be
@@ -222,25 +228,33 @@ function brian_collision(playerx,playery,charx,chary)
 	brian_dog.speed = 0
   		if conversation_state == "level0" then			
 			conversation_state = "level1"
+			talking_to = "brian"			
 		end
- 	else
+ 	else -- if player walks away instead of starting conversation
 	 	brian_dog.speed = 0.2	 	
 		conversation_state = "level0"
-		text.active = false	 	
-		brian_talking = false
-		choose_random_brian_response()  		
+		talking_to = "nobody"
+		text.active = false		
  	end
 end
 
+
 function conversation_system()
+	-- level0 == no conversation
+	-- level1 == player can choose to start conversation
+	-- level2 == player now in a conversation
 	if conversation_state == "level1" then
-		new_conversation({"press x to talk to brian"})
-		if (btnp(❎)) then			
+		new_conversation({"press x to talk"})
+		if (btnp(❎)) then						
 			conversation_state = "level2"
+		end	
+	elseif conversation_state == "level2" and talking_to == "brian" then				
+		new_conversation({"ruff! i'm brian!"}) 		
+		if (btnp(❎)) then		
+			conversation_state = "level3"
 		end
-	end
-	if conversation_state == "level2" then				
-		new_conversation({"player pressed x","a 2nd line of text","and even a third","but four is our limit!"})
+	elseif conversation_state == "level3" and talking_to == "brian" then		
+		new_conversation({"oh really?", "a 2nd line of text","and even a third","but four is our limit!"})
 	end
 end
 
@@ -392,19 +406,20 @@ function draw_conversation()
 	end
 end
 
-function choose_random_brian_response()
-	if brian_talking == false then		
-		choice = rnd{1,2,3,4,5}
-		brian_talking = true
-	end	
-end
+-- function choose_random_brian_response()
+-- 	if brian_talking == false then		
+-- 		choice = rnd{1,2,3,4,5}
+-- 		brian_talking = true
+-- 	end	
+-- end
 
-dog_talk={}
-dog_talk[1] = "woof?"
-dog_talk[2] = "bark"
-dog_talk[3] = "*sniff sniff*"
-dog_talk[4] = "yip!"
-dog_talk[5] = "whimper..."
+-- Brian conversation
+brian_talk={}
+brian_talk[1] = "woof?"
+brian_talk[2] = "bark"
+brian_talk[3] = "*sniff sniff*"
+brian_talk[4] = "yip!"
+brian_talk[5] = "whimper..."
 
 text_array = {}
 text_array[1] = "furlock bones"
