@@ -47,8 +47,7 @@ function _draw()
 		end
 	end	
 	if (debug_mode == true) then		
-		print("conversation_state: "..conversation_state,10,10,8)
-		print(brian_talking)
+		print("player y: "..player.y,player.x,player.y-10,8)		
 	end		
 end
 
@@ -240,10 +239,8 @@ function conversation_system()
 			conversation_state = "level2"
 		end
 	end
-	if conversation_state == "level2" then		
-		text.active = false
-		print(dog_talk[choice],brian_dog.x,brian_dog.y-10,7)
-		--new_conversation({"player pressed x"})
+	if conversation_state == "level2" then				
+		new_conversation({"player pressed x","a 2nd line of text","and even a third","but four is our limit!"})
 	end
 end
 
@@ -364,16 +361,20 @@ function new_conversation(txt)
 end
 
 function draw_conversation()	
+	-- currently I just draw this in the middle of the screen
+	-- I want to draw it at the bottom UNLESS player y >= 188, in which case I'll draw at top of screen
+	
+	-- determine longest line of text
 	local maxTextWidth = 0
 	for i=1, #text.string do 
 		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
 			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
 		end
 	end
-	
+
 	-- define textbox with border
 	local textbox_x = 64 - maxTextWidth *2-1 -- -1 for border
-	local textbox_y = 48
+	local textbox_y = 100
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height = textbox_y + #text.string * 6
 
