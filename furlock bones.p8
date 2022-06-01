@@ -19,7 +19,7 @@ function _init()
 	anim_time = 0
 	anim_wait = 0.1	
 	create_player()
-	create_brian_dog()	
+	create_brian()	
 	init_conversation_text()		
 	poke(0x5f5c, 255) -- this means a held button only registers once
 	readingSign = false	
@@ -32,11 +32,9 @@ function _update60()
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
-		--move_brian_dog()
-		-- stop Brian moving when touches player		
-		if (brian_collision(player.x,player.y,brian_dog.x,brian_dog.y)) == true then end	
+		move_brian()		
 		check_if_next_to_sign()		
-	else			
+	else -- if still on menu
 		if (btnp(❎)) then activeGame = true end
 	end	
 end
@@ -72,7 +70,7 @@ function draw_game()
  	camera(camera_x,camera_y)
  	map(0,0,0,0,128,32)
  	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
-	spr(brian_dog.sprite,brian_dog.x,brian_dog.y,1,1,brian_dog.direction==-1) 	
+	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1) 	
 end
 
 -->8
@@ -207,73 +205,51 @@ end
 
 -->8
 -- character functions
-function create_brian_dog()
-	brian_dog={}
-	brian_dog.x = 74
-	brian_dog.y = 24
-	brian_dog.sprite = 6
-	brian_dog.speed = 0.2
-	brian_dog.direction = -1
+function create_brian()
+	brian={}
+	brian.x = 74
+	brian.y = 24
+	brian.sprite = 6
+	brian.speed = 0.2
+	brian.direction = -1
 end
 
-function move_brian_dog()
-	if player.x < brian_dog.x then
-  		brian_dog.x -= brian_dog.speed
-		brian_dog.direction = -1
- 	end 
- 	if player.x > brian_dog.x then	 	
-  		brian_dog.x += brian_dog.speed
-		brian_dog.direction = 1
- 	end 
- 	if player.y < brian_dog.y then
-  		brian_dog.y -= brian_dog.speed
- 	end 
- 	if player.y > brian_dog.y then
-  		brian_dog.y += brian_dog.speed
- 	end
+function move_brian()
+	if (brian_collision(player.x,player.y,brian.x,brian.y)) == true then 
+		-- this just stops Brian moving any closer
+	else
+		if player.x < brian.x then
+			brian.x -= brian.speed
+			brian.direction = -1
+		end 
+		if player.x > brian.x then	 	
+			brian.x += brian.speed
+			brian.direction = 1
+		end 
+		if player.y < brian.y then
+			brian.y -= brian.speed
+		end 
+		if player.y > brian.y then
+			brian.y += brian.speed
+		end
+	end
 end
 
 function brian_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-	brian_dog.speed = 0
+	brian.speed = 0
   		if conversation_state == "level0" then			
 			conversation_state = "level1"
 			talking_to = "brian"			
 		end 
 	else
 		if talking_to == "brian" then -- if player walks away instead of starting conversation			
-			brian_dog.speed = 0.2	 	
+			brian.speed = 0.2	 	
 			conversation_state = "level0"
 			talking_to = "nobody"
 			text.active = false
 		end
  	end
-end
-
-function conversation_system()
-	-- level0 == no conversation
-	-- level1 == player can choose to start conversation
-	-- level2 == player now in a conversation
-	if conversation_state == "level1" then
-		new_conversation({"press x to talk"})
-		if (btnp(❎)) then						
-			conversation_state = "level2"
-		end	
-	elseif conversation_state == "level2" and talking_to == "brian" then				
-		new_conversation({"ruff! i'm brian!"}) 		
-		if (btnp(❎)) then		
-			conversation_state = "level3"
-		end
-	elseif conversation_state == "level3" and talking_to == "brian" then		
-		new_conversation({"oh really?", "a 2nd line of text","and even a third","but four is our limit!"})
-	elseif conversation_state == "sign" then
-		new_conversation({"press x to read sign"})
-		if (btnp(❎)) then		
-			conversation_state = "sign2"
-		end
-	elseif conversation_state == "sign2" then
-		new_conversation({"it says 'owls house this way' "})		
-	end
 end
 
 -->8
@@ -395,6 +371,32 @@ end
 
 -->8
 -- conversation and text functions
+
+function conversation_system()
+	-- level0 == no conversation
+	-- level1 == player can choose to start conversation
+	-- level2 == player now in a conversation
+	if conversation_state == "level1" then
+		new_conversation({"press x to talk"})
+		if (btnp(❎)) then						
+			conversation_state = "level2"
+		end	
+	elseif conversation_state == "level2" and talking_to == "brian" then				
+		new_conversation({"ruff! i'm brian!"}) 		
+		if (btnp(❎)) then		
+			conversation_state = "level3"
+		end
+	elseif conversation_state == "level3" and talking_to == "brian" then		
+		new_conversation({"oh really?", "a 2nd line of text","and even a third","but four is our limit!"})
+	elseif conversation_state == "sign" then
+		new_conversation({"press x to read sign"})
+		if (btnp(❎)) then		
+			conversation_state = "sign2"
+		end
+	elseif conversation_state == "sign2" then
+		new_conversation({"it says 'owls house this way' "})		
+	end
+end
 
 function format_text_centered(array, colour)
 	height = 50
