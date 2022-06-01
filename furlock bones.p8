@@ -1,28 +1,28 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
---[[ CONTROL +K +J = unfold all
+--[[ 
+** REMINDERS **
+CONTROL +K +J = unfold all
 CONTROL +K +1 = fold at level 1 
-
 U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button)
 
+Furlock Bones: Consulting Dogtective
 ]]
 
 --init, update, draw and draw functions
 function _init()
 	debug_mode = false
-	create_player()
-	create_brian_dog()
 	camera_x = 0
 	camera_y = 0
 	activeGame = false
 	anim_time = 0
 	anim_wait = 0.1	
-	init_conversation_text()	
-	conversation_state = "level0"
-	talking_to = "nobody"	
-	poke(0x5f5c, 255) -- btnp repeat delay to never
-	yes = false
+	create_player()
+	create_brian_dog()	
+	init_conversation_text()		
+	poke(0x5f5c, 255) -- this means a held button only registers once
+	readingSign = false	
 end
 
 function _update60()
@@ -31,9 +31,11 @@ function _update60()
 		animate_player()		
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
-		--move_brian_dog()
 		conversation_system()
-		readSign = nextToSign(player.x -1, player.y)
+		--move_brian_dog()
+		-- stop Brian moving when touches player		
+		if (brian_collision(player.x,player.y,brian_dog.x,brian_dog.y)) == true then end	
+		check_if_next_to_sign()		
 	else			
 		if (btnp(❎)) then activeGame = true end
 	end	
@@ -43,17 +45,11 @@ function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
 	if activeGame == true then
-		draw_game()
-		-- stop Brian moving when touches player
-		if (brian_collision(player.x,player.y,brian_dog.x,brian_dog.y)) then end
-		-- draw player conversations when required
-		if text.active == true then draw_conversation()	end
+		draw_game()				
+		if text.active == true then draw_conversation()	end -- draw player conversations when required
 	end	
 	if (debug_mode == true) then		
-		print("player y: "..player.y,player.x,player.y-10,8)
-		--print(conversation_state)
-		--print("talking to: "..talking_to)
-		print(readSign)
+		--print("player y: "..player.y,player.x,player.y-10,8)		
 	end		
 end
 
@@ -198,6 +194,17 @@ function move_player()
 	if (abs(player.velocity_y)<0.02) player.velocity_y = 0	
 end
 
+function check_if_next_to_sign()
+	if (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == false then
+		conversation_state = "sign"
+		readingSign = true		
+	elseif not (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == true then
+		readingSign = false
+		conversation_state = "level0"			
+		text.active = false			
+	end
+end
+
 -->8
 -- character functions
 function create_brian_dog()
@@ -232,15 +239,16 @@ function brian_collision(playerx,playery,charx,chary)
   		if conversation_state == "level0" then			
 			conversation_state = "level1"
 			talking_to = "brian"			
+		end 
+	else
+		if talking_to == "brian" then -- if player walks away instead of starting conversation			
+			brian_dog.speed = 0.2	 	
+			conversation_state = "level0"
+			talking_to = "nobody"
+			text.active = false
 		end
- 	else -- if player walks away instead of starting conversation
-	 	brian_dog.speed = 0.2	 	
-		conversation_state = "level0"
-		talking_to = "nobody"
-		text.active = false		
  	end
 end
-
 
 function conversation_system()
 	-- level0 == no conversation
@@ -252,12 +260,19 @@ function conversation_system()
 			conversation_state = "level2"
 		end	
 	elseif conversation_state == "level2" and talking_to == "brian" then				
-		new_conversation({"ruff! i'm  i'M brian!"}) 		
+		new_conversation({"ruff! i'm brian!"}) 		
 		if (btnp(❎)) then		
 			conversation_state = "level3"
 		end
 	elseif conversation_state == "level3" and talking_to == "brian" then		
 		new_conversation({"oh really?", "a 2nd line of text","and even a third","but four is our limit!"})
+	elseif conversation_state == "sign" then
+		new_conversation({"press x to read sign"})
+		if (btnp(❎)) then		
+			conversation_state = "sign2"
+		end
+	elseif conversation_state == "sign2" then
+		new_conversation({"it says 'owls house this way' "})		
 	end
 end
 
@@ -335,6 +350,28 @@ function can_move(object,direction_x,direction_y)
 	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
 end
 
+function is_sign(object,direction_x,direction_y) -- copy of can_move
+	--this function takes an object (only player currently) and it's x,y speed. It uses these
+	--to check the four corners of the object to see it can move into that spot. (a map tile
+	--marked as solid would prevent movement into that spot.)
+	-- capture x,y coords for where trying to move
+	local next_left = object.x + direction_x	
+	local next_right = object.x + direction_x + object.width
+	local next_top = object.y + direction_y
+	local next_bottom = object.y + direction_y + object.height		
+
+	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
+	-- map tile location and check if any solid sprites there
+	local top_left_solid = nextToSign(next_left, next_top)
+	local btm_left_solid = nextToSign(next_left, next_bottom)
+	local top_right_solid = nextToSign(next_right, next_top)
+	local btm_right_solid = nextToSign(next_right, next_bottom)
+
+	--if all of those locations are NOT solid, the object can move into that spot.
+	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
+	return (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
+end
+
 function solid(x,y)	
 	--checks x,y of player/object against the map to see if sprite marked as solid
 	-- divide x,y by 8 to get map coordinates
@@ -347,14 +384,14 @@ function solid(x,y)
 	return flag == 1 
 end
 
--- check if next to sign
 function nextToSign(x,y)
 	local map_x = flr(x/8)
 	local map_y = flr(y/8)	
 	local map_sprite = mget(map_x,map_y) -- find what sprite is at map x,y 
 	local flag = fget(map_sprite) -- and get what flag it has set
-	return flag == 128 -- I am specifically checking if last flag is checked as I use that for signs
+	return flag == 128 -- I'm using the last flag (128) for signs
 end
+
 
 -->8
 -- conversation and text functions
@@ -379,6 +416,8 @@ function init_conversation_text()
 	text = {} -- create empty array to store multiple strings
 	text.active = false -- initialise to false
 	text.string = {} -- empty array to store individual string?
+	conversation_state = "level0" -- semi-related code
+	talking_to = "nobody" -- semi-related code
 end
 
 function new_conversation(txt)
