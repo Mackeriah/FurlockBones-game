@@ -23,6 +23,7 @@ function _init()
 	init_conversation_text()		
 	poke(0x5f5c, 255) -- this means a held button only registers once
 	readingSign = false	
+	notNowBrian = false
 end
 
 function _update60()
@@ -47,7 +48,9 @@ function _draw()
 		if text.active == true then draw_conversation()	end -- draw player conversations when required
 	end	
 	if (debug_mode == true) then		
-		--print("player y: "..player.y,player.x,player.y-10,8)		
+		print("player y: "..player.y,player.x,player.y-10,8)		
+		print(brianWaiting)
+		print(time())
 	end		
 end
 
@@ -216,21 +219,28 @@ end
 
 function move_brian()
 	if (brian_collision(player.x,player.y,brian.x,brian.y)) == true then 
-		-- this just stops Brian moving any closer
+		-- this just stops Brian moving any closer and stops him pestering for a while		
 	else
-		if player.x < brian.x then
-			brian.x -= brian.speed
-			brian.direction = -1
-		end 
-		if player.x > brian.x then	 	
-			brian.x += brian.speed
-			brian.direction = 1
-		end 
-		if player.y < brian.y then
-			brian.y -= brian.speed
-		end 
-		if player.y > brian.y then
-			brian.y += brian.speed
+		-- check that Brian hasn't recently pestered player
+		if notNowBrian == true then
+			if (time() >= brianWaiting +20 ) then
+				notNowBrian = false
+			else return end
+		else
+			if player.x < brian.x then
+				brian.x -= brian.speed
+				brian.direction = -1
+			end 
+			if player.x > brian.x then	 	
+				brian.x += brian.speed
+				brian.direction = 1
+			end 
+			if player.y < brian.y then
+				brian.y -= brian.speed
+			end 
+			if player.y > brian.y then
+				brian.y += brian.speed
+			end
 		end
 	end
 end
@@ -240,7 +250,9 @@ function brian_collision(playerx,playery,charx,chary)
 	brian.speed = 0
   		if conversation_state == "level0" then			
 			conversation_state = "level1"
-			talking_to = "brian"			
+			talking_to = "brian"
+			notNowBrian = true
+			brianWaiting = time()
 		end 
 	else
 		if talking_to == "brian" then -- if player walks away instead of starting conversation			
