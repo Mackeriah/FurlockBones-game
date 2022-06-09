@@ -81,9 +81,8 @@ end
 
 -->8
 --player functions
-function create_player()
-	player={}  --create empty table
-	
+function create_player() 
+	player={}  --create empty table -- this means we're creating the player as an object!
 	player.x = 464 -- map location x8 for exact pixel location
 	player.y = 40
 	player.direction = 1
