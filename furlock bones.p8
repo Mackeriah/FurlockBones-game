@@ -21,27 +21,23 @@ function _init()
 	create_player()
 	create_brian()	
 	init_conversation_text()		
-	poke(0x5f5c, 255) -- this means a held button only registers once
+	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once
 	readingSign = false	
 	notNowBrian = false
 	current_map_maximum_x = 624
 	current_map_maximum_y = 248
 end
 
--- line of smileys
-	owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
-	map0 = "ac_?@m=?t<6rh>pbp<ppam=? a6c?l_dgj[qh>?ap<ppam=?0aafli=d8<6ipi=d8<6i?5-dej{uf>?ap<ppam=?!a-?m-ahn<pbpy{v?t-d?+da9<)ja&7g?p-g%<)b1-rdpm_dpy]z?t-d?+da9<?iaauq9&=?n&_?c-ahny]z?t-d?+da9<?iaavu9<_k7[si*e8l7;si*[=g%<?a1-63}_rd?l-d?+da9<5jam=?l<-h,;8l*<)a([sl);-?c<-?<a-i?xca9<)gp<ppam=? a-i?,_d?+da9<5jam=?.<-?<a-i?xca9<?vam=? a-i?5fa9<5jam=?xb-i?xca9<?vam=? a-i?5faaa"
-
 _n = nil _={}
 _[0] = false 
 _[1] = true
 
--- create 6-bit table
-	chr6,asc6,char6={},{},"abcdefghijklmnopqrstuvwxyz.1234567890 !@#$%,&*()-_=+[{]};:'|<>/?"
-	for i=0,63 do
-	c=sub(char6,i+1,i+1) chr6[i]=c asc6[c]=i
-	end
-	char6=_n
+-- create 6-bit table (used for map swapping)
+chr6,asc6,char6={},{},"abcdefghijklmnopqrstuvwxyz.1234567890 !@#$%,&*()-_=+[{]};:'|<>/?"
+for i=0,63 do
+c=sub(char6,i+1,i+1) chr6[i]=c asc6[c]=i
+end
+char6=_n
 
 function _update60()
 	if activeGame == true  then 
@@ -88,9 +84,7 @@ function camera_follow_player()
 	end
 end
 
-function draw_menu()
-	--[[ I'll have other stuff here later of course
-	which is why this currently looks a bit bare! ]]
+function draw_menu()	
 	format_text_centered(text_array, 7) -- display menu text	
 end
 
@@ -110,14 +104,12 @@ function create_player()
 	player.x = 464 -- map location x8 for exact pixel location
 	player.y = 40
 	player.direction = 1
-
 	player.velocity_x = 0
 	player.velocity_y = 0	
 	player.max_x_speed = 1
 	player.max_y_speed = 1	
 	player.acceleration = 0.2
 	player.drag = 0.7 -- 1 = no slow down, 0 = instant halt
-
 	player.width = 7
 	player.height = 7
 	player.sprite = 1
@@ -139,7 +131,6 @@ function animate_player()
 end
 
 function move_player()	
-	
 	if conversation_state != "level2" then	-- if talking then don't walk away, it's rude.
 		--when the user tries to move, only add the acceleration to the current speed.
 		if (btn(⬅️)) then 
@@ -364,7 +355,8 @@ function can_move(object,direction_x,direction_y)
 	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
 end
 
-function is_sign(object,direction_x,direction_y) -- copy of can_move
+function is_sign(object,direction_x,direction_y)
+	-- copy of can_move so should refactor to work for both rather than duplicate it like this
 	--this function takes an object (only player currently) and it's x,y speed. It uses these
 	--to check the four corners of the object to see it can move into that spot. (a map tile
 	--marked as solid would prevent movement into that spot.)
@@ -444,17 +436,10 @@ function conversation_system()
 end
 
 function format_text_centered(array, colour)
+	-- only used for menu currently
 	height = 50
 	for i in all(array) do
 		print(i,64-#i*2, height, colour)
-		height += 6
-	end
-end
-
-function format_text_left(array, colour)
-	height = 50
-	for i in all(array) do
-		print(i,10, height, colour)
 		height += 6
 	end
 end
@@ -503,13 +488,6 @@ function draw_conversation()
 		print(txt, tx, ty, 0)
 	end
 end
-
--- function choose_random_brian_response()
--- 	if brian_talking == false then		
--- 		choice = rnd{1,2,3,4,5}
--- 		brian_talking = true
--- 	end	
--- end
 
 -- Brian conversation
 brian_talk={}
@@ -608,6 +586,10 @@ function decompressmap(h,v,t)
 		if (yp>v+y) return
 	until forever
 end
+
+-- maps
+owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
+map0 = "ac_?@m=?t<6rh>pbp<ppam=? a6c?l_dgj[qh>?ap<ppam=?0aafli=d8<6ipi=d8<6i?5-dej{uf>?ap<ppam=?!a-?m-ahn<pbpy{v?t-d?+da9<)ja&7g?p-g%<)b1-rdpm_dpy]z?t-d?+da9<?iaauq9&=?n&_?c-ahny]z?t-d?+da9<?iaavu9<_k7[si*e8l7;si*[=g%<?a1-63}_rd?l-d?+da9<5jam=?l<-h,;8l*<)a([sl);-?c<-?<a-i?xca9<)gp<ppam=? a-i?,_d?+da9<5jam=?.<-?<a-i?xca9<?vam=? a-i?5fa9<5jam=?xb-i?xca9<?vam=? a-i?5faaa"
 
 __gfx__
 000000000000000000000000000700070007000700000000333bb3b133ab133300000000444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
