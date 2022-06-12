@@ -10,6 +10,8 @@ U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button)
 Furlock Bones: Consulting Dogtective
 ]]
 
+
+
 --init, update, draw and draw functions
 function _init()
 	debug_mode = false
@@ -28,6 +30,19 @@ function _init()
 	current_map_maximum_y = 248
 end
 
+-- line of smileys
+	owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
+
+_n=nil _={}
+_[0]=false _[1]=true
+
+-- create 6-bit table
+	chr6,asc6,char6={},{},"abcdefghijklmnopqrstuvwxyz.1234567890 !@#$%,&*()-_=+[{]};:'|<>/?"
+	for i=0,63 do
+	c=sub(char6,i+1,i+1) chr6[i]=c asc6[c]=i
+	end
+	char6=_n
+
 function _update60()
 	if activeGame == true  then 
 		toggle_debug_mode()	
@@ -40,6 +55,37 @@ function _update60()
 	else -- if still on menu
 		if (btnp(❎)) then activeGame = true end
 	end	
+	decompressmap(0,0,owen)
+end
+
+-- take 6-bit string of t and
+-- decompress it to the mapper
+-- as 8-bit data.
+function decompressmap(h,v,t)
+	local r,b6,c6,cp,n=t,0,0,1,0
+	function to8()
+	local s=0
+		for i=0,7 do
+		if (b6==0) c6=asc6[sub(r,cp,cp)] cp+=1
+		if (band(c6,2^b6)>0) s+=2^i
+		b6=(b6+1)%6
+		end
+		return s
+	end
+	local x,y,xp,yp,c=to8()-1,to8()-1,h,v
+	repeat
+		if n>0 then
+		n-=1
+		else
+		c=to8()
+		if (c==255) n=to8() c=to8()
+		end
+		mset(xp,yp,c)
+		--spr(c,xp*8,yp*8)
+		xp+=1
+		if (xp>h+x) xp=h yp+=1
+		if (yp>v+y) return
+	until forever
 end
 
 function _draw()
