@@ -19,7 +19,8 @@ function _init()
 	anim_time = 0
 	anim_wait = 0.1	
 	create_player()
-	create_brian()	
+	create_brian()
+	create_owl()
 	init_conversation_text()		
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once
 	readingSign = false	
@@ -35,6 +36,7 @@ _n = nil _={}
 _[0] = false 
 _[1] = true
 
+-- put this in a function and run it on _init
 -- create 6-bit table (used for map swapping)
 chr6,asc6,char6={},{},"abcdefghijklmnopqrstuvwxyz.1234567890 !@#$%,&*()-_=+[{]};:'|<>/?"
 for i=0,63 do
@@ -62,6 +64,9 @@ function _update60()
 		--printh(squish, "temp", 1)
 	end
 	musicControl()	
+
+	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
+	end
 end
 
 function _draw()
@@ -72,9 +77,9 @@ function _draw()
 		if text.active == true then draw_conversation()	end -- draw player conversations when required
 	end	
 	-- if (debug_mode == true) then		
-	-- 	print("player x: "..player.x,player.x,player.y-10,8)		
-	-- 	print(camera_x)
-	-- end		
+	--print("player x: "..player.x,player.x,player.y-10,8)
+	print("char: "..text.character,player.x,player.y-10,8)
+	print("convo: "..conversation_state)		
 end
 
 function camera_follow_player()
@@ -96,7 +101,8 @@ function draw_game()
 	spr(110,80,16,1,1,1)
 	spr(126,80,24,1,1,1)
  	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
-	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)	
+	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
+	spr(owl.sprite,owl.x,owl.y,1,1,1)
 end
 
 -->8
@@ -133,7 +139,7 @@ function animate_player()
 end
 
 function move_player()	
-	if conversation_state != "level2" then	-- if talking then don't walk away, it's rude.
+	if conversation_state != "level1" then	-- if talking then don't walk away, it's rude.
 		--when the user tries to move, only add the acceleration to the current speed.
 		if (btn(⬅️)) then 
 			player.velocity_x -= player.acceleration
@@ -220,7 +226,7 @@ function check_if_next_to_sign()
 		readingSign = true		
 	elseif not (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == true then
 		readingSign = false
-		conversation_state = "level0"			
+		conversation_state = "none"			
 		text.active = false			
 	end
 end
@@ -234,6 +240,13 @@ function create_brian()
 	brian.sprite = 5
 	brian.speed = 0.2
 	brian.direction = -1
+end
+
+function create_owl()
+	owl={}
+	owl.x = 100
+	owl.y = 50
+	owl.sprite = 6
 end
 
 function move_brian()
@@ -267,21 +280,38 @@ end
 function brian_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
 	brian.speed = 0
-  		if conversation_state == "level0" then			
-			conversation_state = "level1"
-			talking_to = "brian"
+  		if conversation_state == "none" then			
+			conversation_state = "start"
+			text.character = "brian"
 			notNowBrian = true
 			brianWaiting = time()
 		end 
 	else
-		if talking_to == "brian" then -- if player walks away instead of starting conversation			
+		if text.character == "brian" then -- if player walks away instead of starting conversation			
 			brian.speed = 0.2	 	
-			conversation_state = "level0"
-			talking_to = "nobody"
+			conversation_state = "none"
+			text.character = "nobody"
 			text.active = false
 		end
  	end
 end
+
+function owl_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+  		if conversation_state == "none" then			
+			conversation_state = "start"
+			text.character = "owl"
+		end 
+	else
+		if text.character == "owl" then -- if player walks away instead of starting conversation			
+			conversation_state = "none"
+			text.character = "nobody"
+			text.active = false
+		end
+ 	end
+end
+
+
 
 -->8
 -- player collision functions
@@ -359,24 +389,16 @@ end
 
 function is_sign(object,direction_x,direction_y)
 	-- copy of can_move so should refactor to work for both rather than duplicate it like this
-	--this function takes an object (only player currently) and it's x,y speed. It uses these
-	--to check the four corners of the object to see it can move into that spot. (a map tile
-	--marked as solid would prevent movement into that spot.)
-	-- capture x,y coords for where trying to move
 	local next_left = object.x + direction_x	
 	local next_right = object.x + direction_x + object.width
 	local next_top = object.y + direction_y
 	local next_bottom = object.y + direction_y + object.height		
 
-	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
-	-- map tile location and check if any solid sprites there
 	local top_left_solid = nextToSign(next_left, next_top)
 	local btm_left_solid = nextToSign(next_left, next_bottom)
 	local top_right_solid = nextToSign(next_right, next_top)
 	local btm_right_solid = nextToSign(next_right, next_bottom)
 
-	--if all of those locations are NOT solid, the object can move into that spot.
-	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
 	return (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
 end
 
@@ -389,7 +411,12 @@ function solid(x,y)
 	local map_sprite = mget(map_x,map_y) 
 	-- and get what flag it has set
 	local flag = fget(map_sprite) 
-	return flag == 1 
+	if flag == 1 then
+		return flag == 1 -- I'm using the first flag (1) for solid objects
+	end
+	-- if flag == 128 then
+	-- 	return flag == 128 -- I'm using the last flag (128) for signs
+	-- end
 end
 
 function nextToSign(x,y)
@@ -397,27 +424,43 @@ function nextToSign(x,y)
 	local map_y = flr(y/8)	
 	local map_sprite = mget(map_x,map_y) -- find what sprite is at map x,y 
 	local flag = fget(map_sprite) -- and get what flag it has set
-	return flag == 128 -- I'm using the last flag (128) for signs
+	if flag == 128 then
+		return flag == 128 -- I'm using the last flag (128) for signs
+	end
 end
 
 -->8
 -- conversation and text functions
 function conversation_system()
-	-- level0 == no conversation
-	-- level1 == player can choose to start conversation
-	-- level2 == player now in a conversation
-	if conversation_state == "level1" then
+	-- none == no conversation
+	-- start == player can choose to start conversation
+	-- level1 == player now in a conversation
+	if conversation_state == "start" then
 		new_conversation({"press x to talk"})
 		if (btnp(❎)) then						
-			conversation_state = "level2"
+			conversation_state = "level1"
 		end	
-	elseif conversation_state == "level2" and talking_to == "brian" then				
-		new_conversation({"ruff! i'm brian!"}) 		
+	elseif conversation_state == "level1" and text.character == "brian" then
+		new_conversation({"ruff! morning furlock!"}) 
 		if (btnp(❎)) then		
-			conversation_state = "level3"
+			conversation_state = "level2"
 		end
-	elseif conversation_state == "level3" and talking_to == "brian" then		
+	elseif conversation_state == "level2" and text.character == "brian" then		
 		new_conversation({"i dont have anything","else to say!","bye!"})
+		if (btnp(❎)) then		
+			conversation_state = "none"
+		end
+
+	elseif conversation_state == "level1" and text.character == "owl" then
+		new_conversation({"hmm, what now furlock?"}) 
+		if (btnp(❎)) then		
+			conversation_state = "level2"
+		end
+	elseif conversation_state == "level2" and text.character == "owl" then		
+		new_conversation({"hurrumph!"})
+		if (btnp(❎)) then		
+			conversation_state = "none"
+		end
 
 	elseif conversation_state == "sign" and player.x < 310 then
 		new_conversation({"press x to read sign"})
@@ -437,6 +480,7 @@ function conversation_system()
 	end
 end
 
+
 function format_text_centered(array, colour)
 	-- only used for menu currently
 	height = 50
@@ -450,8 +494,8 @@ function init_conversation_text()
 	text = {} -- create empty array to store multiple strings
 	text.active = false -- initialise to false
 	text.string = {} -- empty array to store individual string?
-	conversation_state = "level0" -- semi-related code
-	talking_to = "nobody" -- semi-related code
+	text.character = "nobody"
+	conversation_state = "none" -- semi-related code
 end
 
 function new_conversation(txt)
@@ -608,14 +652,14 @@ owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay
 map0 = "ac_?@m=?t<6rh>pbp<ppam=? a6c?l_dgj[qh>?ap<ppam=?0aafli=d8<6ipi=d8<6i?5-dej{uf>?ap<ppam=?!a-?m-ahn<pbpy{v?t-d?+da9<)ja&7g?p-g%<)b1-rdpm_dpy]z?t-d?+da9<?iaauq9&=?n&_?c-ahny]z?t-d?+da9<?iaavu9<_k7[si*e8l7;si*[=g%<?a1-63}_rd?l-d?+da9<5jam=?l<-h,;8l*<)a([sl);-?c<-?<a-i?xca9<)gp<ppam=? a-i?,_d?+da9<5jam=?.<-?<a-i?xca9<?vam=? a-i?5fa9<5jam=?xb-i?xca9<?vam=? a-i?5faaa"
 
 __gfx__
-000000000000000000000000000700070007000700000000000000000000000000000000444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
-000000000007000700070007000777770007777700050005000000000000000000000000444444bbbbbbbcccbbbbcccc455454457ccccc7c55cccccccccc7ccc
-007007000007777700077777700717717007177100044444000000000000000000000000444444bbbbbbccccbbbccccc44444444cccccccc5ccccccccccccccc
-000770007007177170071771700777e7700777e75004144100000000000000000000000044444bbbbbbbccccbbbbcccc44444444cccccccccccccccccccccc7c
-00077000700777e7700777e70776686007766860500444e4000000000000000000000000444b444bbbbcccccbbbbcccc44444444cccccccccc7cccccc7cccccc
-007007000776686007766860077777700777777004444440000000000000000000000000444444bbbbbbccccbbbbcccc444444445ccc7ccccccccccccccccccc
-00000000077777700777777070d0070670d07060044444400000000000000000000000004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
-00000000171d7160171d17160111110001111100141d41400000000000000000000000004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
+000000000000000000000000000700070007000700000000040004000000000000000000444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
+000000000007000700070007000777770007777700050005046464000000000000000000444444bbbbbbbcccbbbbcccc455454457ccccc7c55cccccccccc7ccc
+00700700000777770007777770071771700717710004444446c6c6400000000000000000444444bbbbbbccccbbbccccc44444444cccccccc5ccccccccccccccc
+000770007007177170071771700777e7700777e75004144104646400000000000000000044444bbbbbbbccccbbbbcccc44444444cccccccccccccccccccccc7c
+00077000700777e7700777e70776686007766860500444e4004440000000000000000000444b444bbbbcccccbbbbcccc44444444cccccccccc7cccccc7cccccc
+007007000776686007766860077777700777777004444440044444000000000000000000444444bbbbbbccccbbbbcccc444444445ccc7ccccccccccccccccccc
+00000000077777700777777070d0070670d07060044444404444444000000000000000004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
+00000000171d7160171d17160111110001111100141d414014a1a41000000000000000004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
 bbbbbbbbbbbbbbbbbbbbb9bbc44cc44cb44bb44bbbb33bbb000000000000000000000000b444b444444444444444444455d5cccc44444444bbbbbbbbccccc555
 bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000000000000000000000000bb4444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
 bbbbddbbbb224444444944bb4444444444444444b33b331b000000000000000000000000bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
@@ -803,7 +847,7 @@ __label__
 55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
 
 __gff__
-0000000000020000800000000000010100010180800100000100000000000001010001010101010100000000010000000000000000000101000000000000000001010000010101010000000000000101010100000100010100000000000001010101000000000101000000000000010101010000000001010000000000000101
+0000000000020200800000000000010100010180800100000100000000000001010001010101010100000000010000000000000000000101000000000000000001010000010101010000000000000101010100000100010100000000000001010101000000000101000000000000010101010000000001010000000000000101
 0101000001000001010100000000000001010000010000010101000000000000010101010100000001010000000000000101010001010000010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 232323232323232323232323232323232323232323232323232323232323232323232323232323230f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f46470f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
