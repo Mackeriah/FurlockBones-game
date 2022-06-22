@@ -30,10 +30,8 @@ function _init()
 	track_1start=0
 	track_2start=11
 	playing = 'start'
-	flaggy = "empty"
 end
 
--- this can go in _init too
 _n = nil _={}
 _[0] = false 
 _[1] = true
@@ -53,8 +51,8 @@ function _update60()
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
-		check_if_next_to_sign()
-		move_brian()					
+		move_brian()		
+		check_if_next_to_sign()		
 	else -- if still on menu
 		if (btnp(❎)) then activeGame = true end
 	end	
@@ -82,7 +80,6 @@ function _draw()
 	--print("player x: "..player.x,player.x,player.y-10,8)
 	print("char: "..text.character,player.x,player.y-10,8)
 	print("convo: "..conversation_state)		
-	print("flaggy: "..flaggy)
 end
 
 function camera_follow_player()
@@ -174,7 +171,7 @@ function move_player()
 			check_if_next_to_wall(player)
 
 			-- check player isn't trying to move into a solid object
-			if (can_move(player, player.velocity_x, player.velocity_y)) then			
+			if (can_move(player, player.velocity_x, player.velocity_y)) then
 				--actually move the player to the new location
 				player.x += player.velocity_x
 				player.y += player.velocity_y
@@ -224,10 +221,10 @@ function move_player()
 end
 
 function check_if_next_to_sign()
-	if not (can_move(player, player.velocity_x+1, player.velocity_y-1)) and readingSign == false then
+	if (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == false then
 		conversation_state = "sign"
 		readingSign = true		
-	elseif (can_move(player, player.velocity_x+1, player.velocity_y-1)) and readingSign == true then
+	elseif not (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == true then
 		readingSign = false
 		conversation_state = "none"			
 		text.active = false			
@@ -315,6 +312,7 @@ function owl_collision(playerx,playery,charx,chary)
 end
 
 
+
 -->8
 -- player collision functions
 function check_if_next_to_wall(player)
@@ -325,8 +323,8 @@ function check_if_next_to_wall(player)
 	-- player moving left
 	if (player.velocity_x < 0) then
 		--check both left corners for a wall
-		local wall_top_left = get_flag(player.x -1, player.y)
-		local wall_btm_left = get_flag(player.x -1, player.y + player.height)
+		local wall_top_left = solid(player.x -1, player.y)
+		local wall_btm_left = solid(player.x -1, player.y + player.height)
 		-- if wall in that direction, set x movement to 0
 		if (wall_top_left or wall_btm_left) then
 			player.velocity_x = 0
@@ -335,8 +333,8 @@ function check_if_next_to_wall(player)
 	-- player moving right
 	elseif (player.velocity_x > 0) then
 		--check both right corners for a wall
-		local wall_top_right = get_flag(player.x + player.width + 1, player.y)
-		local wall_btm_right = get_flag(player.x + player.width + 1, player.y + player.height)
+		local wall_top_right = solid(player.x + player.width + 1, player.y)
+		local wall_btm_right = solid(player.x + player.width + 1, player.y + player.height)
 
 		--if there is a wall in that direction, set x movement to 0
 		if (wall_top_right or wall_btm_right) then
@@ -347,8 +345,8 @@ function check_if_next_to_wall(player)
 	-- player moving up
 	if (player.velocity_y < 0) then
 		--check both top corners for a wall
-		local wall_top_left = get_flag(player.x, player.y - 1)
-		local wall_top_right = get_flag(player.x + player.width, player.y - 1)
+		local wall_top_left = solid(player.x, player.y - 1)
+		local wall_top_right = solid(player.x + player.width, player.y - 1)
 		--if there is a wall in that direction, set y movement to 0
 		if (wall_top_left or wall_top_right) then
 			player.velocity_y = 0
@@ -357,8 +355,8 @@ function check_if_next_to_wall(player)
 	-- player moving down
 	elseif (player.velocity_y > 0) then
 		--check both bottom corners for a wall
-		local wall_btm_left = get_flag(player.x, player.y + player.height + 1)
-		local wall_btm_right = get_flag(player.x, player.y + player.height + 1)
+		local wall_btm_left = solid(player.x, player.y + player.height + 1)
+		local wall_btm_right = solid(player.x, player.y + player.height + 1)
 		--if there is a wall in that direction, set y movement to 0
 		if (wall_btm_right or wall_btm_left) then
 			player.velocity_y = 0
@@ -379,30 +377,57 @@ function can_move(object,direction_x,direction_y)
 
 	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
 	-- map tile location and check if any solid sprites there
-	local top_left = get_flag(next_left, next_top)
-	local btm_left = get_flag(next_left, next_bottom)
-	local top_right = get_flag(next_right, next_top)
-	local btm_right = get_flag(next_right, next_bottom)
+	local top_left_solid = solid(next_left, next_top)
+	local btm_left_solid = solid(next_left, next_bottom)
+	local top_right_solid = solid(next_right, next_top)
+	local btm_right_solid = solid(next_right, next_bottom)
 
 	--if all of those locations are NOT solid, the object can move into that spot.
 	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
-	return not (top_left or btm_left or	top_right or btm_right)
+	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
 end
 
-function get_flag(x,y)	
-	--checks x,y of player/object against the map to return any flag		
-	local map_x = flr(x/8) -- divide x,y by 8 to get map coordinates
-	local map_y = flr(y/8)		
-	local map_sprite = mget(map_x,map_y) -- find what sprite is at that map x,y	
+function is_sign(object,direction_x,direction_y)
+	-- copy of can_move so should refactor to work for both rather than duplicate it like this
+	local next_left = object.x + direction_x	
+	local next_right = object.x + direction_x + object.width
+	local next_top = object.y + direction_y
+	local next_bottom = object.y + direction_y + object.height		
+
+	local top_left_solid = nextToSign(next_left, next_top)
+	local btm_left_solid = nextToSign(next_left, next_bottom)
+	local top_right_solid = nextToSign(next_right, next_top)
+	local btm_right_solid = nextToSign(next_right, next_bottom)
+
+	return (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
+end
+
+function solid(x,y)	
+	--checks x,y of player/object against the map to see if sprite marked as solid
+	-- divide x,y by 8 to get map coordinates
+	local map_x = flr(x/8)
+	local map_y = flr(y/8)	
+	-- find what sprite is at that map x,y
+	local map_sprite = mget(map_x,map_y) 
+	-- and get what flag it has set
+	local flag = fget(map_sprite) 
+	if flag == 1 then
+		return flag == 1 -- I'm using the first flag (1) for solid objects
+	end
+	-- if flag == 128 then
+	-- 	return flag == 128 -- I'm using the last flag (128) for signs
+	-- end
+end
+
+function nextToSign(x,y)
+	local map_x = flr(x/8)
+	local map_y = flr(y/8)	
+	local map_sprite = mget(map_x,map_y) -- find what sprite is at map x,y 
 	local flag = fget(map_sprite) -- and get what flag it has set
-	flaggy = flag
-	if flag == 1 then  -- 1 is a solid object		
-		return flag == 1 	
-	elseif flag == 128 then -- 128 is a sign								
-		return flag == 128
+	if flag == 128 then
+		return flag == 128 -- I'm using the last flag (128) for signs
 	end
 end
-
 
 -->8
 -- conversation and text functions
