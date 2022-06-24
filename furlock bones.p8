@@ -1,14 +1,15 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
---[[ 
+--[[  
 ** REMINDERS **
 CONTROL +K +J = unfold all
 CONTROL +K +1 = fold at level 1 
-U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button)
+U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button) 
+CTRL + X deletes a line of code!
+--]]
 
-Furlock Bones: Consulting Dogtective
-]]
+-- Furlock Bones: Consulting Dogtective --
 
 --init, update, draw and draw functions
 function _init()
@@ -21,6 +22,7 @@ function _init()
 	create_player()
 	create_brian()
 	create_owl()
+	create_signs()
 	init_conversation_text()		
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once
 	readingSign = false	
@@ -29,7 +31,7 @@ function _init()
 	current_map_maximum_y = 248	
 	track_1start=0
 	track_2start=11
-	playing = 'start'
+	playing = 'start'			
 end
 
 _n = nil _={}
@@ -51,8 +53,7 @@ function _update60()
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
-		move_brian()		
-		check_if_next_to_sign()		
+		move_brian()				
 	else -- if still on menu
 		if (btnp(❎)) then activeGame = true end
 	end	
@@ -61,12 +62,21 @@ function _update60()
 		-- compress current map 128x16 into variable squish
 		--squish=compressmap(0,0,128,16)
 		decompressmap(0,0,map0)
-		--printh(squish, "temp", 1)
+		--printh(squish, "temp", 1) -- this prints it to a file so I can copy and paste
 	end
 	musicControl()	
 
 	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
 	end
+
+	if player.x < 290 then
+		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
+		end
+	else
+		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
+		end
+	end
+	
 end
 
 function _draw()
@@ -78,8 +88,36 @@ function _draw()
 	end	
 	-- if (debug_mode == true) then		
 	--print("player x: "..player.x,player.x,player.y-10,8)
-	print("char: "..text.character,player.x,player.y-10,8)
-	print("convo: "..conversation_state)		
+	--print("char: "..text.character) --,player.x,player.y-10,8)
+	--print("convo: "..conversation_state)		
+	
+	characters = {} -- create empty object/array to store all characters
+
+	frodo = {} -- create empty object/array for a specific character
+	frodo.name = "frodo baggins" -- populate the object with various parameters
+	frodo.age =  46
+	frodo.hp = 10
+	frodo.str = 7
+	frodo.x = 100
+	frodo.y = 50
+
+	gandalf = {} -- create empty object/array/table for a specific character
+	gandalf.name = "gandalf the grey" -- populate the object with various parameters
+	gandalf.age =  46
+	gandalf.hp = 10
+	gandalf.str = 7
+	gandalf.x = 200
+	gandalf.y = 99
+
+	characters[1] = frodo	-- add frodo to the character 
+	characters[2] = gandalf
+
+	-- for i=1, #characters do		
+	-- 	print(characters[i].name)
+	-- end
+
+	-- t = {}
+	-- print(t)
 end
 
 function camera_follow_player()
@@ -103,6 +141,9 @@ function draw_game()
  	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
 	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
 	spr(owl.sprite,owl.x,owl.y,1,1,1)
+	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
+	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
+	
 end
 
 -->8
@@ -220,17 +261,6 @@ function move_player()
 	if (abs(player.velocity_y)<0.02) player.velocity_y = 0	
 end
 
-function check_if_next_to_sign()
-	if (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == false then
-		conversation_state = "sign"
-		readingSign = true		
-	elseif not (is_sign(player, player.velocity_x, player.velocity_y)) and readingSign == true then
-		readingSign = false
-		conversation_state = "none"			
-		text.active = false			
-	end
-end
-
 -->8
 -- character functions
 function create_brian()
@@ -238,8 +268,8 @@ function create_brian()
 	brian.x = 74
 	brian.y = 24
 	brian.sprite = 5
-	brian.speed = 0.2
-	brian.direction = -1
+	brian.speed = 0
+	brian.direction = -1	
 end
 
 function create_owl()
@@ -247,6 +277,17 @@ function create_owl()
 	owl.x = 100
 	owl.y = 50
 	owl.sprite = 6
+end
+
+function create_signs()
+	sign1={}
+	sign1.x = 56
+	sign1.y = 64
+	sign1.sprite = 20	
+	sign2={}
+	sign2.x = 304
+	sign2.y = 16
+	sign2.sprite = 20
 end
 
 function move_brian()
@@ -275,6 +316,86 @@ function move_brian()
 			end
 		end
 	end
+end
+
+
+-->8
+-- player collision functions
+function check_if_next_to_wall(player)
+	-- if player next to a wall stop them moving in that direction
+	-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
+	-- what happens is that we ignore the left movement as it is set to zero meaning that we only
+	-- apply the vertical movement. It's really just a player UX fix.
+	-- player moving left
+	if (player.velocity_x < 0) then
+		--check both left corners for a wall
+		local wall_top_left = solid(player.x -1, player.y)
+		local wall_btm_left = solid(player.x -1, player.y + player.height)
+		-- if wall in that direction, set x movement to 0
+		if (wall_top_left or wall_btm_left) then
+			player.velocity_x = 0
+		end
+
+	-- player moving right
+	elseif (player.velocity_x > 0) then		
+		local wall_top_right = solid(player.x + player.width + 1, player.y)
+		local wall_btm_right = solid(player.x + player.width + 1, player.y + player.height)		
+		if (wall_top_right or wall_btm_right) then
+			player.velocity_x = 0
+		end
+	end
+
+	-- player moving up
+	if (player.velocity_y < 0) then		
+		local wall_top_left = solid(player.x, player.y - 1)
+		local wall_top_right = solid(player.x + player.width, player.y - 1)		
+		if (wall_top_left or wall_top_right) then
+			player.velocity_y = 0
+		end
+
+	-- player moving down
+	elseif (player.velocity_y > 0) then		
+		local wall_btm_left = solid(player.x, player.y + player.height + 1)
+		local wall_btm_right = solid(player.x, player.y + player.height + 1)		
+		if (wall_btm_right or wall_btm_left) then
+			player.velocity_y = 0
+		end
+	end 
+end
+
+function can_move(object,direction_x,direction_y)
+	--this function takes an object (only player currently) and it's x,y speed. It uses these
+	--to check the four corners of the object to see it can move into that spot. (a map tile
+	--marked as solid would prevent movement into that spot.)
+	-- capture x,y coords for where trying to move
+	local next_left = object.x + direction_x	
+	local next_right = object.x + direction_x + object.width
+	local next_top = object.y + direction_y
+	local next_bottom = object.y + direction_y + object.height	
+	-- BUG: getting stuck on edge if moving diagonal down/left (might be in check_if_next_to_a_wall)
+
+	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
+	-- map tile location and check if any solid sprites there
+	local top_left_solid = solid(next_left, next_top)
+	local btm_left_solid = solid(next_left, next_bottom)
+	local top_right_solid = solid(next_right, next_top)
+	local btm_right_solid = solid(next_right, next_bottom)
+
+	--if all of those locations are NOT solid, the object can move into that spot.
+	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
+	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
+end
+
+function solid(x,y)	
+	--checks x,y of player/object against the map to see if sprite marked as solid
+	-- divide x,y by 8 to get map coordinates
+	local map_x = flr(x/8)
+	local map_y = flr(y/8)	
+	local map_sprite = mget(map_x,map_y) -- find what sprite is at that map x,y	
+	local flag = fget(map_sprite) -- and get what flag it has set	
+	if flag == 1 then		
+		return flag == 1 -- I'm using the first flag (1) for solid objects
+	end		
 end
 
 function brian_collision(playerx,playery,charx,chary)
@@ -311,122 +432,21 @@ function owl_collision(playerx,playery,charx,chary)
  	end
 end
 
-
-
--->8
--- player collision functions
-function check_if_next_to_wall(player)
-	-- if player next to a wall stop them moving in that direction
-	-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
-	-- what happens is that we ignore the left movement as it is set to zero meaning that we only
-	-- apply the vertical movement. It's really just a player UX fix.
-	-- player moving left
-	if (player.velocity_x < 0) then
-		--check both left corners for a wall
-		local wall_top_left = solid(player.x -1, player.y)
-		local wall_btm_left = solid(player.x -1, player.y + player.height)
-		-- if wall in that direction, set x movement to 0
-		if (wall_top_left or wall_btm_left) then
-			player.velocity_x = 0
+function sign_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+  		if conversation_state == "none" then			
+			conversation_state = "sign"
+			readingSign = true	
+			text.character = "sign"
+		end 
+	else
+		if text.character == "sign" then -- if player walks away instead of starting conversation			
+			conversation_state = "none"
+			readingSign = false
+			text.character = "nobody"
+			text.active = false
 		end
-
-	-- player moving right
-	elseif (player.velocity_x > 0) then
-		--check both right corners for a wall
-		local wall_top_right = solid(player.x + player.width + 1, player.y)
-		local wall_btm_right = solid(player.x + player.width + 1, player.y + player.height)
-
-		--if there is a wall in that direction, set x movement to 0
-		if (wall_top_right or wall_btm_right) then
-			player.velocity_x = 0
-		end
-	end
-
-	-- player moving up
-	if (player.velocity_y < 0) then
-		--check both top corners for a wall
-		local wall_top_left = solid(player.x, player.y - 1)
-		local wall_top_right = solid(player.x + player.width, player.y - 1)
-		--if there is a wall in that direction, set y movement to 0
-		if (wall_top_left or wall_top_right) then
-			player.velocity_y = 0
-		end
-
-	-- player moving down
-	elseif (player.velocity_y > 0) then
-		--check both bottom corners for a wall
-		local wall_btm_left = solid(player.x, player.y + player.height + 1)
-		local wall_btm_right = solid(player.x, player.y + player.height + 1)
-		--if there is a wall in that direction, set y movement to 0
-		if (wall_btm_right or wall_btm_left) then
-			player.velocity_y = 0
-		end
-	end 
-end
-
-function can_move(object,direction_x,direction_y)
-	--this function takes an object (only player currently) and it's x,y speed. It uses these
-	--to check the four corners of the object to see it can move into that spot. (a map tile
-	--marked as solid would prevent movement into that spot.)
-	-- capture x,y coords for where trying to move
-	local next_left = object.x + direction_x	
-	local next_right = object.x + direction_x + object.width
-	local next_top = object.y + direction_y
-	local next_bottom = object.y + direction_y + object.height	
-	-- BUG: getting stuck on edge if moving diagonal down/left (might be in check_if_next_to_a_wall)
-
-	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
-	-- map tile location and check if any solid sprites there
-	local top_left_solid = solid(next_left, next_top)
-	local btm_left_solid = solid(next_left, next_bottom)
-	local top_right_solid = solid(next_right, next_top)
-	local btm_right_solid = solid(next_right, next_bottom)
-
-	--if all of those locations are NOT solid, the object can move into that spot.
-	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
-	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
-end
-
-function is_sign(object,direction_x,direction_y)
-	-- copy of can_move so should refactor to work for both rather than duplicate it like this
-	local next_left = object.x + direction_x	
-	local next_right = object.x + direction_x + object.width
-	local next_top = object.y + direction_y
-	local next_bottom = object.y + direction_y + object.height		
-
-	local top_left_solid = nextToSign(next_left, next_top)
-	local btm_left_solid = nextToSign(next_left, next_bottom)
-	local top_right_solid = nextToSign(next_right, next_top)
-	local btm_right_solid = nextToSign(next_right, next_bottom)
-
-	return (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
-end
-
-function solid(x,y)	
-	--checks x,y of player/object against the map to see if sprite marked as solid
-	-- divide x,y by 8 to get map coordinates
-	local map_x = flr(x/8)
-	local map_y = flr(y/8)	
-	-- find what sprite is at that map x,y
-	local map_sprite = mget(map_x,map_y) 
-	-- and get what flag it has set
-	local flag = fget(map_sprite) 
-	if flag == 1 then
-		return flag == 1 -- I'm using the first flag (1) for solid objects
-	end
-	-- if flag == 128 then
-	-- 	return flag == 128 -- I'm using the last flag (128) for signs
-	-- end
-end
-
-function nextToSign(x,y)
-	local map_x = flr(x/8)
-	local map_y = flr(y/8)	
-	local map_sprite = mget(map_x,map_y) -- find what sprite is at map x,y 
-	local flag = fget(map_sprite) -- and get what flag it has set
-	if flag == 128 then
-		return flag == 128 -- I'm using the last flag (128) for signs
-	end
+ 	end
 end
 
 -->8
@@ -462,7 +482,7 @@ function conversation_system()
 			conversation_state = "none"
 		end
 
-	elseif conversation_state == "sign" and player.x < 310 then
+	elseif conversation_state == "sign" and player.x < 290 then
 		new_conversation({"press x to read sign"})
 		if (btnp(❎)) then		
 			conversation_state = "sign2"			
@@ -470,7 +490,7 @@ function conversation_system()
 	elseif conversation_state == "sign2" then
 		new_conversation({"it says 'owls house this way' "})		
 
-	elseif conversation_state == "sign" and player.x > 120 then
+	elseif conversation_state == "sign" then
 		new_conversation({"press x to read sign"})
 		if (btnp(❎)) then		
 			conversation_state = "sign3"			
@@ -479,7 +499,6 @@ function conversation_system()
 		new_conversation({"'i'm very busy you know..."})
 	end
 end
-
 
 function format_text_centered(array, colour)
 	-- only used for menu currently
@@ -535,14 +554,6 @@ function draw_conversation()
 	end
 end
 
--- Brian conversation
-brian_talk={}
-brian_talk[1] = "woof?"
-brian_talk[2] = "bark"
-brian_talk[3] = "*sniff sniff*"
-brian_talk[4] = "yip!"
-brian_talk[5] = "whimper..."
-
 text_array = {}
 text_array[1] = "furlock bones"
 text_array[2] = "the case of the lost animals"
@@ -551,13 +562,6 @@ text_array[4] = ""
 text_array[5] = ""
 text_array[6] = ""
 text_array[7] = "press x to start"
-
-other_array = {}
-other_array[1] = "this"
-other_array[2] = "is some other"
-other_array[3] = "text"
-other_array[4] = "which is"
-other_array[5] = "aligned to the left"
 
 -->8
 -- back of house functions
@@ -652,14 +656,14 @@ owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay
 map0 = "ac_?@m=?t<6rh>pbp<ppam=? a6c?l_dgj[qh>?ap<ppam=?0aafli=d8<6ipi=d8<6i?5-dej{uf>?ap<ppam=?!a-?m-ahn<pbpy{v?t-d?+da9<)ja&7g?p-g%<)b1-rdpm_dpy]z?t-d?+da9<?iaauq9&=?n&_?c-ahny]z?t-d?+da9<?iaavu9<_k7[si*e8l7;si*[=g%<?a1-63}_rd?l-d?+da9<5jam=?l<-h,;8l*<)a([sl);-?c<-?<a-i?xca9<)gp<ppam=? a-i?,_d?+da9<5jam=?.<-?<a-i?xca9<?vam=? a-i?5fa9<5jam=?xb-i?xca9<?vam=? a-i?5faaa"
 
 __gfx__
-000000000000000000000000000700070007000700000000040004000000000000000000444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
-000000000007000700070007000777770007777700050005046464000000000000000000444444bbbbbbbcccbbbbcccc455454457ccccc7c55cccccccccc7ccc
-00700700000777770007777770071771700717710004444446c6c6400000000000000000444444bbbbbbccccbbbccccc44444444cccccccc5ccccccccccccccc
-000770007007177170071771700777e7700777e75004144104646400000000000000000044444bbbbbbbccccbbbbcccc44444444cccccccccccccccccccccc7c
-00077000700777e7700777e70776686007766860500444e4004440000000000000000000444b444bbbbcccccbbbbcccc44444444cccccccccc7cccccc7cccccc
-007007000776686007766860077777700777777004444440044444000000000000000000444444bbbbbbccccbbbbcccc444444445ccc7ccccccccccccccccccc
-00000000077777700777777070d0070670d07060044444404444444000000000000000004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
-00000000171d7160171d17160111110001111100141d414014a1a41000000000000000004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
+000000000000000000000000000700070007000700000000050005000500050000000000444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
+000000000007000700070007000777770007777700050005046464000464640005000500444444bbbbbbbcccbbbbcccc455454457ccccc7c55cccccccccc7ccc
+00700700000777770007777770071771700717710004444406c4c60006c4c60004646400444444bbbbbbccccbbbccccc44444444cccccccc5ccccccccccccccc
+000770007007177170071771700777e7700777e750041441044a4400044a440006c4c60044444bbbbbbbccccbbbbcccc44444444cccccccccccccccccccccc7c
+00077000700777e7700777e70776686007766860500444e40544450005444500044a4400444b444bbbbcccccbbbbcccc44444444cccccccccc7cccccc7cccccc
+007007000776686007766860077777700777777004444440054445005044405005444500444444bbbbbbccccbbbbcccc444444445ccc7ccccccccccccccccccc
+00000000077777700777777070d0070670d07060044444400544450050444050054445004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
+00000000171d7160171d17160111110001111100141d414000a1a00000a1a00005a4a5004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
 bbbbbbbbbbbbbbbbbbbbb9bbc44cc44cb44bb44bbbb33bbb000000000000000000000000b444b444444444444444444455d5cccc44444444bbbbbbbbccccc555
 bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000000000000000000000000bb4444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
 bbbbddbbbb224444444944bb4444444444444444b33b331b000000000000000000000000bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
@@ -852,10 +856,10 @@ __gff__
 __map__
 232323232323232323232323232323232323232323232323232323232323232323232323232323230f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f46470f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 2348494a4b321032323232323232323232323232323232323232323232323232323232323232320a0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f464243470f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2358595a5b404132323232323232323232323232323232323232323232323232323232323232140b220f220f220f220f220f220f0f0f0f0f0f0f0f445253450f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+2358595a5b404132323232323232323232323232323232323232323232323232323232323232320b220f220f220f220f220f220f0f0f0f0f0f0f0f445253450f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 2368696a6b50513232323232323232323232323132323232323232323232323232323232323232320c0c0c0c0c0c0c0c0c0c0c0c0c1c0d0f0f0f0f0f56570f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 233232323232323232323232323232323232323232323232323232323132323232323232323232321b1a1b1b1b1b2a1b1b1b1b1b1b1b1c0d0f0f0f0f66670f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-233232313232323232323232313232323232323232323232323232323232323232323232324041232b331b331b331b331b331b331b1b1b0c0c0c1c0d66670f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+233232313232323232323232323232323232323232323232323232323232323232323232324041232b331b331b331b331b331b331b1b1b0c0c0c1c0d66670f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 233232323232323232323232323232323232323232323232323232323232323232323232325051231f2b2c2c2c2c2c2c2c2c2c2c2d1b2a1b1b1b1b0c76771c0d0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 233232323232323232323232323232323232323232323232323232323232323232323232323232230f0f0f0f0f0f0f0f0f0f0f0f1f2b2e2e2d2e2e2e2d2d2f0e0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 233232313232323232323232323232323232323232323232323232323232323232323232323232230f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
