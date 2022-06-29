@@ -88,7 +88,7 @@ function _draw()
 	end	
 	-- if (debug_mode == true) then		
 	--print("player x: "..player.x,player.x,player.y-10,8)
-	--print("char: "..text.character) --,player.x,player.y-10,8)
+	--print("char: "..text.character,player.x,player.y-10,8)
 	--print("convo: "..conversation_state)		
 	
 	characters = {} -- create empty object/array to store all characters
@@ -150,7 +150,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 40 -- map location x8 for exact pixel location
+	player.x = 432 -- (40 by house) map location x8 for exact pixel location
 	player.y = 40
 	player.direction = 1
 	player.velocity_x = 0
@@ -274,8 +274,8 @@ end
 
 function create_owl()
 	owl={}
-	owl.x = 100
-	owl.y = 50
+	owl.x = 476
+	owl.y = 8
 	owl.sprite = 6
 end
 
@@ -418,7 +418,7 @@ function brian_collision(playerx,playery,charx,chary)
 end
 
 function owl_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
   		if conversation_state == "none" then			
 			conversation_state = "start"
 			text.character = "owl"
@@ -437,7 +437,7 @@ function sign_collision(playerx,playery,charx,chary)
   		if conversation_state == "none" then			
 			conversation_state = "sign"
 			readingSign = true	
-			text.character = "sign"
+			text.character = "sign"			
 		end 
 	else
 		if text.character == "sign" then -- if player walks away instead of starting conversation			
@@ -451,15 +451,16 @@ end
 
 -->8
 -- conversation and text functions
-function conversation_system()
+function conversation_system()	
 	-- none == no conversation
 	-- start == player can choose to start conversation
 	-- level1 == player now in a conversation
 	if conversation_state == "start" then
-		new_conversation({"press x to talk"})
+		new_conversation({text.character,"press x to talk"})
 		if (btnp(❎)) then						
 			conversation_state = "level1"
 		end	
+	-- BRIAN
 	elseif conversation_state == "level1" and text.character == "brian" then
 		new_conversation({"ruff! morning furlock!"}) 
 		if (btnp(❎)) then		
@@ -471,6 +472,7 @@ function conversation_system()
 			conversation_state = "none"
 		end
 
+	-- OWL
 	elseif conversation_state == "level1" and text.character == "owl" then
 		new_conversation({"hmm, what now furlock?"}) 
 		if (btnp(❎)) then		
@@ -482,8 +484,9 @@ function conversation_system()
 			conversation_state = "none"
 		end
 
+	-- SIGNS
 	elseif conversation_state == "sign" and player.x < 290 then
-		new_conversation({"press x to read sign"})
+		new_conversation({text.character, "press x to read"})
 		if (btnp(❎)) then		
 			conversation_state = "sign2"			
 		end
@@ -491,7 +494,7 @@ function conversation_system()
 		new_conversation({"it says 'owls house this way' "})		
 
 	elseif conversation_state == "sign" then
-		new_conversation({"press x to read sign"})
+		new_conversation({text.character, "press x to read"})
 		if (btnp(❎)) then		
 			conversation_state = "sign3"			
 		end
