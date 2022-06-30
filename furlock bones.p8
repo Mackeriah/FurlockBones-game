@@ -11,7 +11,7 @@ CTRL + X deletes a line of code!
 
 -- Furlock Bones: Consulting Dogtective --
 
---init, update, draw and draw functions
+--init, update and draw functions
 function _init()
 	-- debug_mode = false
 	camera_x = 0
@@ -21,6 +21,7 @@ function _init()
 	anim_wait = 0.1	
 	owl_time = 0
 	owl_wait = 1
+	map_swapper()
 	create_player()
 	create_brian()
 	create_owl()
@@ -40,13 +41,6 @@ _n = nil _={}
 _[0] = false 
 _[1] = true
 
--- put this in a function and run it on _init
--- create 6-bit table (used for map swapping)
-chr6,asc6,char6={},{},"abcdefghijklmnopqrstuvwxyz.1234567890 !@#$%,&*()-_=+[{]};:'|<>/?"
-for i=0,63 do
-c=sub(char6,i+1,i+1) chr6[i]=c asc6[c]=i
-end
-char6=_n
 
 function _update60()
 	if activeGame == true  then 
@@ -56,31 +50,14 @@ function _update60()
 		move_player() -- MUST be before camera_follow_player
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
-		move_brian()				
-	else -- if still on menu
+		move_brian()
+		musicControl()
+		doMapStuff()	
+	else -- if still on menu then start game
 		if (btnp(❎)) then activeGame = true end
 	end	
-
-	if (btnp(🅾️)) then
-		-- compress current map 128x16 into variable squish
-		--squish=compressmap(0,0,128,16)
-		decompressmap(0,0,map0)
-		--printh(squish, "temp", 1) -- this prints it to a file so I can copy and paste
-	end
-	musicControl()	
-
-	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
-	end
-
-	if player.x < 290 then
-		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
-		end
-	else
-		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
-		end
-	end
-	
 end
+
 
 function _draw()
 	cls()	
@@ -90,10 +67,11 @@ function _draw()
 		if text.active == true then draw_conversation()	end -- draw player conversations when required
 	end	
 	-- if (debug_mode == true) then		
-	--print("time: "..time(),player.x,player.y-10,8)
+	print("convo: "..conversation_state,player.x,player.y-10,8)
 	--print("anim_time: "..anim_time)
 	--print(player.velocity_x)
-	--print("char: "..text.character,player.x,player.y-10,8)	
+	--print("char: "..text.character,player.x,player.y-10,8)
+
 	
 	characters = {} -- create empty object/array to store all characters
 
@@ -180,21 +158,6 @@ function animate_player()
 	else
 		anim_time = 0
 		player.sprite = 1
-	end
-end
-
-function animate_owl()
-	-- eliza says owl should NOT move if you're talking to him
-	if player.x > 430 then
-		if text.character != "owl" and player.velocity_x == 0 then
-			if time() - owl_time > owl_wait then
-				owl.sprite += 1
-				owl_time = time()
-				if (owl.sprite > 8 ) then
-					owl.sprite = 5
-				end
-			end			
-		end
 	end
 end
 
@@ -291,24 +254,6 @@ function create_brian()
 	brian.direction = -1	
 end
 
-function create_owl()
-	owl={}
-	owl.x = 476
-	owl.y = 8
-	owl.sprite = 5
-end
-
-function create_signs()
-	sign1={}
-	sign1.x = 56
-	sign1.y = 64
-	sign1.sprite = 20	
-	sign2={}
-	sign2.x = 304
-	sign2.y = 16
-	sign2.sprite = 20
-end
-
 function move_brian()
 	if (brian_collision(player.x,player.y,brian.x,brian.y)) == true then 
 		-- this just stops Brian moving any closer and stops him pestering for a while		
@@ -335,6 +280,40 @@ function move_brian()
 			end
 		end
 	end
+end
+
+function create_owl()
+	owl={}
+	owl.x = 476
+	owl.y = 8
+	owl.sprite = 5
+end
+
+function animate_owl()
+	-- eliza says owl should NOT move if you're talking to him
+	if player.x > 430 then
+		if time() - owl_time > owl_wait then
+			owl.sprite += 1
+			owl_time = time()
+			if (owl.sprite > 8 ) then -- owl flaps wings to pass the time
+				owl.sprite = 6
+			end
+		end			
+		if text.character == "owl" and conversation_state != "start" then
+			owl.sprite = 5 -- owl sits down when talking
+		end
+	end
+end
+
+function create_signs()
+	sign1={}
+	sign1.x = 56
+	sign1.y = 64
+	sign1.sprite = 20	
+	sign2={}
+	sign2.x = 304
+	sign2.y = 16
+	sign2.sprite = 20
 end
 
 
@@ -470,7 +449,21 @@ end
 
 -->8
 -- conversation and text functions
-function conversation_system()	
+function conversation_system()
+
+	-- check if next to Wise Old Owl
+	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
+	end
+
+	-- check if next to a sign
+	if player.x < 290 then
+		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
+		end
+	else
+		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
+		end
+	end
+
 	-- none == no conversation
 	-- start == player can choose to start conversation
 	-- level1 == player now in a conversation
@@ -493,7 +486,7 @@ function conversation_system()
 
 	-- OWL
 	elseif conversation_state == "level1" and text.character == "owl" then
-		new_conversation({"hmm, what now furlock?"}) 
+		new_conversation({"* wise old owl *","hmm, what now furlock?"}) 
 		if (btnp(❎)) then		
 			conversation_state = "level2"
 		end
@@ -545,9 +538,7 @@ function new_conversation(txt)
 end
 
 function draw_conversation()	
-	-- currently I just draw this in the middle of the screen
 	-- I want to draw it at the bottom UNLESS player y >= 188, in which case I'll draw at top of screen
-	
 	-- determine longest line of text
 	local maxTextWidth = 0
 	for i=1, #text.string do 
@@ -572,7 +563,13 @@ function draw_conversation()
 		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		print(txt, tx, ty, 0)
+		if (conversation_state == "start") and i == 1 
+		 or (conversation_state == "sign") and i == 1 
+		 then 
+			print(txt, tx, ty, 7) -- print first text line white
+		else
+			print(txt, tx, ty, 1)
+		end
 	end
 end
 
@@ -598,6 +595,14 @@ text_array[7] = "press x to start"
 
 function log(text,overwrite) -- external logging file
 		printh(text, "log", overwrite)
+end
+
+function doMapStuff()
+	if (btnp(🅾️)) then
+		--squish=compressmap(0,0,128,16) -- compress current map 128x16 into squish
+		decompressmap(0,0,map0) -- decompress map0 and load into active game
+		--printh(squish, "temp", 1) -- this prints it to a file so I can copy and paste
+	end
 end
 
 function compressmap(h,v,x,y)
@@ -659,6 +664,15 @@ function decompressmap(h,v,t)
 	until forever
 end
 
+function map_swapper()
+	-- create 6-bit table to store maps
+	chr6,asc6,char6={},{},"abcdefghijklmnopqrstuvwxyz.1234567890 !@#$%,&*()-_=+[{]};:'|<>/?"
+	for i=0,63 do
+	c=sub(char6,i+1,i+1) chr6[i]=c asc6[c]=i
+	end
+	char6=_n
+end
+
 -- music function
 function musicControl()
 	if playing == 'start' then
@@ -678,14 +692,14 @@ owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay
 map0 = "ac_?@m=?t<6rh>pbp<ppam=? a6c?l_dgj[qh>?ap<ppam=?0aafli=d8<6ipi=d8<6i?5-dej{uf>?ap<ppam=?!a-?m-ahn<pbpy{v?t-d?+da9<)ja&7g?p-g%<)b1-rdpm_dpy]z?t-d?+da9<?iaauq9&=?n&_?c-ahny]z?t-d?+da9<?iaavu9<_k7[si*e8l7;si*[=g%<?a1-63}_rd?l-d?+da9<5jam=?l<-h,;8l*<)a([sl);-?c<-?<a-i?xca9<)gp<ppam=? a-i?,_d?+da9<5jam=?.<-?<a-i?xca9<?vam=? a-i?5fa9<5jam=?xb-i?xca9<?vam=? a-i?5faaa"
 
 __gfx__
-000000000000000000000000000700070007000700000000050005000500050005000500444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
-000000000007000700070007000777770007777705000500046464000464640004646400444444bbbbbbbcccbbbbcccc455454457ccccc7c55cccccccccc7ccc
-00700700000777770007777770071771700717710464640006c4c60006c4c60006c4c600444444bbbbbbccccbbbccccc44444444cccccccc5ccccccccccccccc
-000770007007177170071771700777e7700777e706c4c600044a4400044a4400044a440044444bbbbbbbccccbbbbcccc44444444cccccccccccccccccccccc7c
-00077000700777e7700777e70776686007766860044a4400054445000544450005444500444b444bbbbcccccbbbbcccc44444444cccccccccc7cccccc7cccccc
-007007000776686007766860077777700777777005444500054445005044405005444500444444bbbbbbccccbbbbcccc444444445ccc7ccccccccccccccccccc
-00000000077777700777777070d0070670d07060054445000544450050444050054445004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
-00000000171d7160171d1716011111000111110005a4a50000a1a00000a1a00000a1a0004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
+000000000000000000000000000700070007000700000000060006000600060006000600444b444bbbbbbbccbbbbbccc55555555cccccccc555ccc7ccccccccc
+000000000007000700070007000777770007777706000600047474000474740004747400444444bbbbbbbcccbbbbcccc455454457ccccc7c55cccccccccc7ccc
+00700700000777770007777770071771700717710474740007c4c70007c4c70007c4c700444444bbbbbbccccbbbccccc44444444cccccccc5ccccccccccccccc
+000770007007177170071771700777e7700777e707c4c700044a4400044a4400044a440044444bbbbbbbccccbbbbcccc44444444cccccccccccccccccccccc7c
+00077000700777e7700777e70776686007766860044a4400064446000644460006444600444b444bbbbcccccbbbbcccc44444444cccccccccc7cccccc7cccccc
+007007000776686007766860077777700777777006444600064446006144416006444600444444bbbbbbccccbbbbcccc444444445ccc7ccccccccccccccccccc
+00000000077777700777777070d0070670d07060064446000644460061444160064446004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
+00000000171d7160171d1716011111000111110006a4a60001a1a10011a1a11001a1a1004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
 bbbbbbbbbbbbbbbbbbbbb9bbc44cc44cb44bb44bbbb33bbb000000000000000000000000bbbb4444444444444444444455d5cccc44444444bbbbbbbbccccc555
 bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000500050000000000000000bbb444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
 bbbbddbbbb224444444944bb4444444444444444b33b331b000444440000000000000000bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
