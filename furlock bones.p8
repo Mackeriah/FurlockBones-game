@@ -58,7 +58,6 @@ function _update60()
 	end	
 end
 
-
 function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
@@ -67,11 +66,8 @@ function _draw()
 		if text.active == true then draw_conversation()	end -- draw player conversations when required
 	end	
 	-- if (debug_mode == true) then		
-	print("musicState: "..musicState,player.x,player.y-10,8)
-	print(activeGame)
-	--print("anim_time: "..anim_time)
-	--print(player.velocity_x)
-	--print("char: "..text.character,player.x,player.y-10,8)
+	print("X: "..player.x,player.x,player.y-10,8)
+	print("convo: "..conversation_state)
 
 	
 	characters = {} -- create empty object/array to store all characters
@@ -103,15 +99,6 @@ function _draw()
 	-- print(t)
 end
 
-function camera_follow_player()
-	if player.x > 60 and player.x <= (current_map_maximum_x -60) then 
-		camera_x = player.x - 60
-	end
-	if player.y > 60 and player.y <= (current_map_maximum_y-60) then
-		camera_y = player.y - 60
-	end
-end
-
 function draw_menu()	
 	format_text_centered(text_array, 7) -- display menu text	
 end
@@ -133,7 +120,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- (40 by house) map location x8 for exact pixel location
+	player.x = 40 -- 40 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 40
 	player.direction = 1
 	player.velocity_x = 0
@@ -309,13 +296,13 @@ end
 
 function create_signs()
 	sign1={}
-	sign1.x = 56
-	sign1.y = 64
+	sign1.x = 308
+	sign1.y = 16
 	sign1.sprite = 20	
 	sign2={}
-	sign2.x = 304
+	sign2.x = 416
 	sign2.y = 16
-	sign2.sprite = 20
+	sign2.sprite = 19
 end
 
 
@@ -459,17 +446,17 @@ function conversation_system()
 	end
 
 	-- check if next to a sign
-	if player.x < 290 then
-		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
+	if player.x > 400 then
+		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
 		end
 	else
-		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
+		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
 		end
 	end
 
 	-- none == no conversation
 	-- start == player can choose to start conversation
-	-- level1 == player now in a conversation
+	-- level1 == player in conversation
 	if conversation_state == "start" then
 		new_conversation({text.character,"press x to talk"})
 		if (btnp(❎)) then						
@@ -483,7 +470,7 @@ function conversation_system()
 		end
 	elseif conversation_state == "level2" and text.character == "brian" then		
 		new_conversation({"i dont have anything","else to say!","bye!"})
-		if (btnp(❎)) then		
+		if (btnp(❎)) then
 			conversation_state = "none"
 		end
 
@@ -500,21 +487,27 @@ function conversation_system()
 		end
 
 	-- SIGNS
-	elseif conversation_state == "sign" and player.x < 290 then
+	elseif conversation_state == "sign" and player.x < 400 then
 		new_conversation({text.character, "press x to read"})
 		if (btnp(❎)) then		
 			conversation_state = "sign2"			
 		end
 	elseif conversation_state == "sign2" then
-		new_conversation({"it says 'owls house this way' "})		
+		new_conversation({"it says 'owls house this way' "})
+		if (btnp(❎)) then
+			conversation_state = "none"
+		end
 
-	elseif conversation_state == "sign" then
+	elseif conversation_state == "sign" and player.x > 400 then
 		new_conversation({text.character, "press x to read"})
 		if (btnp(❎)) then		
 			conversation_state = "sign3"			
 		end
 	elseif conversation_state == "sign3" then
 		new_conversation({"'i'm very busy you know..."})
+		if (btnp(❎)) then
+			conversation_state = "none"
+		end
 	end
 end
 
@@ -594,6 +587,15 @@ function toggle_debug_mode()
 	elseif (btnp(🅾️)) and (debug_mode == true) then
 	  	debug_mode = false
 	end	
+end
+
+function camera_follow_player()
+	if player.x > 60 and player.x <= (current_map_maximum_x -60) then 
+		camera_x = player.x - 60
+	end
+	if player.y > 60 and player.y <= (current_map_maximum_y-60) then
+		camera_y = player.y - 60
+	end
 end
 
 function log(text,overwrite) -- external logging file
