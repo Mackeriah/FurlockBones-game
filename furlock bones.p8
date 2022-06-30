@@ -32,17 +32,18 @@ function _init()
 	notNowBrian = false
 	current_map_maximum_x = 624
 	current_map_maximum_y = 248	
-	track_1start=0
-	track_2start=11
-	playing = 'start'			
+	track_1start = 0 -- this indicates the point in the music the track starts
+	track_2start = 11
+	musicState = 'start' -- used for music, seems bizarely complex!
 end
 
+-- map compress related, try to add to function or init
 _n = nil _={}
 _[0] = false 
 _[1] = true
 
-
 function _update60()
+	musicControl()
 	if activeGame == true  then 
 		--toggle_debug_mode()	
 		animate_player()
@@ -51,7 +52,6 @@ function _update60()
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
 		move_brian()
-		musicControl()
 		doMapStuff()	
 	else -- if still on menu then start game
 		if (btnp(❎)) then activeGame = true end
@@ -67,7 +67,8 @@ function _draw()
 		if text.active == true then draw_conversation()	end -- draw player conversations when required
 	end	
 	-- if (debug_mode == true) then		
-	print("convo: "..conversation_state,player.x,player.y-10,8)
+	print("musicState: "..musicState,player.x,player.y-10,8)
+	print(activeGame)
 	--print("anim_time: "..anim_time)
 	--print(player.velocity_x)
 	--print("char: "..text.character,player.x,player.y-10,8)
@@ -242,6 +243,7 @@ function move_player()
 	if (abs(player.velocity_x)<0.02) player.velocity_x = 0
 	if (abs(player.velocity_y)<0.02) player.velocity_y = 0	
 end
+
 
 -->8
 -- character functions
@@ -447,6 +449,7 @@ function sign_collision(playerx,playery,charx,chary)
  	end
 end
 
+
 -->8
 -- conversation and text functions
 function conversation_system()
@@ -486,7 +489,7 @@ function conversation_system()
 
 	-- OWL
 	elseif conversation_state == "level1" and text.character == "owl" then
-		new_conversation({"* wise old owl *","hmm, what now furlock?"}) 
+		new_conversation({"hmm, what now furlock?"}) 
 		if (btnp(❎)) then		
 			conversation_state = "level2"
 		end
@@ -585,13 +588,13 @@ text_array[7] = "press x to start"
 -->8
 -- back of house functions
 
--- function toggle_debug_mode()	
--- 	if (btnp(🅾️)) and (debug_mode == false) then
--- 		debug_mode = true	
--- 	elseif (btnp(🅾️)) and (debug_mode == true) then
--- 	  	debug_mode = false
--- 	end	
--- end
+function toggle_debug_mode()	
+	if (btnp(🅾️)) and (debug_mode == false) then
+		debug_mode = true	
+	elseif (btnp(🅾️)) and (debug_mode == true) then
+	  	debug_mode = false
+	end	
+end
 
 function log(text,overwrite) -- external logging file
 		printh(text, "log", overwrite)
@@ -675,15 +678,13 @@ end
 
 -- music function
 function musicControl()
-	if playing == 'start' then
-		if (activeGame == false) then
-			music(track_1start,0,120)
-			playing = 'menu'
-		end
-	-- elseif playing == 'menu' and (activeGame == true)  then
-	-- 	music(track_2start,0,120)	
-	-- 	playing = 'level1'
-	-- end
+	if (activeGame == false) and musicState != 'menu' then
+			music(track_2start,0,120)
+			musicState = 'menu'
+	end
+	if activeGame == true and musicState != 'level1' then
+		music(track_1start,0,120)	
+		musicState = 'level1'
 	end
 end
 
