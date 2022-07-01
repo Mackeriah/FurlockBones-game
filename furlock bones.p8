@@ -35,6 +35,7 @@ function _init()
 	track_1start = 0 -- this indicates the point in the music the track starts
 	track_2start = 11
 	musicState = 'start' -- used for music, seems bizarely complex!
+	show_inventory = false
 end
 
 -- map compress related, try to add to function or init
@@ -45,15 +46,17 @@ _[1] = true
 function _update60()
 	musicControl()
 	if activeGame == true  then 
-		--toggle_debug_mode()	
 		animate_player()
 		animate_owl()
-		move_player() -- MUST be before camera_follow_player
+		if show_inventory == false then
+			move_player() -- MUST be before camera_follow_player
+		end
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
 		move_brian()
-		doMapStuff()	
-	else -- if still on menu then start game
+		doMapStuff()
+		view_inventory()
+	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
 	end	
 end
@@ -61,35 +64,57 @@ end
 function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
-	if activeGame == true then
-		draw_game()				
-		if text.active == true then draw_conversation()	end -- draw player conversations when required
-	end	
-	-- if (debug_mode == true) then		
-	print("X: "..player.x,player.x,player.y-10,8)
-	print("convo: "..conversation_state)
-
+	if activeGame == true then draw_game() end	
+			
+	--print("camX: "..camera_x,player.x,player.y-10,8)
+	--print("camy: "..camera_y)
+	--print("convo: "..conversation_state)
+	print(camera_x,50,0)
+	print(camera_y)
 	
-	characters = {} -- create empty object/array to store all characters
+end
 
-	frodo = {} -- create empty object/array for a specific character
-	frodo.name = "frodo baggins" -- populate the object with various parameters
-	frodo.age =  46
-	frodo.hp = 10
-	frodo.str = 7
-	frodo.x = 100
-	frodo.y = 50
+function draw_menu()	
+	format_text_centered(text_array, 7) -- display menu text	
+end
 
-	gandalf = {} -- create empty object/array/table for a specific character
-	gandalf.name = "gandalf the grey" -- populate the object with various parameters
-	gandalf.age =  46
-	gandalf.hp = 10
-	gandalf.str = 7
-	gandalf.x = 200
-	gandalf.y = 99
+function draw_game()
+	if show_inventory == false then
+		map(0,0,0,0,128,32) -- draw game level
+		camera(camera_x,camera_y) -- needs to be here to avoid stutter
+		spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
+		spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
+		spr(owl.sprite,owl.x,owl.y,1,1,1)
+		spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
+		spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
+		if text.active == true then draw_conversation()	end
+	end
+	if show_inventory == true then
+		rect(0, 0, 127, 127, 7)
+	end 	
+end
 
-	characters[1] = frodo	-- add frodo to the character 
-	characters[2] = gandalf
+function character_arrays()
+	-- characters = {} -- create empty object/array to store all characters
+
+	-- frodo = {} -- create empty object/array for a specific character
+	-- frodo.name = "frodo baggins" -- populate the object with various parameters
+	-- frodo.age =  46
+	-- frodo.hp = 10
+	-- frodo.str = 7
+	-- frodo.x = 100
+	-- frodo.y = 50
+
+	-- gandalf = {} -- create empty object/array/table for a specific character
+	-- gandalf.name = "gandalf the grey" -- populate the object with various parameters
+	-- gandalf.age =  46
+	-- gandalf.hp = 10
+	-- gandalf.str = 7
+	-- gandalf.x = 200
+	-- gandalf.y = 99
+
+	-- characters[1] = frodo	-- add frodo to the character 
+	-- characters[2] = gandalf
 
 	-- for i=1, #characters do		
 	-- 	print(characters[i].name)
@@ -99,22 +124,15 @@ function _draw()
 	-- print(t)
 end
 
-function draw_menu()	
-	format_text_centered(text_array, 7) -- display menu text	
+function view_inventory()
+	if (btnp(🅾️)) and show_inventory == false then
+		show_inventory = true
+		camera(0,0)
+	elseif (btnp(🅾️)) and show_inventory == true then
+		show_inventory = false
+	end
 end
 
-function draw_game()
- 	camera(camera_x,camera_y)
- 	map(0,0,0,0,128,32)
-	spr(110,80,16,1,1,1)
-	spr(126,80,24,1,1,1)
- 	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
-	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
-	spr(owl.sprite,owl.x,owl.y,1,1,1)
-	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
-	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
-	
-end
 
 -->8
 --player functions
@@ -229,6 +247,15 @@ function move_player()
 	--if they are going slow enough in a particular direction, bring them to a halt.
 	if (abs(player.velocity_x)<0.02) player.velocity_x = 0
 	if (abs(player.velocity_y)<0.02) player.velocity_y = 0	
+end
+
+function camera_follow_player()
+	if player.x > 60 and player.x <= (current_map_maximum_x -60) then 
+		camera_x = player.x - 60
+	end
+	if player.y > 60 and player.y <= (current_map_maximum_y-60) then
+		camera_y = player.y - 60
+	end
 end
 
 
@@ -504,7 +531,7 @@ function conversation_system()
 			conversation_state = "sign3"			
 		end
 	elseif conversation_state == "sign3" then
-		new_conversation({"'i'm very busy you know..."})
+		new_conversation({"hmm, it says","i'm very busy you know..."})
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
@@ -589,25 +616,16 @@ function toggle_debug_mode()
 	end	
 end
 
-function camera_follow_player()
-	if player.x > 60 and player.x <= (current_map_maximum_x -60) then 
-		camera_x = player.x - 60
-	end
-	if player.y > 60 and player.y <= (current_map_maximum_y-60) then
-		camera_y = player.y - 60
-	end
-end
-
 function log(text,overwrite) -- external logging file
 		printh(text, "log", overwrite)
 end
 
 function doMapStuff()
-	if (btnp(🅾️)) then
-		--squish=compressmap(0,0,128,16) -- compress current map 128x16 into squish
-		decompressmap(0,0,map0) -- decompress map0 and load into active game
-		--printh(squish, "temp", 1) -- this prints it to a file so I can copy and paste
-	end
+	-- if (btnp(🅾️)) then
+	-- 	--squish=compressmap(0,0,128,16) -- compress current map 128x16 into squish
+	-- 	decompressmap(0,0,map0) -- decompress map0 and load into active game
+	-- 	--printh(squish, "temp", 1) -- this prints it to a file so I can copy and paste
+	-- end
 end
 
 function compressmap(h,v,x,y)
