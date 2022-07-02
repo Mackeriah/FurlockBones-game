@@ -66,11 +66,11 @@ function _draw()
 	if activeGame == false then draw_menu() end
 	if activeGame == true then draw_game() end	
 			
-	--print("camX: "..camera_x,player.x,player.y-10,8)
+	--print("y: "..player.y,player.x,player.y-10,8)
 	--print("camy: "..camera_y)
 	--print("convo: "..conversation_state)
-	print(camera_x,50,0)
-	print(camera_y)
+	--print(camera_x,50,0)
+	--print(camera_y)
 	
 end
 
@@ -80,8 +80,8 @@ end
 
 function draw_game()
 	if show_inventory == false then
+		camera(camera_x,camera_y) -- run before map to avoid inventory stutter
 		map(0,0,0,0,128,32) -- draw game level
-		camera(camera_x,camera_y) -- needs to be here to avoid stutter
 		spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
 		spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
 		spr(owl.sprite,owl.x,owl.y,1,1,1)
@@ -90,8 +90,65 @@ function draw_game()
 		if text.active == true then draw_conversation()	end
 	end
 	if show_inventory == true then
-		rect(0, 0, 127, 127, 7)
+		rectfill(0, 0, 127, 127, 6) -- fill screen
+		rect(0, 0, 127, 127, 3) -- screen border 
+		rect(0, 0, 127, 6, 3) -- top heading
+		string = "inventory"
+		print(string,64 - (#string * 2),1,7) -- heading text
+		--[[]
+			x0, y0, x1, y1
+			x0 = x upper left
+			y0 = y upper left
+			x1 = x lower right
+			y1 = x lower right
+			so to visualise this you are ONLY placing those 2 corners, after which the 
+			rectangle is drawn between them. Also the x1 and y1 start from the x0,y0 position
+			whereas x0,y0 start from 0,0
+		]]
+		rect(5, 50, 50, 70, 11) -- sentence start
 	end 	
+end
+
+function display_book_sentences()	
+	-- determine longest line of text
+	local maxTextWidth = 0
+	for i=1, #text.string do 
+		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- define textbox with border
+	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- if player close to screen bottom, draw text box at top, else draw at bottom
+	if (player.y < 200) then
+		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	else
+		textbox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
+	end	
+	
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
+
+	-- draw outer border text box
+	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+
+	-- write text
+	for i=1, #text.string do  -- the # gets the legnth of the array 'text'
+		local txt = text.string[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		if (conversation_state == "start") and i == 1 
+		 or (conversation_state == "sign") and i == 1 
+		 then 
+			print(txt, tx, ty, 7) -- print first text line white
+		else
+			print(txt, tx, ty, 1)
+		end
+	end
 end
 
 function character_arrays()
@@ -127,7 +184,7 @@ end
 function view_inventory()
 	if (btnp(🅾️)) and show_inventory == false then
 		show_inventory = true
-		camera(0,0)
+		camera(0,0) -- move camera to 0,0 as we always display inventory here
 	elseif (btnp(🅾️)) and show_inventory == true then
 		show_inventory = false
 	end
@@ -266,7 +323,7 @@ function create_brian()
 	brian.x = 74
 	brian.y = 24
 	brian.sprite = 22
-	brian.speed = 0
+	brian.speed = 0.3
 	brian.direction = -1	
 end
 
@@ -531,7 +588,7 @@ function conversation_system()
 			conversation_state = "sign3"			
 		end
 	elseif conversation_state == "sign3" then
-		new_conversation({"hmm, it says","i'm very busy you know..."})
+		new_conversation({"it says","'i'm very busy you know'"})
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
@@ -561,7 +618,6 @@ function new_conversation(txt)
 end
 
 function draw_conversation()	
-	-- I want to draw it at the bottom UNLESS player y >= 188, in which case I'll draw at top of screen
 	-- determine longest line of text
 	local maxTextWidth = 0
 	for i=1, #text.string do 
@@ -571,10 +627,17 @@ function draw_conversation()
 	end
 
 	-- define textbox with border
-	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border
-	local textbox_y = 100
+	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- if player close to screen bottom, draw text box at top, else draw at bottom
+	if (player.y < 200) then
+		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	else
+		textbox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
+	end	
+	
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #text.string * 6
+	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
 
 	-- draw outer border text box
 	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
