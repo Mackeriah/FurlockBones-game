@@ -53,6 +53,7 @@ function _update60()
 		end
 		camera_follow_player() -- MUST be after move_player
 		conversation_system()
+		--draw_pages_minigame() -- based on draw_conversation
 		move_brian()
 		doMapStuff()
 		view_inventory()
@@ -65,8 +66,12 @@ function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
 	if activeGame == true then draw_game() end	
-			
-	--print("y: "..player.y,player.x,player.y-10,8)
+	
+	-- player.x-20,player.y-20,8
+	-- print(text.string[1],player.x-20,player.y-20,8)
+	-- print(text.string[2])
+	-- print(text.string[3])
+	-- print(text.character)
 	--print("camy: "..camera_y)
 	--print("convo: "..conversation_state)
 	--print(camera_x,50,0)
@@ -95,6 +100,8 @@ function draw_game()
 		rect(0, 0, 127, 6, 3) -- top heading
 		string = "inventory"
 		print(string,64 - (#string * 2),1,7) -- heading text
+		if text.pages == true then draw_pages_minigame() end
+
 		--[[]
 			x0, y0, x1, y1
 			x0 = x upper left
@@ -152,6 +159,9 @@ function display_book_sentences()
 end
 
 function character_arrays()
+	-- when I come to use this also refer to conversation init as I'm pretty sure this
+	-- is a simpler/shorter way to achieve the same
+
 	-- characters = {} -- create empty object/array to store all characters
 
 	-- frodo = {} -- create empty object/array for a specific character
@@ -170,8 +180,8 @@ function character_arrays()
 	-- gandalf.x = 200
 	-- gandalf.y = 99
 
-	-- characters[1] = frodo	-- add frodo to the character 
-	-- characters[2] = gandalf
+	-- characters[1] = frodo	-- add frodo to the character array
+	-- characters[2] = gandalf	-- and add gandalf
 
 	-- for i=1, #characters do		
 	-- 	print(characters[i].name)
@@ -185,8 +195,11 @@ function view_inventory()
 	if (btnp(🅾️)) and show_inventory == false then
 		show_inventory = true
 		camera(0,0) -- move camera to 0,0 as we always display inventory here
+		previous_conversation_state = conversation_state -- store this so we can return to previous later
+		conversation_state = "habitat"
 	elseif (btnp(🅾️)) and show_inventory == true then
 		show_inventory = false
+		conversation_state = previous_conversation_state -- return to previous convo state
 	end
 end
 
@@ -522,7 +535,93 @@ end
 
 
 -->8
--- conversation and text functions
+-- conversation and text functions (includes menu)
+function format_text_centered(array, colour) -- used for menu
+
+	height = 50
+	for i in all(array) do
+		print(i,64-#i*2, height, colour)
+		height += 6
+	end
+end
+
+function init_conversation_text()
+	text = {} -- create empty array to store multiple strings
+	text.active = false -- initialise to false
+	text.pages = false
+	text.string = {} -- empty array to store individual string?
+	text.pages_answers = {} -- store page minigame answers
+	text.character = "nobody"
+	conversation_state = "none" -- initialising to none (not done elsewhere)
+end
+
+function new_conversation(txt)
+	-- function called if conversation_state is a certain value and when called
+	-- predefined text is stored in the text.string array and can handle multiple strings
+	-- being passed to it and stores each in their own array element
+	text.string = txt
+	text.active = true -- draw game displays conversation if this is true
+end
+
+function new_pages(txt)
+	-- function called if conversation_state is a certain value and when called
+	-- predefined text is stored in the text.string array and can handle multiple strings
+	-- being passed to it and stores each in their own array element
+	text.string = txt
+	text.pages = true -- draw game displays pages minigame if this is true
+end
+
+function new_pages_answers(txt)
+	-- function called if conversation_state is a certain value and when called
+	-- predefined text is stored in the text.string array and can handle multiple strings
+	-- being passed to it and stores each in their own array element
+	text.pages_answers = txt
+end
+
+
+function draw_conversation()
+	-- this runs if text.active is true
+	-- determine longest line of text
+	local maxTextWidth = 0
+	for i=1, #text.string do -- the # gets array length
+		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- define textbox with border
+	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- if player close to screen bottom, draw text box at top, else draw at bottom
+	if (player.y < 200) then
+		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	else
+		textbox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
+	end	
+	
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
+
+	-- draw outer border text box
+	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+
+	-- write text
+	for i=1, #text.string do  -- the # gets the legnth of the array 'text'
+		local txt = text.string[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		if (conversation_state == "start") and i == 1 
+		 or (conversation_state == "sign") and i == 1 
+		 then 
+			print(txt, tx, ty, 7) -- print first text line white
+		else
+			print(txt, tx, ty, 1)
+		end
+	end
+end
+
 function conversation_system()
 
 	-- check if next to Wise Old Owl
@@ -540,7 +639,7 @@ function conversation_system()
 
 	-- none == no conversation
 	-- start == player can choose to start conversation
-	-- level1 == player in conversation
+	-- levelx == player in conversation
 	if conversation_state == "start" then
 		new_conversation({text.character,"press x to talk"})
 		if (btnp(❎)) then						
@@ -592,35 +691,28 @@ function conversation_system()
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
+
+	elseif conversation_state == "habitat" then
+		new_pages({"a fox lives in a <       >"})
+		new_pages_answers({"a den"})		
 	end
 end
 
-function format_text_centered(array, colour)
-	-- only used for menu currently
-	height = 50
-	for i in all(array) do
-		print(i,64-#i*2, height, colour)
-		height += 6
-	end
-end
+text_array = {}
+text_array[1] = "furlock bones"
+text_array[2] = "the case of the lost animals"
+text_array[3] = ""
+text_array[4] = ""
+text_array[5] = ""
+text_array[6] = ""
+text_array[7] = "press x to start"
 
-function init_conversation_text()
-	text = {} -- create empty array to store multiple strings
-	text.active = false -- initialise to false
-	text.string = {} -- empty array to store individual string?
-	text.character = "nobody"
-	conversation_state = "none" -- semi-related code
-end
+function draw_pages_minigame()	
 
-function new_conversation(txt)
-	text.string = txt -- enter received string(s) into array
-	text.active = true
-end
-
-function draw_conversation()	
+	-- ** QUESTION ** 
 	-- determine longest line of text
 	local maxTextWidth = 0
-	for i=1, #text.string do 
+	for i=1, #text.string do -- the # gets array length
 		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
 			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
 		end
@@ -629,12 +721,8 @@ function draw_conversation()
 	-- define textbox with border
 	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
-	-- if player close to screen bottom, draw text box at top, else draw at bottom
-	if (player.y < 200) then
-		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
-	else
-		textbox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
-	end	
+	-- draw text box at top of screen
+	local textbox_y = camera_y + 10 -- controls vertical location of text box (0 top, 127 bottom)
 	
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
@@ -649,24 +737,40 @@ function draw_conversation()
 		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		if (conversation_state == "start") and i == 1 
-		 or (conversation_state == "sign") and i == 1 
-		 then 
-			print(txt, tx, ty, 7) -- print first text line white
-		else
-			print(txt, tx, ty, 1)
+		print(txt, tx, ty, 1)
+	end
+
+	-- ** ANSWER ** 
+	-- determine longest line of text
+	local maxTextWidth = 0
+	for i=1, #text.pages_answers do -- the # gets array length
+		if #text.pages_answers[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #text.pages_answers[i] -- set max width to longest element so box wide enough
 		end
 	end
-end
 
-text_array = {}
-text_array[1] = "furlock bones"
-text_array[2] = "the case of the lost animals"
-text_array[3] = ""
-text_array[4] = ""
-text_array[5] = ""
-text_array[6] = ""
-text_array[7] = "press x to start"
+	-- define textbox with border
+	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- draw text box at top of screen
+	local textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #text.pages_answers * 6 -- *6 for character height
+
+	-- draw outer border text box
+	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+
+	-- write text
+	for i=1, #text.pages_answers do  -- the # gets the legnth of the array 'text'
+		local txt = text.pages_answers[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		print(txt, tx, ty, 1)
+	end
+end
 
 -->8
 -- back of house functions
