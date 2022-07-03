@@ -16,6 +16,8 @@ function _init()
 	-- debug_mode = false
 	camera_x = 0
 	camera_y = 0
+	tmp_camera_x = 0
+	tmp_camera_y = 0
 	activeGame = false
 	anim_time = 0
 	anim_wait = 0.1	
@@ -76,8 +78,9 @@ function draw_menu()
 end
 
 function draw_game()
-	if show_inventory == false then
+	if show_inventory == false then 	
 		camera(camera_x,camera_y) -- run before map to avoid inventory stutter
+		
 		map(0,0,0,0,128,32) -- draw game level
 		spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
 		spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
@@ -87,11 +90,16 @@ function draw_game()
 		if text.active == true then draw_conversation()	end
 	end
 	if show_inventory == true then
+		tmp_camera_x = camera_x -- store previous camera position so we can return to it later
+		tmp_camera_y = camera_y
+		camera_x = 0 -- put camera at 0,0 as that's the way I'm drawing sentence game
+		camera_y = 0
+		camera(camera_x,camera_y)
 		rectfill(0, 0, 127, 127, 6) -- fill screen
 		rect(0, 0, 127, 127, 3) -- screen border 
 		rect(0, 0, 127, 6, 3) -- top heading
-		string = "inventory"
-		print(string,64 - (#string * 2),1,7) -- heading text
+		--string = "inventory"
+		--print(string,64 - (#string * 2),1,7) -- heading text
 		if text.pages == true then draw_pages_minigame() end
 	end 	
 end
@@ -180,6 +188,8 @@ function view_inventory()
 	elseif (btnp(🅾️)) and show_inventory == true then
 		show_inventory = false
 		conversation_state = previous_conversation_state -- return to previous convo state
+		camera_x = tmp_camera_x
+		camera_y = tmp_camera_y
 	end
 end
 
@@ -657,7 +667,7 @@ function conversation_system()
 			conversation_state = "sign2"			
 		end
 	elseif conversation_state == "sign2" then
-		new_conversation({"it says 'owls house this way' "})
+		new_conversation({"owl's house this way"})
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
@@ -668,7 +678,7 @@ function conversation_system()
 			conversation_state = "sign3"			
 		end
 	elseif conversation_state == "sign3" then
-		new_conversation({"it says","'i'm very busy you know'"})
+		new_conversation({"i'm very busy you know"})
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
