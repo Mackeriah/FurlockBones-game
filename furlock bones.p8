@@ -65,10 +65,8 @@ end
 function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
-	if activeGame == true then draw_game() end	
-	
+	if activeGame == true then draw_game() end		
 	-- player.x-20,player.y-20,8
-	-- print(text.string[1],player.x-20,player.y-20,8)
 	-- print(text.string[2])
 	-- print(text.string[3])
 end
@@ -533,6 +531,8 @@ function init_conversation_text()
 	text.pages = false
 	text.string = {} -- empty array to store individual string?
 	text.pages_answers = {} -- store page minigame answers
+	text.pages_correct = 1
+	text.pages_selection = 1
 	text.character = "nobody"
 	conversation_state = "none" -- initialising to none (not done elsewhere)
 end
@@ -559,7 +559,6 @@ function new_pages_answers(txt)
 	-- being passed to it and stores each in their own array element
 	text.pages_answers = txt
 end
-
 
 function draw_conversation()
 	-- this runs if text.active is true
@@ -675,8 +674,9 @@ function conversation_system()
 		end
 
 	elseif conversation_state == "habitat" then
-		new_pages({"a fox lives in <       >"})
-		new_pages_answers({"a large den", "a coloured hive", "a large tree-house","a very deep hole"})		
+		new_pages({"a fox lives in a <       >"})
+		new_pages_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+		text.pages_correct = 1	
 	end
 end
 
@@ -736,7 +736,7 @@ function draw_pages_minigame()
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
 	-- vertical text box location
-	local textbox_yy = camera_y + 30
+	local textbox_yy = camera_y + 20
 	
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
@@ -747,9 +747,43 @@ function draw_pages_minigame()
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_yy - 5 +(i*16) -- padding for top of box but as loop starts at 1 we subtract 5
 		
-		rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+		if text.pages_selection == i then
+			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+		end
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
-		print(txt, tx, ty, 0)
+		print(txt, tx, ty, 0) -- print the current possible answer
+		if correct == true then
+			print("yes, well done!",10,20,11)
+		elseif correct == false then
+			print("i don't think that's right.",10,20,8)
+		end
+		print("UP/DOWN AND X TO SELECT",15,120,13)		
+	end
+
+	-- change selected question
+	if (btnp(3)) then 
+		if text.pages_selection > #text.pages_answers-1 then
+			text.pages_selection = 1
+			correct = none
+		else
+			text.pages_selection += 1
+			correct = none
+		end
+	end
+	if (btnp(2)) then -- 2 is up
+		if text.pages_selection == 1 then
+			text.pages_selection = #text.pages_answers
+			correct = none
+		else
+			text.pages_selection -= 1
+			correct = none
+		end
+	end
+
+	-- check for correct answer
+	if (btnp(❎)) then
+		if text.pages_selection == text.pages_correct then correct = true			
+		else correct = false end
 	end
 end
 
