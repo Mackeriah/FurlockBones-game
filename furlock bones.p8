@@ -71,12 +71,6 @@ function _draw()
 	-- print(text.string[1],player.x-20,player.y-20,8)
 	-- print(text.string[2])
 	-- print(text.string[3])
-	-- print(text.character)
-	--print("camy: "..camera_y)
-	--print("convo: "..conversation_state)
-	--print(camera_x,50,0)
-	--print(camera_y)
-	
 end
 
 function draw_menu()	
@@ -101,18 +95,6 @@ function draw_game()
 		string = "inventory"
 		print(string,64 - (#string * 2),1,7) -- heading text
 		if text.pages == true then draw_pages_minigame() end
-
-		--[[]
-			x0, y0, x1, y1
-			x0 = x upper left
-			y0 = y upper left
-			x1 = x lower right
-			y1 = x lower right
-			so to visualise this you are ONLY placing those 2 corners, after which the 
-			rectangle is drawn between them. Also the x1 and y1 start from the x0,y0 position
-			whereas x0,y0 start from 0,0
-		]]
-		rect(5, 50, 50, 70, 11) -- sentence start
 	end 	
 end
 
@@ -693,8 +675,8 @@ function conversation_system()
 		end
 
 	elseif conversation_state == "habitat" then
-		new_pages({"a fox lives in a <       >"})
-		new_pages_answers({"a den"})		
+		new_pages({"a fox lives in <       >"})
+		new_pages_answers({"a large den", "a coloured hive", "a large tree-house","a very deep hole"})		
 	end
 end
 
@@ -708,8 +690,7 @@ text_array[6] = ""
 text_array[7] = "press x to start"
 
 function draw_pages_minigame()	
-
-	-- ** QUESTION ** 
+	-- ** QUESTION LOGIC** 
 	-- determine longest line of text
 	local maxTextWidth = 0
 	for i=1, #text.string do -- the # gets array length
@@ -740,7 +721,9 @@ function draw_pages_minigame()
 		print(txt, tx, ty, 1)
 	end
 
-	-- ** ANSWER ** 
+	-- ** ANSWER LOGIC ** 
+	-- #text.pages_answers this is how many answers there are and thus how many boxes we need
+
 	-- determine longest line of text
 	local maxTextWidth = 0
 	for i=1, #text.pages_answers do -- the # gets array length
@@ -749,26 +732,24 @@ function draw_pages_minigame()
 		end
 	end
 
-	-- define textbox with border
-	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+	-- horizontal text box location
+	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
-	-- draw text box at top of screen
-	local textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	-- vertical text box location
+	local textbox_yy = camera_y + 30
 	
-	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #text.pages_answers * 6 -- *6 for character height
-
-	-- draw outer border text box
-	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height2 = textbox_yy + 6 -- *6 for character height
 
 	-- write text
 	for i=1, #text.pages_answers do  -- the # gets the legnth of the array 'text'
 		local txt = text.pages_answers[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		print(txt, tx, ty, 1)
+		local ty = textbox_yy - 5 +(i*16) -- padding for top of box but as loop starts at 1 we subtract 5
+		
+		rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
+		print(txt, tx, ty, 0)
 	end
 end
 
