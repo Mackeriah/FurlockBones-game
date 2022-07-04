@@ -19,8 +19,8 @@ function _init()
 	tmp_camera_x = 0
 	tmp_camera_y = 0
 	activeGame = false
-	anim_time = 0
-	anim_wait = 0.1	
+	playerAnimTime = 0
+	playerAnimWait = 0.1	
 	owl_time = 0
 	owl_wait = 1
 	map_swapper()
@@ -37,7 +37,8 @@ function _init()
 	track_1start = 0 -- this indicates the point in the music the track starts
 	track_2start = 11
 	musicState = 'start' -- used for music, seems bizarely complex!
-	show_inventory = false
+	create_inventory()
+	-- show_inventory = false
 end
 
 -- map compress related, try to add to function or init
@@ -50,15 +51,15 @@ function _update60()
 	if activeGame == true  then 
 		animate_player()
 		animate_owl()
-		if show_inventory == false then
+		on_inventory_button_press()
+		if show_inventory == false then -- stop player moving if inventory displayed
 			move_player() -- MUST be before camera_follow_player
+			camera_follow_player() -- MUST be after move_player
+			conversation_system()
+			move_brian()
+			check_character_collision()
+			doMapStuff()
 		end
-		camera_follow_player() -- MUST be after move_player
-		conversation_system()
-		--draw_pages_minigame() -- based on draw_conversation
-		move_brian()
-		doMapStuff()
-		view_inventory()
 	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
 	end	
@@ -70,17 +71,21 @@ function _draw()
 	if activeGame == true then draw_game() end		
 	-- player.x-20,player.y-20,8
 	-- print(text.string[2])
-	-- print(text.string[3])
+	-- print("x: "..player.x-20,player.y-20,8)
 end
 
-function draw_menu()	
-	format_text_centered(text_array, 7) -- display menu text	
+function draw_menu()
+	height = 50
+	print_centered("furlock bones", height, 12)
+	height += 6
+	print_centered("the case of the lost animals", height, 7)
+	height += 6*8
+	print_centered("press x to start", height, 7)
 end
 
 function draw_game()
 	if show_inventory == false then 	
 		camera(camera_x,camera_y) -- run before map to avoid inventory stutter
-		
 		map(0,0,0,0,128,32) -- draw game level
 		spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
 		spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
@@ -90,17 +95,11 @@ function draw_game()
 		if text.active == true then draw_conversation()	end
 	end
 	if show_inventory == true then
-		tmp_camera_x = camera_x -- store previous camera position so we can return to it later
-		tmp_camera_y = camera_y
+		draw_inventory()
 		camera_x = 0 -- put camera at 0,0 as that's the way I'm drawing sentence game
 		camera_y = 0
 		camera(camera_x,camera_y)
-		rectfill(0, 0, 127, 127, 6) -- fill screen
-		rect(0, 0, 127, 127, 3) -- screen border 
-		rect(0, 0, 127, 6, 3) -- top heading
-		--string = "inventory"
-		--print(string,64 - (#string * 2),1,7) -- heading text
-		if text.pages == true then draw_pages_minigame() end
+		if text.pages == true then draw_animal_questions() end
 	end 	
 end
 
@@ -179,20 +178,37 @@ function character_arrays()
 	-- print(t)
 end
 
-function view_inventory()
+function create_inventory()
+	inventory={}
+	show_inventory = false
+	inventory.state = "questions"
+end
+
+function on_inventory_button_press()
 	if (btnp(🅾️)) and show_inventory == false then
 		show_inventory = true
-		camera(0,0) -- move camera to 0,0 as we always display inventory here
-		previous_conversation_state = conversation_state -- store this so we can return to previous later
-		conversation_state = "habitat"
+		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
+		tmp_camera_y = camera_y
 	elseif (btnp(🅾️)) and show_inventory == true then
 		show_inventory = false
-		conversation_state = previous_conversation_state -- return to previous convo state
-		camera_x = tmp_camera_x
+		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
 	end
 end
 
+function draw_inventory()
+	-- draw inventory (which currently is just the question mini-game)
+	if (inventory.state == "top") then
+		rectfill(0, 0, 127, 127, 7) -- fill screen
+		rect(0, 0, 127, 127, 3) -- screen border 
+		rect(0, 0, 127, 6, 3) -- top heading
+	elseif (inventory.state == "questions") then
+		question_minigame()
+		rectfill(0, 0, 127, 127, 6) -- fill screen
+		rect(0, 0, 127, 127, 3) -- screen border 
+		rect(0, 0, 127, 6, 3) -- top heading
+	end
+end
 
 -->8
 --player functions
@@ -214,15 +230,15 @@ end
 
 function animate_player()
 	if player.velocity_x != 0 or player.velocity_y != 0 then
-		if time() - anim_time > anim_wait then
+		if time() - playerAnimTime > playerAnimWait then
 			player.sprite += 1
-			anim_time = time()
+			playerAnimTime = time()
 			if (player.sprite > 4 ) then
 				player.sprite = 1
 			end
 		end	
 	else
-		anim_time = 0
+		playerAnimTime = 0
 		player.sprite = 1
 	end
 end
@@ -358,11 +374,45 @@ function move_brian()
 	end
 end
 
+function brian_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+	brian.speed = 0
+  		if conversation_state == "none" then			
+			conversation_state = "start"
+			text.character = "brian"
+			notNowBrian = true
+			brianWaiting = time()
+		end 
+	else
+		if text.character == "brian" then -- if player walks away instead of starting conversation			
+			brian.speed = 0.2	 	
+			conversation_state = "none"
+			text.character = "nobody"
+			text.active = false
+		end
+ 	end
+end
+
 function create_owl()
 	owl={}
 	owl.x = 476
 	owl.y = 8
 	owl.sprite = 5
+end
+
+function owl_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
+  		if conversation_state == "none" then			
+			conversation_state = "start"
+			text.character = "owl"
+		end 
+	else
+		if text.character == "owl" then -- if player walks away instead of starting conversation			
+			conversation_state = "none"
+			text.character = "nobody"
+			text.active = false
+		end
+ 	end
 end
 
 function animate_owl()
@@ -390,6 +440,41 @@ function create_signs()
 	sign2.x = 416
 	sign2.y = 16
 	sign2.sprite = 19
+end
+
+function sign_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+  		if conversation_state == "none" then			
+			conversation_state = "sign"
+			readingSign = true	
+			text.character = "sign"			
+		end 
+	else
+		if text.character == "sign" then -- if player walks away instead of starting conversation			
+			conversation_state = "none"
+			readingSign = false
+			text.character = "nobody"
+			text.active = false
+		end
+ 	end
+end
+
+function check_character_collision()
+	-- check if next to Wise Old Owl
+	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
+	end
+
+	-- check if next to a sign
+	if player.x > 400 then
+		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
+		end
+	else
+		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
+		end
+	end
+
+
+
 end
 
 
@@ -472,67 +557,11 @@ function solid(x,y)
 	end		
 end
 
-function brian_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-	brian.speed = 0
-  		if conversation_state == "none" then			
-			conversation_state = "start"
-			text.character = "brian"
-			notNowBrian = true
-			brianWaiting = time()
-		end 
-	else
-		if text.character == "brian" then -- if player walks away instead of starting conversation			
-			brian.speed = 0.2	 	
-			conversation_state = "none"
-			text.character = "nobody"
-			text.active = false
-		end
- 	end
-end
-
-function owl_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
-  		if conversation_state == "none" then			
-			conversation_state = "start"
-			text.character = "owl"
-		end 
-	else
-		if text.character == "owl" then -- if player walks away instead of starting conversation			
-			conversation_state = "none"
-			text.character = "nobody"
-			text.active = false
-		end
- 	end
-end
-
-function sign_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-  		if conversation_state == "none" then			
-			conversation_state = "sign"
-			readingSign = true	
-			text.character = "sign"			
-		end 
-	else
-		if text.character == "sign" then -- if player walks away instead of starting conversation			
-			conversation_state = "none"
-			readingSign = false
-			text.character = "nobody"
-			text.active = false
-		end
- 	end
-end
-
 
 -->8
 -- conversation and text functions (includes menu)
-function format_text_centered(array, colour) -- used for menu
-
-	height = 50
-	for i in all(array) do
-		print(i,64-#i*2, height, colour)
-		height += 6
-	end
+function print_centered(str, height, colour)
+	print(str, 64 - (#str * 2), height, colour) 
 end
 
 function init_conversation_text()
@@ -555,7 +584,7 @@ function new_conversation(txt)
 	text.active = true -- draw game displays conversation if this is true
 end
 
-function new_pages(txt)
+function store_animal_questions(txt)
 	-- function called if conversation_state is a certain value and when called
 	-- predefined text is stored in the text.string array and can handle multiple strings
 	-- being passed to it and stores each in their own array element
@@ -563,10 +592,9 @@ function new_pages(txt)
 	text.pages = true -- draw game displays pages minigame if this is true
 end
 
-function new_pages_answers(txt)
-	-- function called if conversation_state is a certain value and when called
-	-- predefined text is stored in the text.string array and can handle multiple strings
-	-- being passed to it and stores each in their own array element
+function store_animal_answers(txt)
+	-- function called if conversation_state == habitat and predefined text is stored in 
+	-- text.string array which can handle multiple strings and stores each in own array element
 	text.pages_answers = txt
 end
 
@@ -614,92 +642,74 @@ function draw_conversation()
 end
 
 function conversation_system()
-
-	-- check if next to Wise Old Owl
-	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
-	end
-
-	-- check if next to a sign
-	if player.x > 400 then
-		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
-		end
-	else
-		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
-		end
-	end
-
 	-- none == no conversation
 	-- start == player can choose to start conversation
 	-- levelx == player in conversation
-	if conversation_state == "start" then
-		new_conversation({text.character,"press x to talk"})
-		if (btnp(❎)) then						
-			conversation_state = "level1"
+	if show_inventory == false then -- to stop buttons affecting conversations
+		if conversation_state == "start" then
+			new_conversation({text.character,"press x to talk"})
+			if (btnp(❎)) then						
+				conversation_state = "level1"
+			end	
+			
+		-- BRIAN
+		elseif conversation_state == "level1" and text.character == "brian" then
+			new_conversation({"ruff! morning furlock!"}) 
+			if (btnp(❎)) then		
+				conversation_state = "level2"
+			end
+		elseif conversation_state == "level2" and text.character == "brian" then		
+			new_conversation({"i dont have anything","else to say!","bye!"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+
+		-- OWL
+		elseif conversation_state == "level1" and text.character == "owl" then
+			new_conversation({"hmm, what now furlock?"}) 
+			if (btnp(❎)) then		
+				conversation_state = "level2"
+			end
+		elseif conversation_state == "level2" and text.character == "owl" then		
+			new_conversation({"hurrumph!"})
+			if (btnp(❎)) then		
+				conversation_state = "none"
+			end
+
+		-- SIGNS
+		elseif conversation_state == "sign" and player.x < 400 then
+			new_conversation({text.character, "press x to read"})
+			if (btnp(❎)) then		
+				conversation_state = "sign2"			
+			end
+		elseif conversation_state == "sign2" then
+			new_conversation({"owl's house this way"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+		elseif conversation_state == "sign" and player.x > 400 then
+			new_conversation({text.character, "press x to read"})
+			if (btnp(❎)) then		
+				conversation_state = "sign3"			
+			end
+		elseif conversation_state == "sign3" then
+			new_conversation({"i'm very busy you know"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
 		end	
-	-- BRIAN
-	elseif conversation_state == "level1" and text.character == "brian" then
-		new_conversation({"ruff! morning furlock!"}) 
-		if (btnp(❎)) then		
-			conversation_state = "level2"
-		end
-	elseif conversation_state == "level2" and text.character == "brian" then		
-		new_conversation({"i dont have anything","else to say!","bye!"})
-		if (btnp(❎)) then
-			conversation_state = "none"
-		end
+	end
+end
 
-	-- OWL
-	elseif conversation_state == "level1" and text.character == "owl" then
-		new_conversation({"hmm, what now furlock?"}) 
-		if (btnp(❎)) then		
-			conversation_state = "level2"
-		end
-	elseif conversation_state == "level2" and text.character == "owl" then		
-		new_conversation({"hurrumph!"})
-		if (btnp(❎)) then		
-			conversation_state = "none"
-		end
-
-	-- SIGNS
-	elseif conversation_state == "sign" and player.x < 400 then
-		new_conversation({text.character, "press x to read"})
-		if (btnp(❎)) then		
-			conversation_state = "sign2"			
-		end
-	elseif conversation_state == "sign2" then
-		new_conversation({"owl's house this way"})
-		if (btnp(❎)) then
-			conversation_state = "none"
-		end
-
-	elseif conversation_state == "sign" and player.x > 400 then
-		new_conversation({text.character, "press x to read"})
-		if (btnp(❎)) then		
-			conversation_state = "sign3"			
-		end
-	elseif conversation_state == "sign3" then
-		new_conversation({"i'm very busy you know"})
-		if (btnp(❎)) then
-			conversation_state = "none"
-		end
-
-	elseif conversation_state == "habitat" then
-		new_pages({"a fox lives in a <       >"})
-		new_pages_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+function question_minigame()
+	if inventory.state == "questions" then
+		store_animal_questions({"a fox lives in a <       >"})
+		store_animal_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
 		text.pages_correct = 1	
 	end
 end
 
-text_array = {}
-text_array[1] = "furlock bones"
-text_array[2] = "the case of the lost animals"
-text_array[3] = ""
-text_array[4] = ""
-text_array[5] = ""
-text_array[6] = ""
-text_array[7] = "press x to start"
-
-function draw_pages_minigame()	
+function draw_animal_questions()	
 	-- ** QUESTION LOGIC** 
 	-- determine longest line of text
 	local maxTextWidth = 0
@@ -763,14 +773,14 @@ function draw_pages_minigame()
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
 		print(txt, tx, ty, 0) -- print the current possible answer
 		if correct == true then
-			print("yes, well done!",10,20,11)
+			print_centered("yes, well done!",108,11)
 		elseif correct == false then
-			print("i don't think that's right.",10,20,8)
+			print_centered("i don't think that's right", 108, 8)
 		end
-		print("UP/DOWN AND X TO SELECT",15,120,13)		
+		print_centered("UP,DOWN AND X TO SELECT", 120, 13)		
 	end
 
-	-- change selected question
+	-- use up and down to select a question
 	if (btnp(3)) then 
 		if text.pages_selection > #text.pages_answers-1 then
 			text.pages_selection = 1
@@ -790,16 +800,16 @@ function draw_pages_minigame()
 		end
 	end
 
-	-- check for correct answer
+	-- check if correct
 	if (btnp(❎)) then
 		if text.pages_selection == text.pages_correct then correct = true			
 		else correct = false end
 	end
 end
 
+
 -->8
 -- back of house functions
-
 function toggle_debug_mode()	
 	if (btnp(🅾️)) and (debug_mode == false) then
 		debug_mode = true	
@@ -888,7 +898,6 @@ function map_swapper()
 	char6=_n
 end
 
--- music function
 function musicControl()
 	if (activeGame == false) and musicState != 'menu' then
 			music(track_2start,0,120)
@@ -900,7 +909,7 @@ function musicControl()
 	end
 end
 
--- maps
+-- map strings
 owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
 map0 = "ac_?@m=?t<6rh>pbp<ppam=? a6c?l_dgj[qh>?ap<ppam=?0aafli=d8<6ipi=d8<6i?5-dej{uf>?ap<ppam=?!a-?m-ahn<pbpy{v?t-d?+da9<)ja&7g?p-g%<)b1-rdpm_dpy]z?t-d?+da9<?iaauq9&=?n&_?c-ahny]z?t-d?+da9<?iaavu9<_k7[si*e8l7;si*[=g%<?a1-63}_rd?l-d?+da9<5jam=?l<-h,;8l*<)a([sl);-?c<-?<a-i?xca9<)gp<ppam=? a-i?,_d?+da9<5jam=?.<-?<a-i?xca9<?vam=? a-i?5fa9<5jam=?xb-i?xca9<?vam=? a-i?5faaa"
 
