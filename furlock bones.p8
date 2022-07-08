@@ -28,7 +28,7 @@ function _init()
 	create_owl()
 	create_signs()
 	init_conversation()
-	init_animal_word_game()
+	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once			
 	create_inventory()	
 end
@@ -101,51 +101,8 @@ function draw_game()
 		camera_x = 0 -- put camera at 0,0 as that's the way I'm drawing sentence game
 		camera_y = 0
 		camera(camera_x,camera_y)
-		if text.pages == true then draw_animal_questions() end
+		if wordgame.pages == true then draw_wordgame_questions() end
 	end 	
-end
-
-function display_book_sentences()	-- WTF IS THIS? IT'S NOT EVEN USED!!
-	-- determine longest line of text
-	local maxTextWidth = 0
-	for i=1, #text.string do 
-		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
-		end
-	end
-
-	-- define textbox with border
-	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
-
-	-- ** DO I NEED THIS IF IT'S THE GAME?? I DONT THINK SO **
-	-- if player close to screen bottom, draw text box at top, else draw at bottom
-	if (player.y < 200) then
-		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
-	else
-		textbox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
-	end	
-	
-	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
-
-	-- draw outer border text box
-	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
-
-	-- write text
-	for i=1, #text.string do  -- the # gets the legnth of the array 'text'
-		local txt = text.string[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
-		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		if (conversation_state == "start") and i == 1 
-		 or (conversation_state == "sign") and i == 1 
-		 then 
-			print(txt, tx, ty, 7) -- print first text line white
-		else
-			print(txt, tx, ty, 1)
-		end
-	end
 end
 
 function character_arrays()
@@ -206,7 +163,7 @@ function draw_inventory()
 		rect(0, 0, 127, 127, 3) -- screen border 
 		rect(0, 0, 127, 6, 3) -- top heading
 	elseif (inventory.state == "questions") then
-		question_minigame()
+		launch_wordgame()
 		rectfill(0, 0, 127, 127, 6) -- fill screen
 		rect(0, 0, 127, 127, 3) -- screen border 
 		rect(0, 0, 127, 6, 3) -- top heading
@@ -573,16 +530,11 @@ function init_conversation()
 	conversation.string = {} -- empty array to store individual string?
 	conversation.character = "nobody"
 	conversation_state = "none" -- initialising to none (not done elsewhere)
-
-	--text.pages = false
-	--text.pages_answers = {} -- store page minigame answers
-	--text.pages_correct = 1
-	--text.pages_selection = 1		
 end
 
 function new_conversation(txt)
 	-- function called if conversation_state is a certain value and when called
-	-- predefined text is stored in the text.string array and can handle multiple strings
+	-- predefined text is stored in the conversation.string array and can handle multiple strings
 	-- being passed to it and stores each in their own array element
 	conversation.string = txt
 	conversation.active = true -- draw game displays conversation if this is true
@@ -649,17 +601,16 @@ function conversation_system()
 end
 
 function draw_conversation()
-	-- this runs if conversation.active is true
-	-- determine longest line of text
-	local maxConversationWidth = 0
+	-- this runs if conversation.active is true and determines longest sentence length
+	local maxSentenceWidth = 0
 	for i=1, #conversation.string do -- the # gets array length
-		if #conversation.string[i] > maxConversationWidth then -- loop through array and find longest text element
-			maxConversationWidth = #conversation.string[i] -- set max width to longest element so box wide enough
+		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
+			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
 		end
 	end
 
-	-- define textbox with border
-	local conversationBox_x = camera_x + 64 - maxConversationWidth *2 -1 -- -1 for border and centred
+	-- define textbox with border (the -1 is for border and centred)
+	local conversationBox_x = camera_x + 64 - maxSentenceWidth *2 -1
 
 	-- if player close to screen bottom, draw text box at top, else draw at bottom
 	if (player.y < 200) then
@@ -668,7 +619,7 @@ function draw_conversation()
 		conversationBox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
 	end	
 	
-	local conversationBox_width = conversationBox_x+(maxConversationWidth*4)  -- *4 to account for character width
+	local conversationBox_width = conversationBox_x+(maxSentenceWidth*4)  -- *4 to account for character width
 	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
 
 	-- draw outer border text box
@@ -693,47 +644,35 @@ end
 
 -->8
 -- word game functions
-function init_animal_word_game()
-	text = {} -- create empty array to store multiple strings	
-	text.pages = false
-	text.string = {} -- empty array to store individual string?
-	text.pages_answers = {} -- store page minigame answers
-	text.pages_correct = 1
-	text.pages_selection = 1
-	--text.active = false -- initialise to false
-	--text.character = "nobody"
-	--conversation_state = "none" -- initialising to none (not done elsewhere)
+function init_wordgame()
+	wordgame = {} -- create empty array to store multiple strings	
+	wordgame.pages = false
+	wordgame.string = {} -- empty array to store individual string?
+	wordgame.pages_answers = {} -- store page wordgame answers	
+	wordgame.pages_selection = 1	
 end
 
-function store_animal_questions(txt)
-	-- function called if conversation_state is a certain value and when called
-	-- predefined text is stored in the text.string array and can handle multiple strings
-	-- being passed to it and stores each in their own array element
-	text.string = txt
-	text.pages = true -- draw game displays pages minigame if this is true
+function store_wordgame_questions(txt)
+	wordgame.string = txt
+	wordgame.pages = true -- draw game displays pages wordgame if this is true
 end
 
-function store_animal_answers(txt)
-	-- function called if conversation_state == habitat and predefined text is stored in 
-	-- text.string array which can handle multiple strings and stores each in own array element
-	text.pages_answers = txt
+function store_wordgame_answers(txt)
+	wordgame.pages_answers = txt
 end
 
-function question_minigame()
-	if inventory.state == "questions" then -- not required as checked above & launches this function
-		store_animal_questions({"a fox lives in a <       >"})
-		store_animal_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-		text.pages_correct = 1	
-	end
+function launch_wordgame()
+	store_wordgame_questions({"a fox lives in a <       >"})
+	store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+	wordgame.correct_answer = 1
 end
 
-function draw_animal_questions() -- based on draw_conversation
-	-- ** QUESTION LOGIC** 
-	-- determine longest line of text
+function draw_wordgame_questions() -- based on draw_conversation
+-- ** QUESTION LOGIC** 
 	local maxTextWidth = 0
-	for i=1, #text.string do -- the # gets array length
-		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
+	for i=1, #wordgame.string do -- the # gets array length
+		if #wordgame.string[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.string[i] -- set max width to longest element so box wide enough
 		end
 	end
 
@@ -744,29 +683,29 @@ function draw_animal_questions() -- based on draw_conversation
 	local textbox_y = camera_y + 10 -- controls vertical location of text box (0 top, 127 bottom)
 	
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
+	local textbox_height = textbox_y + #wordgame.string * 6 -- *6 for character height
 
 	-- draw outer border text box
 	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
 	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
 
 	-- write text
-	for i=1, #text.string do  -- the # gets the legnth of the array 'text'
-		local txt = text.string[i]
+	for i=1, #wordgame.string do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.string[i]
 		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
 		print(txt, tx, ty, 1)
 	end
 
-	-- ** ANSWER LOGIC ** 
-	-- #text.pages_answers this is how many answers there are and thus how many boxes we need
+-- ** ANSWER LOGIC ** 
+	-- #wordgame.pages_answers this is how many answers there are and thus how many boxes we need
 
 	-- determine longest line of text
 	local maxTextWidth = 0
-	for i=1, #text.pages_answers do -- the # gets array length
-		if #text.pages_answers[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #text.pages_answers[i] -- set max width to longest element so box wide enough
+	for i=1, #wordgame.pages_answers do -- the # gets array length
+		if #wordgame.pages_answers[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.pages_answers[i] -- set max width to longest element so box wide enough
 		end
 	end
 
@@ -780,12 +719,12 @@ function draw_animal_questions() -- based on draw_conversation
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
 
 	-- write text
-	for i=1, #text.pages_answers do  -- the # gets the legnth of the array 'text'
-		local txt = text.pages_answers[i]
+	for i=1, #wordgame.pages_answers do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.pages_answers[i]
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_yy - 5 +(i*16) -- padding for top of box but as loop starts at 1 we subtract 5
 		
-		if text.pages_selection == i then
+		if wordgame.pages_selection == i then
 			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 		end
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
@@ -800,27 +739,27 @@ function draw_animal_questions() -- based on draw_conversation
 
 	-- use up and down to select a question
 	if (btnp(3)) then 
-		if text.pages_selection > #text.pages_answers-1 then
-			text.pages_selection = 1
+		if wordgame.pages_selection > #wordgame.pages_answers-1 then
+			wordgame.pages_selection = 1
 			correct = none
 		else
-			text.pages_selection += 1
+			wordgame.pages_selection += 1
 			correct = none
 		end
 	end
 	if (btnp(2)) then -- 2 is up
-		if text.pages_selection == 1 then
-			text.pages_selection = #text.pages_answers
+		if wordgame.pages_selection == 1 then
+			wordgame.pages_selection = #wordgame.pages_answers
 			correct = none
 		else
-			text.pages_selection -= 1
+			wordgame.pages_selection -= 1
 			correct = none
 		end
 	end
 
 	-- check if correct
 	if (btnp(❎)) then
-		if text.pages_selection == text.pages_correct then correct = true			
+		if wordgame.pages_selection == wordgame.correct_answer then correct = true			
 		else correct = false end
 	end
 end
