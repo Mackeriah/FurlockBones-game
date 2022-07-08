@@ -27,7 +27,8 @@ function _init()
 	create_brian()
 	create_owl()
 	create_signs()
-	init_conversation_text()		
+	init_conversation()
+	init_animal_word_game()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once			
 	create_inventory()	
 end
@@ -71,8 +72,7 @@ function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
 	if activeGame == true then draw_game() end		
-	-- player.x-20,player.y-20,8
-	-- print(text.string[2])
+	-- player.x-20,player.y-20,8	
 	-- print("x: "..player.x-20,player.y-20,8)
 end
 
@@ -94,7 +94,7 @@ function draw_game()
 		spr(owl.sprite,owl.x,owl.y,1,1,1)
 		spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
 		spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
-		if text.active == true then draw_conversation()	end
+		if conversation.active == true then draw_conversation()	end
 	end
 	if show_inventory == true then
 		draw_inventory()
@@ -105,7 +105,7 @@ function draw_game()
 	end 	
 end
 
-function display_book_sentences()	
+function display_book_sentences()	-- WTF IS THIS? IT'S NOT EVEN USED!!
 	-- determine longest line of text
 	local maxTextWidth = 0
 	for i=1, #text.string do 
@@ -117,6 +117,7 @@ function display_book_sentences()
 	-- define textbox with border
 	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
+	-- ** DO I NEED THIS IF IT'S THE GAME?? I DONT THINK SO **
 	-- if player close to screen bottom, draw text box at top, else draw at bottom
 	if (player.y < 200) then
 		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
@@ -199,7 +200,7 @@ function on_inventory_button_press()
 end
 
 function draw_inventory()
-	-- draw inventory (which currently is just the question mini-game)
+	-- draw inventory
 	if (inventory.state == "top") then
 		rectfill(0, 0, 127, 127, 7) -- fill screen
 		rect(0, 0, 127, 127, 3) -- screen border 
@@ -211,6 +212,7 @@ function draw_inventory()
 		rect(0, 0, 127, 6, 3) -- top heading
 	end
 end
+
 
 -->8
 --player functions
@@ -384,16 +386,16 @@ function brian_collision(playerx,playery,charx,chary)
 	brian.speed = 0
   		if conversation_state == "none" then			
 			conversation_state = "start"
-			text.character = "brian"
+			conversation.character = "brian"
 			brian.wait = true
 			brian.waitTime = time()
 		end 
 	else
-		if text.character == "brian" then -- if player walks away instead of starting conversation			
+		if conversation.character == "brian" then -- if player walks away instead of starting conversation			
 			brian.speed = 0.2	 	
 			conversation_state = "none"
-			text.character = "nobody"
-			text.active = false
+			conversation.character = "nobody"
+			conversation.active = false
 		end
  	end
 end
@@ -411,13 +413,13 @@ function owl_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
   		if conversation_state == "none" then			
 			conversation_state = "start"
-			text.character = "owl"
+			conversation.character = "owl"
 		end 
 	else
-		if text.character == "owl" then -- if player walks away instead of starting conversation			
+		if conversation.character == "owl" then -- if player walks away instead of starting conversation			
 			conversation_state = "none"
-			text.character = "nobody"
-			text.active = false
+			conversation.character = "nobody"
+			conversation.active = false
 		end
  	end
 end
@@ -432,7 +434,7 @@ function animate_owl()
 				owl.sprite = 6
 			end
 		end			
-		if text.character == "owl" and conversation_state != "start" then
+		if conversation.character == "owl" and conversation_state != "start" then
 			owl.sprite = 5 -- owl sits down when talking
 		end
 	end
@@ -450,23 +452,6 @@ function create_signs()
 	readingSign = false
 end
 
-function sign_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-  		if conversation_state == "none" then			
-			conversation_state = "sign"
-			readingSign = true
-			text.character = "sign"			
-		end 
-	else
-		if text.character == "sign" then -- if player walks away instead of starting conversation			
-			conversation_state = "none"
-			readingSign = false
-			text.character = "nobody"
-			text.active = false
-		end
- 	end
-end
-
 function check_character_collision()
 	-- check if next to Wise Old Owl
 	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
@@ -480,9 +465,6 @@ function check_character_collision()
 		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
 		end
 	end
-
-
-
 end
 
 
@@ -565,31 +547,162 @@ function solid(x,y)
 	end		
 end
 
-
--->8
--- conversation and text functions (includes menu)
-function print_centered(str, height, colour)
-	print(str, 64 - (#str * 2), height, colour) 
+function sign_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+  		if conversation_state == "none" then			
+			conversation_state = "sign"
+			readingSign = true
+			conversation.character = "sign"			
+		end 
+	else
+		if conversation.character == "sign" then -- if player walks away instead of starting conversation			
+			conversation_state = "none"
+			readingSign = false
+			conversation.character = "nobody"
+			conversation.active = false
+		end
+ 	end
 end
 
-function init_conversation_text()
-	text = {} -- create empty array to store multiple strings
-	text.active = false -- initialise to false
-	text.pages = false
-	text.string = {} -- empty array to store individual string?
-	text.pages_answers = {} -- store page minigame answers
-	text.pages_correct = 1
-	text.pages_selection = 1
-	text.character = "nobody"
+
+-->8
+-- conversation and menu functions
+function init_conversation()
+	conversation = {} -- create empty array to store multiple strings
+	conversation.active = false -- initialise to false	
+	conversation.string = {} -- empty array to store individual string?
+	conversation.character = "nobody"
 	conversation_state = "none" -- initialising to none (not done elsewhere)
+
+	--text.pages = false
+	--text.pages_answers = {} -- store page minigame answers
+	--text.pages_correct = 1
+	--text.pages_selection = 1		
 end
 
 function new_conversation(txt)
 	-- function called if conversation_state is a certain value and when called
 	-- predefined text is stored in the text.string array and can handle multiple strings
 	-- being passed to it and stores each in their own array element
-	text.string = txt
-	text.active = true -- draw game displays conversation if this is true
+	conversation.string = txt
+	conversation.active = true -- draw game displays conversation if this is true
+end
+
+function conversation_system()
+	-- none == no conversation
+	-- start == player can choose to start conversation
+	-- levelx == player in conversation
+	if show_inventory == false then -- to stop buttons affecting conversations
+		if conversation_state == "start" then
+			new_conversation({conversation.character,"press x to talk"})
+			if (btnp(❎)) then						
+				conversation_state = "level1"
+			end	
+			
+		-- BRIAN
+		elseif conversation_state == "level1" and conversation.character == "brian" then
+			new_conversation({"ruff! morning furlock!"}) 
+			if (btnp(❎)) then		
+				conversation_state = "level2"
+			end
+		elseif conversation_state == "level2" and conversation.character == "brian" then		
+			new_conversation({"i dont have anything","else to say!","bye!"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+
+		-- OWL
+		elseif conversation_state == "level1" and conversation.character == "owl" then
+			new_conversation({"hmm, what now furlock?"}) 
+			if (btnp(❎)) then		
+				conversation_state = "level2"
+			end
+		elseif conversation_state == "level2" and conversation.character == "owl" then		
+			new_conversation({"hurrumph!"})
+			if (btnp(❎)) then		
+				conversation_state = "none"
+			end
+
+		-- SIGNS
+		elseif conversation_state == "sign" and player.x < 400 then
+			new_conversation({conversation.character, "press x to read"})
+			if (btnp(❎)) then		
+				conversation_state = "sign2"			
+			end
+		elseif conversation_state == "sign2" then
+			new_conversation({"owl's house this way"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+		elseif conversation_state == "sign" and player.x > 400 then
+			new_conversation({conversation.character, "press x to read"})
+			if (btnp(❎)) then		
+				conversation_state = "sign3"			
+			end
+		elseif conversation_state == "sign3" then
+			new_conversation({"i'm very busy you know"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+		end	
+	end
+end
+
+function draw_conversation()
+	-- this runs if conversation.active is true
+	-- determine longest line of text
+	local maxConversationWidth = 0
+	for i=1, #conversation.string do -- the # gets array length
+		if #conversation.string[i] > maxConversationWidth then -- loop through array and find longest text element
+			maxConversationWidth = #conversation.string[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- define textbox with border
+	local conversationBox_x = camera_x + 64 - maxConversationWidth *2 -1 -- -1 for border and centred
+
+	-- if player close to screen bottom, draw text box at top, else draw at bottom
+	if (player.y < 200) then
+		conversationBox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	else
+		conversationBox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
+	end	
+	
+	local conversationBox_width = conversationBox_x+(maxConversationWidth*4)  -- *4 to account for character width
+	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
+
+	-- draw outer border text box
+	rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 0)
+	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 12)
+
+	-- write text
+	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'
+		local txt = conversation.string[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		if (conversation_state == "start") and i == 1 
+		 or (conversation_state == "sign") and i == 1 
+		 then 
+			print(txt, tx, ty, 7) -- print first text line white
+		else
+			print(txt, tx, ty, 1)
+		end
+	end
+end
+
+-->8
+-- word game functions
+function init_animal_word_game()
+	text = {} -- create empty array to store multiple strings	
+	text.pages = false
+	text.string = {} -- empty array to store individual string?
+	text.pages_answers = {} -- store page minigame answers
+	text.pages_correct = 1
+	text.pages_selection = 1
+	--text.active = false -- initialise to false
+	--text.character = "nobody"
+	--conversation_state = "none" -- initialising to none (not done elsewhere)
 end
 
 function store_animal_questions(txt)
@@ -606,118 +719,15 @@ function store_animal_answers(txt)
 	text.pages_answers = txt
 end
 
-function draw_conversation()
-	-- this runs if text.active is true
-	-- determine longest line of text
-	local maxTextWidth = 0
-	for i=1, #text.string do -- the # gets array length
-		if #text.string[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #text.string[i] -- set max width to longest element so box wide enough
-		end
-	end
-
-	-- define textbox with border
-	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
-
-	-- if player close to screen bottom, draw text box at top, else draw at bottom
-	if (player.y < 200) then
-		textbox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
-	else
-		textbox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
-	end	
-	
-	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #text.string * 6 -- *6 for character height
-
-	-- draw outer border text box
-	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
-
-	-- write text
-	for i=1, #text.string do  -- the # gets the legnth of the array 'text'
-		local txt = text.string[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
-		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		if (conversation_state == "start") and i == 1 
-		 or (conversation_state == "sign") and i == 1 
-		 then 
-			print(txt, tx, ty, 7) -- print first text line white
-		else
-			print(txt, tx, ty, 1)
-		end
-	end
-end
-
-function conversation_system()
-	-- none == no conversation
-	-- start == player can choose to start conversation
-	-- levelx == player in conversation
-	if show_inventory == false then -- to stop buttons affecting conversations
-		if conversation_state == "start" then
-			new_conversation({text.character,"press x to talk"})
-			if (btnp(❎)) then						
-				conversation_state = "level1"
-			end	
-			
-		-- BRIAN
-		elseif conversation_state == "level1" and text.character == "brian" then
-			new_conversation({"ruff! morning furlock!"}) 
-			if (btnp(❎)) then		
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and text.character == "brian" then		
-			new_conversation({"i dont have anything","else to say!","bye!"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-
-		-- OWL
-		elseif conversation_state == "level1" and text.character == "owl" then
-			new_conversation({"hmm, what now furlock?"}) 
-			if (btnp(❎)) then		
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and text.character == "owl" then		
-			new_conversation({"hurrumph!"})
-			if (btnp(❎)) then		
-				conversation_state = "none"
-			end
-
-		-- SIGNS
-		elseif conversation_state == "sign" and player.x < 400 then
-			new_conversation({text.character, "press x to read"})
-			if (btnp(❎)) then		
-				conversation_state = "sign2"			
-			end
-		elseif conversation_state == "sign2" then
-			new_conversation({"owl's house this way"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-		elseif conversation_state == "sign" and player.x > 400 then
-			new_conversation({text.character, "press x to read"})
-			if (btnp(❎)) then		
-				conversation_state = "sign3"			
-			end
-		elseif conversation_state == "sign3" then
-			new_conversation({"i'm very busy you know"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-		end	
-	end
-end
-
 function question_minigame()
-	if inventory.state == "questions" then
+	if inventory.state == "questions" then -- not required as checked above & launches this function
 		store_animal_questions({"a fox lives in a <       >"})
 		store_animal_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
 		text.pages_correct = 1	
 	end
 end
 
-function draw_animal_questions()	
+function draw_animal_questions() -- based on draw_conversation
 	-- ** QUESTION LOGIC** 
 	-- determine longest line of text
 	local maxTextWidth = 0
@@ -824,6 +834,10 @@ function toggle_debug_mode()
 	elseif (btnp(🅾️)) and (debug_mode == true) then
 	  	debug_mode = false
 	end	
+end
+
+function print_centered(str, height, colour)
+	print(str, 64 - (#str * 2), height, colour) 
 end
 
 function log(text,overwrite) -- external logging file
