@@ -9,7 +9,8 @@ U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button)
 CTRL + X deletes a line of code!
 --]]
 
--- Furlock Bones: Consulting Dogtective --
+--[[ CS50 Final Project for Owen FitzGerald 2022
+	 Furlock Bones: Consulting Dogtective ]]
 
 --init, update and draw functions
 function _init()
@@ -19,26 +20,27 @@ function _init()
 	tmp_camera_x = 0
 	tmp_camera_y = 0
 	activeGame = false
-	playerAnimTime = 0
-	playerAnimWait = 0.1	
-	owl_time = 0
-	owl_wait = 1
+	init_music()
+	init_camera()	
 	map_swapper()
 	create_player()
 	create_brian()
 	create_owl()
 	create_signs()
 	init_conversation_text()		
-	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once
-	readingSign = false	
-	notNowBrian = false
-	current_map_maximum_x = 624
-	current_map_maximum_y = 248	
+	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once			
+	create_inventory()	
+end
+
+function init_music()
 	track_1start = 0 -- this indicates the point in the music the track starts
 	track_2start = 11
 	musicState = 'start' -- used for music, seems bizarely complex!
-	create_inventory()
-	-- show_inventory = false
+end
+
+function init_camera()
+	current_map_maximum_x = 624
+	current_map_maximum_y = 248
 end
 
 -- map compress related, try to add to function or init
@@ -226,19 +228,21 @@ function create_player()
 	player.width = 7
 	player.height = 7
 	player.sprite = 1
+	player.animTime = 0
+	player.animWait = 0.1		
 end
 
 function animate_player()
 	if player.velocity_x != 0 or player.velocity_y != 0 then
-		if time() - playerAnimTime > playerAnimWait then
+		if time() - player.animTime > player.animWait then
 			player.sprite += 1
-			playerAnimTime = time()
+			player.animTime = time()
 			if (player.sprite > 4 ) then
 				player.sprite = 1
 			end
 		end	
 	else
-		playerAnimTime = 0
+		player.animTime = 0
 		player.sprite = 1
 	end
 end
@@ -343,17 +347,18 @@ function create_brian()
 	brian.y = 24
 	brian.sprite = 22
 	brian.speed = 0.3
-	brian.direction = -1	
+	brian.direction = -1
+	brian.wait = false	
+	brian.waitTime = 0
 end
 
 function move_brian()
 	if (brian_collision(player.x,player.y,brian.x,brian.y)) == true then 
 		-- this just stops Brian moving any closer and stops him pestering for a while		
-	else
-		-- check that Brian hasn't recently pestered player
-		if notNowBrian == true then
-			if (time() >= brianWaiting +20 ) then
-				notNowBrian = false
+	else		
+		if brian.wait == true then -- wait if Brian's recently pestered player
+			if (time() >= brian.waitTime +5 ) then
+				brian.wait = false
 			else return end
 		else
 			if player.x < brian.x then
@@ -380,8 +385,8 @@ function brian_collision(playerx,playery,charx,chary)
   		if conversation_state == "none" then			
 			conversation_state = "start"
 			text.character = "brian"
-			notNowBrian = true
-			brianWaiting = time()
+			brian.wait = true
+			brian.waitTime = time()
 		end 
 	else
 		if text.character == "brian" then -- if player walks away instead of starting conversation			
@@ -398,6 +403,8 @@ function create_owl()
 	owl.x = 476
 	owl.y = 8
 	owl.sprite = 5
+	owl.time = 0
+	owl.wait = 1	
 end
 
 function owl_collision(playerx,playery,charx,chary)
@@ -418,9 +425,9 @@ end
 function animate_owl()
 	-- eliza says owl should NOT move if you're talking to him
 	if player.x > 430 then
-		if time() - owl_time > owl_wait then
+		if time() - owl.time > owl.wait then
 			owl.sprite += 1
-			owl_time = time()
+			owl.time = time()
 			if (owl.sprite > 8 ) then -- owl flaps wings to pass the time
 				owl.sprite = 6
 			end
@@ -440,13 +447,14 @@ function create_signs()
 	sign2.x = 416
 	sign2.y = 16
 	sign2.sprite = 19
+	readingSign = false
 end
 
 function sign_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
   		if conversation_state == "none" then			
 			conversation_state = "sign"
-			readingSign = true	
+			readingSign = true
 			text.character = "sign"			
 		end 
 	else
