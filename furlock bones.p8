@@ -31,8 +31,7 @@ function _init()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once			
 	create_inventory()
-	lost_animals()
-	currentObjective = "talk to brian"
+	lost_animals()	
 end
 
 function init_music()
@@ -71,11 +70,11 @@ function _update60()
 end
 
 function _draw()
-	cls()	
+	cls()
 	if activeGame == false then draw_menu() end
 	if activeGame == true then draw_game() end		
 	-- player.x-20,player.y-20,8
-	--print("lostAnimal: "..lostAnimal,player.x-20,player.y-20,8)
+	--print("inventory.state: "..inventory.state,player.x-20,player.y-20,8)
 end
 
 function draw_menu()
@@ -144,6 +143,7 @@ function create_inventory()
 	inventory={}
 	show_inventory = false
 	inventory.state = "objectives"
+	currentObjective = "goal: talk to brian"
 end
 
 function lost_animals()
@@ -154,6 +154,7 @@ function lost_animals()
 	--animal.direction = -1
 	animal.list = {"fox", "red panda"}
 	animal.active = 1
+	animal.takeHome = false	
 end
 
 function on_inventory_button_press()
@@ -169,17 +170,12 @@ function on_inventory_button_press()
 end
 
 function draw_inventory()
-	-- draw inventory
-	if (inventory.state == "objectives") then
-		rectfill(0, 0, 127, 127, 7) -- fill screen
-		rect(0, 0, 127, 127, 3) -- border 
-		rect(0, 0, 127, 6, 3) -- heading
-		display_objectives()
-	elseif (inventory.state == "display wordgame") then
+	rectfill(0, 0, 127, 127, 7) -- fill screen
+	rect(0, 0, 127, 127, 3) -- border 
+	rect(0, 0, 127, 12, 3) -- heading
+	print_centered(currentObjective,4,8)
+	if (inventory.state == "display wordgame") then
 		launch_wordgame()
-		rectfill(0, 0, 127, 127, 6) -- fill screen
-		rect(0, 0, 127, 127, 3) -- border 
-		rect(0, 0, 127, 6, 3) -- heading
 	end
 end
 
@@ -560,19 +556,19 @@ function conversation_system()
 	if show_inventory == false then -- to stop buttons affecting conversations
 		if conversation_state == "start" then
 			new_conversation({conversation.character,"press x to talk"})
-			if (btnp(❎)) then						
+			if (btnp(❎)) then
 				conversation_state = "level1"
 			end	
 			
 		-- BRIAN
 		elseif conversation_state == "level1" and conversation.character == "brian" then
-			new_conversation({"ruff! morning furlock!", "PRESS X TO CONTINUE"}) 
+			new_conversation({"ruff! morning furlock!"}) 
 			if (btnp(❎)) then		
 				conversation_state = "level2"
 			end
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
 			new_conversation({"i dont have anything","else to say!","bye!"})
-			currentObjective = "talk to wise old owl"
+			currentObjective = "talk to wise old owl"			
 			if (btnp(❎)) then
 				conversation_state = "none"
 			end
@@ -586,7 +582,7 @@ function conversation_system()
 		elseif conversation_state == "level2" and conversation.character == "owl" then		
 			new_conversation({"hurrumph!"})
 			currentObjective = "collect torn page pieces"
-			inventory.state = "display wordgame"
+			inventory.state = "display wordgame"			
 			if (btnp(❎)) then		
 				conversation_state = "none"
 			end
@@ -643,25 +639,22 @@ function draw_conversation()
 	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 12)
 
 	-- write text
-	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'
+	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'		
 		local txt = conversation.string[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
 		if (conversation_state == "start") and i == 1 
 		 or (conversation_state == "sign") and i == 1 
 		 then 
-			print(txt, tx, ty, 7) -- print first text line white
+			print(txt, tx, ty, 7) -- print first text line white		
 		else
 			print(txt, tx, ty, 1)
 		end
-		--print("PRESS X TO CONTINUE",)
 	end
 end
 
 function display_objectives()
-	print_centered("current objective: ",90,8)
-	print_centered(currentObjective,100,8)
+	--
 end
 
 -->8
@@ -686,14 +679,14 @@ end
 function launch_wordgame()
 	lostAnimal = animal.list[animal.active]
 	if lostAnimal == "fox" then
-		store_wordgame_questions({"a fox lives in a <       >"})
+		store_wordgame_questions({"a fox lives in a ?"})
 		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-		wordgame.correct_answer = 1
+		wordgame.correct_answer = 1				
 	elseif lostAnimal == "red panda" then
-		store_wordgame_questions({"a red panda lives in a <       >"})
+		store_wordgame_questions({"a red panda lives in a ?"})
 		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
 		wordgame.correct_answer = 3
-	end
+	end	
 end
 
 function draw_wordgame_questions() -- based on draw_conversation
@@ -709,13 +702,13 @@ function draw_wordgame_questions() -- based on draw_conversation
 	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
 	-- draw text box at top of screen
-	local textbox_y = camera_y + 10 -- controls vertical location of text box (0 top, 127 bottom)
+	local textbox_y = camera_y + 16 -- controls vertical location of text box (0 top, 127 bottom)
 	
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height = textbox_y + #wordgame.string * 6 -- *6 for character height
 
 	-- draw outer border text box
-	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
+	--rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
 	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
 
 	-- write text
@@ -742,7 +735,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
 	-- vertical text box location
-	local textbox_yy = camera_y + 20
+	local textbox_yy = camera_y + 22 -- first question starts here
 	
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
@@ -751,7 +744,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 	for i=1, #wordgame.pages_answers do  -- the # gets the legnth of the array 'text'
 		local txt = wordgame.pages_answers[i]
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_yy - 5 +(i*16) -- padding for top of box but as loop starts at 1 we subtract 5
+		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
 		
 		if wordgame.pages_selection == i then
 			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
@@ -759,30 +752,41 @@ function draw_wordgame_questions() -- based on draw_conversation
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
 		print(txt, tx, ty, 0) -- print the current possible answer
 		if correct == true then
-			print_centered("yes, well done!",108,11)
+			print_centered("yes, well done!",102,11)
+			print_centered("press x to close",110,11)
+			animal.takeHome = true
+			currentObjective = "take the animal home!"
+			inventory.state = ""			
 		elseif correct == false then
 			print_centered("i don't think that's right", 108, 8)
 		end
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)		
 	end
 
-	-- use up and down to select a question
-	if (btnp(3)) then 
-		if wordgame.pages_selection > #wordgame.pages_answers-1 then
-			wordgame.pages_selection = 1
-			correct = none
-		else
-			wordgame.pages_selection += 1
-			correct = none
+	-- use up and down to select a question unless already correctly answered
+	if correct == true then
+		if (btnp(❎)) then			
+			inventory.state = ""
+			wordgame.pages = false
 		end
-	end
-	if (btnp(2)) then -- 2 is up
-		if wordgame.pages_selection == 1 then
-			wordgame.pages_selection = #wordgame.pages_answers
-			correct = none
-		else
-			wordgame.pages_selection -= 1
-			correct = none
+	else
+		if (btnp(3)) then 
+			if wordgame.pages_selection > #wordgame.pages_answers-1 then
+				wordgame.pages_selection = 1
+				correct = none
+			else
+				wordgame.pages_selection += 1
+				correct = none
+			end
+		end
+		if (btnp(2)) then -- 2 is up
+			if wordgame.pages_selection == 1 then
+				wordgame.pages_selection = #wordgame.pages_answers
+				correct = none
+			else
+				wordgame.pages_selection -= 1
+				correct = none
+			end
 		end
 	end
 
@@ -790,7 +794,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 	if (btnp(❎)) then
 		if wordgame.pages_selection == wordgame.correct_answer then 
 			correct = true
-			animal.active += 1
+			--animal.active += 1 -- this moves on to next animal but use it elsewhere instead
 		else correct = false end
 	end
 end
