@@ -30,7 +30,9 @@ function _init()
 	init_conversation()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once			
-	create_inventory()	
+	create_inventory()
+	lost_animals()
+	currentObjective = "talk to brian"
 end
 
 function init_music()
@@ -72,8 +74,8 @@ function _draw()
 	cls()	
 	if activeGame == false then draw_menu() end
 	if activeGame == true then draw_game() end		
-	-- player.x-20,player.y-20,8	
-	-- print("x: "..player.x-20,player.y-20,8)
+	-- player.x-20,player.y-20,8
+	--print("lostAnimal: "..lostAnimal,player.x-20,player.y-20,8)
 end
 
 function draw_menu()
@@ -141,7 +143,17 @@ end
 function create_inventory()
 	inventory={}
 	show_inventory = false
-	inventory.state = "questions"
+	inventory.state = "objectives"
+end
+
+function lost_animals()
+	animal = {}
+	--animal.x = 100
+	--animal.y = 100
+	--animal.sprite = 1
+	--animal.direction = -1
+	animal.list = {"fox", "red panda"}
+	animal.active = 1
 end
 
 function on_inventory_button_press()
@@ -158,15 +170,16 @@ end
 
 function draw_inventory()
 	-- draw inventory
-	if (inventory.state == "top") then
+	if (inventory.state == "objectives") then
 		rectfill(0, 0, 127, 127, 7) -- fill screen
-		rect(0, 0, 127, 127, 3) -- screen border 
-		rect(0, 0, 127, 6, 3) -- top heading
-	elseif (inventory.state == "questions") then
+		rect(0, 0, 127, 127, 3) -- border 
+		rect(0, 0, 127, 6, 3) -- heading
+		display_objectives()
+	elseif (inventory.state == "display wordgame") then
 		launch_wordgame()
 		rectfill(0, 0, 127, 127, 6) -- fill screen
-		rect(0, 0, 127, 127, 3) -- screen border 
-		rect(0, 0, 127, 6, 3) -- top heading
+		rect(0, 0, 127, 127, 3) -- border 
+		rect(0, 0, 127, 6, 3) -- heading
 	end
 end
 
@@ -559,6 +572,7 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
 			new_conversation({"i dont have anything","else to say!","bye!"})
+			currentObjective = "talk to wise old owl"
 			if (btnp(❎)) then
 				conversation_state = "none"
 			end
@@ -571,6 +585,8 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "owl" then		
 			new_conversation({"hurrumph!"})
+			currentObjective = "collect torn page pieces"
+			inventory.state = "display wordgame"
 			if (btnp(❎)) then		
 				conversation_state = "none"
 			end
@@ -642,6 +658,11 @@ function draw_conversation()
 	end
 end
 
+function display_objectives()
+	print_centered("current objective: ",90,8)
+	print_centered(currentObjective,100,8)
+end
+
 -->8
 -- word game functions
 function init_wordgame()
@@ -662,13 +683,20 @@ function store_wordgame_answers(txt)
 end
 
 function launch_wordgame()
-	store_wordgame_questions({"a fox lives in a <       >"})
-	store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-	wordgame.correct_answer = 1
+	lostAnimal = animal.list[animal.active]
+	if lostAnimal == "fox" then
+		store_wordgame_questions({"a fox lives in a <       >"})
+		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+		wordgame.correct_answer = 1
+	elseif lostAnimal == "red panda" then
+		store_wordgame_questions({"a red panda lives in a <       >"})
+		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+		wordgame.correct_answer = 3
+	end
 end
 
 function draw_wordgame_questions() -- based on draw_conversation
--- ** QUESTION LOGIC** 
+ -- ** QUESTION LOGIC** 
 	local maxTextWidth = 0
 	for i=1, #wordgame.string do -- the # gets array length
 		if #wordgame.string[i] > maxTextWidth then -- loop through array and find longest text element
@@ -698,7 +726,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 		print(txt, tx, ty, 1)
 	end
 
--- ** ANSWER LOGIC ** 
+ -- ** ANSWER LOGIC ** 
 	-- #wordgame.pages_answers this is how many answers there are and thus how many boxes we need
 
 	-- determine longest line of text
@@ -759,7 +787,9 @@ function draw_wordgame_questions() -- based on draw_conversation
 
 	-- check if correct
 	if (btnp(❎)) then
-		if wordgame.pages_selection == wordgame.correct_answer then correct = true			
+		if wordgame.pages_selection == wordgame.correct_answer then 
+			correct = true
+			animal.active += 1
 		else correct = false end
 	end
 end
