@@ -95,6 +95,8 @@ function draw_game()
 		spr(owl.sprite,owl.x,owl.y,1,1,1)
 		spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
 		spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
+		rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
+		print(currentObjective, camera_x + (#currentObjective +4), camera_y+2, 7)
 		if conversation.active == true then draw_conversation()	end
 	end
 	if show_inventory == true then
@@ -147,14 +149,9 @@ function create_inventory()
 end
 
 function lost_animals()
-	animal = {}
-	--animal.x = 100
-	--animal.y = 100
-	--animal.sprite = 1
-	--animal.direction = -1
+	animal = {}	
 	animal.list = {"fox", "red panda"}
 	animal.active = 1
-	animal.takeHome = false	
 end
 
 function on_inventory_button_press()
@@ -568,7 +565,8 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
 			new_conversation({"i dont have anything","else to say!","bye!"})
-			currentObjective = "talk to wise old owl"			
+			currentObjective = "talk to wise old owl"
+			inventory.state = "display wordgame"
 			if (btnp(❎)) then
 				conversation_state = "none"
 			end
@@ -581,8 +579,7 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "owl" then		
 			new_conversation({"hurrumph!"})
-			currentObjective = "collect torn page pieces"
-			inventory.state = "display wordgame"			
+			currentObjective = "collect torn page pieces"			
 			if (btnp(❎)) then		
 				conversation_state = "none"
 			end
@@ -653,9 +650,6 @@ function draw_conversation()
 	end
 end
 
-function display_objectives()
-	--
-end
 
 -->8
 -- word game functions
@@ -754,9 +748,8 @@ function draw_wordgame_questions() -- based on draw_conversation
 		if correct == true then
 			print_centered("yes, well done!",102,11)
 			print_centered("press x to close",110,11)
-			animal.takeHome = true
 			currentObjective = "take the animal home!"
-			inventory.state = ""			
+			--inventory.state = ""			
 		elseif correct == false then
 			print_centered("i don't think that's right", 108, 8)
 		end
