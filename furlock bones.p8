@@ -566,7 +566,7 @@ function conversation_system()
 			
 		-- BRIAN
 		elseif conversation_state == "level1" and conversation.character == "brian" then
-			new_conversation({"ruff! morning furlock!"}) 
+			new_conversation({"ruff! morning furlock!", "PRESS X TO CONTINUE"}) 
 			if (btnp(❎)) then		
 				conversation_state = "level2"
 			end
@@ -655,6 +655,7 @@ function draw_conversation()
 		else
 			print(txt, tx, ty, 1)
 		end
+		--print("PRESS X TO CONTINUE",)
 	end
 end
 
