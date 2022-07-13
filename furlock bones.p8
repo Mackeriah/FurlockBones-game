@@ -15,10 +15,7 @@ CTRL + X deletes a line of code!
 --init, update and draw functions
 function _init()
 	-- debug_mode = false
-	camera_x = 0
-	camera_y = 0
-	tmp_camera_x = 0
-	tmp_camera_y = 0
+	camera_x, camera_y = 0,0
 	activeGame = false
 	init_music()
 	init_camera()	
@@ -71,10 +68,9 @@ end
 
 function _draw()
 	cls()
-	if activeGame == false then draw_menu() end
-	if activeGame == true then draw_game() end		
+	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	--print("inventory.state: "..inventory.state,player.x-20,player.y-20,8)
+	--print("inv state: "..inventory.state,player.x-20,player.y-20,8)	
 end
 
 function draw_menu()
@@ -87,58 +83,19 @@ function draw_menu()
 end
 
 function draw_game()
-	if show_inventory == false then 	
+	if show_inventory == true then		
+		camera_x, camera_y = 0,0 --0,0 as I draw inventory in top left so
+		camera(camera_x,camera_y)
+		draw_inventory()
+		draw_objective()		
+		if wordgame.active == true then draw_wordgame_questions() end
+	else
 		camera(camera_x,camera_y) -- run before map to avoid inventory stutter
-		map(0,0,0,0,128,32) -- draw game level
-		spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
-		spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
-		spr(owl.sprite,owl.x,owl.y,1,1,1)
-		spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
-		spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
-		rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
-		print(currentObjective, camera_x + (#currentObjective +4), camera_y+2, 7)
+		map(0,0,0,0,128,32) -- draw current map
+		draw_objective()
+		draw_characters()		
 		if conversation.active == true then draw_conversation()	end
 	end
-	if show_inventory == true then
-		draw_inventory()
-		camera_x = 0 -- put camera at 0,0 as that's the way I'm drawing sentence game
-		camera_y = 0
-		camera(camera_x,camera_y)
-		if wordgame.pages == true then draw_wordgame_questions() end
-	end 	
-end
-
-function character_arrays()
-	-- when I come to use this also refer to conversation init as I'm pretty sure this
-	-- is a simpler/shorter way to achieve the same
-
-	-- characters = {} -- create empty object/array to store all characters
-
-	-- frodo = {} -- create empty object/array for a specific character
-	-- frodo.name = "frodo baggins" -- populate the object with various parameters
-	-- frodo.age =  46
-	-- frodo.hp = 10
-	-- frodo.str = 7
-	-- frodo.x = 100
-	-- frodo.y = 50
-
-	-- gandalf = {} -- create empty object/array/table for a specific character
-	-- gandalf.name = "gandalf the grey" -- populate the object with various parameters
-	-- gandalf.age =  46
-	-- gandalf.hp = 10
-	-- gandalf.str = 7
-	-- gandalf.x = 200
-	-- gandalf.y = 99
-
-	-- characters[1] = frodo	-- add frodo to the character array
-	-- characters[2] = gandalf	-- and add gandalf
-
-	-- for i=1, #characters do		
-	-- 	print(characters[i].name)
-	-- end
-
-	-- t = {}
-	-- print(t)
 end
 
 function create_inventory()
@@ -156,7 +113,7 @@ end
 
 function on_inventory_button_press()
 	if (btnp(🅾️)) and show_inventory == false then
-		show_inventory = true
+		show_inventory = true		
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
 	elseif (btnp(🅾️)) and show_inventory == true then
@@ -166,13 +123,286 @@ function on_inventory_button_press()
 	end
 end
 
-function draw_inventory()
-	rectfill(0, 0, 127, 127, 7) -- fill screen
-	rect(0, 0, 127, 127, 3) -- border 
-	rect(0, 0, 127, 12, 3) -- heading
-	print_centered(currentObjective,4,8)
+function draw_inventory() -- really ISN'T an inventory so need to rename!
+	rectfill(0, 0, 127, 127, 7) -- fill screen		
 	if (inventory.state == "display wordgame") then
 		launch_wordgame()
+	end
+end
+
+function draw_objective() -- draws current objective at top of screen
+	rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
+	print(currentObjective, camera_x + (#currentObjective +4), camera_y+2, 7)
+end
+
+
+-->8
+-- conversation and menu functions
+function init_conversation()
+	conversation = {} -- create empty array to store multiple strings
+	conversation.active = false -- initialise to false	
+	conversation.string = {} -- empty array to store individual string?
+	conversation.character = "nobody"
+	conversation_state = "none" -- initialising to none (not done elsewhere)
+end
+
+function new_conversation(txt)
+	-- function called if conversation_state is a certain value and when called
+	-- predefined text is stored in the conversation.string array and can handle multiple strings
+	-- being passed to it and stores each in their own array element
+	conversation.string = txt
+	conversation.active = true -- draw game displays conversation if this is true
+end
+
+function conversation_system()
+	-- none == no conversation
+	-- start == player can choose to start conversation
+	-- levelx == player in conversation
+	if show_inventory == false then -- to stop buttons affecting conversations
+		if conversation_state == "start" then
+			new_conversation({conversation.character,"press x to talk"})
+			if (btnp(❎)) then
+				conversation_state = "level1"
+			end	
+			
+		-- BRIAN
+		elseif conversation_state == "level1" and conversation.character == "brian" then
+			new_conversation({"ruff! morning furlock!"}) 
+			if (btnp(❎)) then		
+				conversation_state = "level2"
+			end
+		elseif conversation_state == "level2" and conversation.character == "brian" then		
+			new_conversation({"i dont have anything","else to say!","bye!"})
+			currentObjective = "talk to wise old owl"
+			inventory.state = "display wordgame"
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+
+		-- OWL
+		elseif conversation_state == "level1" and conversation.character == "owl" then
+			new_conversation({"hmm, what now furlock?"}) 
+			if (btnp(❎)) then		
+				conversation_state = "level2"
+			end
+		elseif conversation_state == "level2" and conversation.character == "owl" then		
+			new_conversation({"hurrumph!"})
+			currentObjective = "collect torn page pieces"			
+			if (btnp(❎)) then		
+				conversation_state = "none"
+			end
+
+		-- SIGNS
+		elseif conversation_state == "sign" and player.x < 400 then
+			new_conversation({conversation.character, "press x to read"})
+			if (btnp(❎)) then		
+				conversation_state = "sign2"			
+			end
+		elseif conversation_state == "sign2" then
+			new_conversation({"owl's house this way"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+		elseif conversation_state == "sign" and player.x > 400 then
+			new_conversation({conversation.character, "press x to read"})
+			if (btnp(❎)) then		
+				conversation_state = "sign3"			
+			end
+		elseif conversation_state == "sign3" then
+			new_conversation({"i'm very busy you know"})
+			if (btnp(❎)) then
+				conversation_state = "none"
+			end
+		end	
+	end
+end
+
+function draw_conversation()
+	-- this runs if conversation.active is true and determines longest sentence length
+	local maxSentenceWidth = 0
+	for i=1, #conversation.string do -- the # gets array length
+		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
+			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- define textbox with border (the -1 is for border and centred)
+	local conversationBox_x = camera_x + 64 - maxSentenceWidth *2 -1
+
+	-- if player close to screen bottom, draw text box at top, else draw at bottom
+	if (player.y < 200) then
+		conversationBox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+	else
+		conversationBox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
+	end	
+	
+	local conversationBox_width = conversationBox_x+(maxSentenceWidth*4)  -- *4 to account for character width
+	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
+
+	-- draw outer border text box
+	rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 0)
+	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 12)
+
+	-- write text
+	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'		
+		local txt = conversation.string[i]
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		if (conversation_state == "start") and i == 1 
+		 or (conversation_state == "sign") and i == 1 
+		 then 
+			print(txt, tx, ty, 7) -- print first text line white		
+		else
+			print(txt, tx, ty, 1)
+		end
+	end
+end
+
+
+-->8
+-- word game functions
+function init_wordgame()
+	wordgame = {} -- create empty array to store multiple strings	
+	wordgame.string = {} -- empty array to store individual string?
+	wordgame.active = false	
+	wordgame.question = 1
+	wordgame.answers = {} -- store page wordgame answers	
+	wordgame.selectedAnswer = 1
+end
+
+function store_wordgame_questions(txt)
+	wordgame.string = txt
+	wordgame.active = true -- draw game displays pages wordgame if this is true
+end
+
+function store_wordgame_answers(txt)
+	wordgame.answers = txt
+end
+
+function launch_wordgame()
+	lostAnimal = animal.list[animal.active]
+	if lostAnimal == "fox" then
+		if wordgame.question == 1 then
+			store_wordgame_questions({"a fox lives in a ?"})
+			store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+			wordgame.correct_answer = 1
+		elseif wordgame.question == 2 then
+			store_wordgame_questions({"a fox likes to eat ?"})
+			store_wordgame_answers({"leaves", "bees", "people","chickens","sausages"})
+			wordgame.correct_answer = 4
+		end
+	elseif lostAnimal == "red panda" then
+		store_wordgame_questions({"a red panda lives in a ?"})
+		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+		wordgame.correct_answer = 3
+	end	
+end
+
+function draw_wordgame_questions() -- based on draw_conversation
+ -- ** QUESTION LOGIC** 
+	local maxTextWidth = 0
+	for i=1, #wordgame.string do -- the # gets array length
+		if #wordgame.string[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.string[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- define textbox with border
+	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- draw text box at top of screen
+	local textbox_y = camera_y + 16 -- controls vertical location of text box (0 top, 127 bottom)
+	
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #wordgame.string * 6 -- *6 for character height
+
+	-- draw outer border text box
+	--rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+
+	-- write text
+	for i=1, #wordgame.string do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.string[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		print(txt, tx, ty, 1)
+	end
+
+ -- ** ANSWER LOGIC ** 
+	-- #wordgame.answers this is how many answers there are and thus how many boxes we need
+
+	-- determine longest line of text
+	local maxTextWidth = 0
+	for i=1, #wordgame.answers do -- the # gets array length
+		if #wordgame.answers[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.answers[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- horizontal text box location
+	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- vertical text box location
+	local textbox_yy = camera_y + 22 -- first question starts here
+	
+	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height2 = textbox_yy + 6 -- *6 for character height
+
+	-- write text
+	for i=1, #wordgame.answers do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.answers[i]
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
+		
+		if wordgame.selectedAnswer == i then
+			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+		end
+		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
+		print(txt, tx, ty, 0) -- print the current possible answer
+		if correct == true then
+			print_centered("yes, well done!",102,11)
+			print_centered("press x to close",110,11)
+			currentObjective = "take the animal home!"			
+		elseif correct == false then
+			print_centered("i don't think that's right", 108, 8)
+		end
+		print_centered("UP,DOWN AND X TO SELECT", 120, 13)		
+	end
+
+	-- use up and down to select a question unless already correctly answered
+	if correct == true then
+		if (btnp(❎)) then						
+			wordgame.active = false
+			inventory.state = "objectives"
+		end
+	else
+		if (btnp(3)) then 
+			if wordgame.selectedAnswer > #wordgame.answers-1 then
+				wordgame.selectedAnswer = 1
+				correct = none
+			else
+				wordgame.selectedAnswer += 1
+				correct = none
+			end
+		end
+		if (btnp(2)) then -- 2 is up
+			if wordgame.selectedAnswer == 1 then
+				wordgame.selectedAnswer = #wordgame.answers
+				correct = none
+			else
+				wordgame.selectedAnswer -= 1
+				correct = none
+			end
+		end
+	end
+
+	-- check if correct
+	if (btnp(❎)) then
+		if wordgame.selectedAnswer == wordgame.correct_answer then 
+			correct = true
+			--animal.active += 1 -- this moves on to next animal but use it elsewhere instead
+		else correct = false end
 	end
 end
 
@@ -305,6 +535,103 @@ end
 
 
 -->8
+-- player collision functions
+function check_if_next_to_wall(player)
+	-- if player next to a wall stop them moving in that direction
+	-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
+	-- what happens is that we ignore the left movement as it is set to zero meaning that we only
+	-- apply the vertical movement. It's really just a player UX fix.
+	-- player moving left
+	if (player.velocity_x < 0) then
+		--check both left corners for a wall
+		local wall_top_left = solid(player.x -1, player.y)
+		local wall_btm_left = solid(player.x -1, player.y + player.height)
+		-- if wall in that direction, set x movement to 0
+		if (wall_top_left or wall_btm_left) then
+			player.velocity_x = 0
+		end
+
+	-- player moving right
+	elseif (player.velocity_x > 0) then		
+		local wall_top_right = solid(player.x + player.width + 1, player.y)
+		local wall_btm_right = solid(player.x + player.width + 1, player.y + player.height)		
+		if (wall_top_right or wall_btm_right) then
+			player.velocity_x = 0
+		end
+	end
+
+	-- player moving up
+	if (player.velocity_y < 0) then		
+		local wall_top_left = solid(player.x, player.y - 1)
+		local wall_top_right = solid(player.x + player.width, player.y - 1)		
+		if (wall_top_left or wall_top_right) then
+			player.velocity_y = 0
+		end
+
+	-- player moving down
+	elseif (player.velocity_y > 0) then		
+		local wall_btm_left = solid(player.x, player.y + player.height + 1)
+		local wall_btm_right = solid(player.x, player.y + player.height + 1)		
+		if (wall_btm_right or wall_btm_left) then
+			player.velocity_y = 0
+		end
+	end 
+end
+
+function can_move(object,direction_x,direction_y)
+	--this function takes an object (only player currently) and it's x,y speed. It uses these
+	--to check the four corners of the object to see it can move into that spot. (a map tile
+	--marked as solid would prevent movement into that spot.)
+	-- capture x,y coords for where trying to move
+	local next_left = object.x + direction_x	
+	local next_right = object.x + direction_x + object.width
+	local next_top = object.y + direction_y
+	local next_bottom = object.y + direction_y + object.height	
+	-- BUG: getting stuck on edge if moving diagonal down/left (might be in check_if_next_to_a_wall)
+
+	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
+	-- map tile location and check if any solid sprites there
+	local top_left_solid = solid(next_left, next_top)
+	local btm_left_solid = solid(next_left, next_bottom)
+	local top_right_solid = solid(next_right, next_top)
+	local btm_right_solid = solid(next_right, next_bottom)
+
+	--if all of those locations are NOT solid, the object can move into that spot.
+	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
+	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
+end
+
+function solid(x,y)	
+	--checks x,y of player/object against the map to see if sprite marked as solid
+	-- divide x,y by 8 to get map coordinates
+	local map_x = flr(x/8)
+	local map_y = flr(y/8)	
+	local map_sprite = mget(map_x,map_y) -- find what sprite is at that map x,y	
+	local flag = fget(map_sprite) -- and get what flag it has set	
+	if flag == 1 then		
+		return flag == 1 -- I'm using the first flag (1) for solid objects
+	end		
+end
+
+function sign_collision(playerx,playery,charx,chary)
+	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
+  		if conversation_state == "none" then			
+			conversation_state = "sign"
+			readingSign = true
+			conversation.character = "sign"			
+		end 
+	else
+		if conversation.character == "sign" then -- if player walks away instead of starting conversation			
+			conversation_state = "none"
+			readingSign = false
+			conversation.character = "nobody"
+			conversation.active = false
+		end
+ 	end
+end
+
+
+-->8
 -- character functions
 function create_brian()
 	brian={}
@@ -430,366 +757,12 @@ function check_character_collision()
 	end
 end
 
-
--->8
--- player collision functions
-function check_if_next_to_wall(player)
-	-- if player next to a wall stop them moving in that direction
-	-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
-	-- what happens is that we ignore the left movement as it is set to zero meaning that we only
-	-- apply the vertical movement. It's really just a player UX fix.
-	-- player moving left
-	if (player.velocity_x < 0) then
-		--check both left corners for a wall
-		local wall_top_left = solid(player.x -1, player.y)
-		local wall_btm_left = solid(player.x -1, player.y + player.height)
-		-- if wall in that direction, set x movement to 0
-		if (wall_top_left or wall_btm_left) then
-			player.velocity_x = 0
-		end
-
-	-- player moving right
-	elseif (player.velocity_x > 0) then		
-		local wall_top_right = solid(player.x + player.width + 1, player.y)
-		local wall_btm_right = solid(player.x + player.width + 1, player.y + player.height)		
-		if (wall_top_right or wall_btm_right) then
-			player.velocity_x = 0
-		end
-	end
-
-	-- player moving up
-	if (player.velocity_y < 0) then		
-		local wall_top_left = solid(player.x, player.y - 1)
-		local wall_top_right = solid(player.x + player.width, player.y - 1)		
-		if (wall_top_left or wall_top_right) then
-			player.velocity_y = 0
-		end
-
-	-- player moving down
-	elseif (player.velocity_y > 0) then		
-		local wall_btm_left = solid(player.x, player.y + player.height + 1)
-		local wall_btm_right = solid(player.x, player.y + player.height + 1)		
-		if (wall_btm_right or wall_btm_left) then
-			player.velocity_y = 0
-		end
-	end 
-end
-
-function can_move(object,direction_x,direction_y)
-	--this function takes an object (only player currently) and it's x,y speed. It uses these
-	--to check the four corners of the object to see it can move into that spot. (a map tile
-	--marked as solid would prevent movement into that spot.)
-	-- capture x,y coords for where trying to move
-	local next_left = object.x + direction_x	
-	local next_right = object.x + direction_x + object.width
-	local next_top = object.y + direction_y
-	local next_bottom = object.y + direction_y + object.height	
-	-- BUG: getting stuck on edge if moving diagonal down/left (might be in check_if_next_to_a_wall)
-
-	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
-	-- map tile location and check if any solid sprites there
-	local top_left_solid = solid(next_left, next_top)
-	local btm_left_solid = solid(next_left, next_bottom)
-	local top_right_solid = solid(next_right, next_top)
-	local btm_right_solid = solid(next_right, next_bottom)
-
-	--if all of those locations are NOT solid, the object can move into that spot.
-	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
-	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
-end
-
-function solid(x,y)	
-	--checks x,y of player/object against the map to see if sprite marked as solid
-	-- divide x,y by 8 to get map coordinates
-	local map_x = flr(x/8)
-	local map_y = flr(y/8)	
-	local map_sprite = mget(map_x,map_y) -- find what sprite is at that map x,y	
-	local flag = fget(map_sprite) -- and get what flag it has set	
-	if flag == 1 then		
-		return flag == 1 -- I'm using the first flag (1) for solid objects
-	end		
-end
-
-function sign_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-  		if conversation_state == "none" then			
-			conversation_state = "sign"
-			readingSign = true
-			conversation.character = "sign"			
-		end 
-	else
-		if conversation.character == "sign" then -- if player walks away instead of starting conversation			
-			conversation_state = "none"
-			readingSign = false
-			conversation.character = "nobody"
-			conversation.active = false
-		end
- 	end
-end
-
-
--->8
--- conversation and menu functions
-function init_conversation()
-	conversation = {} -- create empty array to store multiple strings
-	conversation.active = false -- initialise to false	
-	conversation.string = {} -- empty array to store individual string?
-	conversation.character = "nobody"
-	conversation_state = "none" -- initialising to none (not done elsewhere)
-end
-
-function new_conversation(txt)
-	-- function called if conversation_state is a certain value and when called
-	-- predefined text is stored in the conversation.string array and can handle multiple strings
-	-- being passed to it and stores each in their own array element
-	conversation.string = txt
-	conversation.active = true -- draw game displays conversation if this is true
-end
-
-function conversation_system()
-	-- none == no conversation
-	-- start == player can choose to start conversation
-	-- levelx == player in conversation
-	if show_inventory == false then -- to stop buttons affecting conversations
-		if conversation_state == "start" then
-			new_conversation({conversation.character,"press x to talk"})
-			if (btnp(❎)) then
-				conversation_state = "level1"
-			end	
-			
-		-- BRIAN
-		elseif conversation_state == "level1" and conversation.character == "brian" then
-			new_conversation({"ruff! morning furlock!"}) 
-			if (btnp(❎)) then		
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and conversation.character == "brian" then		
-			new_conversation({"i dont have anything","else to say!","bye!"})
-			currentObjective = "talk to wise old owl"
-			inventory.state = "display wordgame"
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-
-		-- OWL
-		elseif conversation_state == "level1" and conversation.character == "owl" then
-			new_conversation({"hmm, what now furlock?"}) 
-			if (btnp(❎)) then		
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and conversation.character == "owl" then		
-			new_conversation({"hurrumph!"})
-			currentObjective = "collect torn page pieces"			
-			if (btnp(❎)) then		
-				conversation_state = "none"
-			end
-
-		-- SIGNS
-		elseif conversation_state == "sign" and player.x < 400 then
-			new_conversation({conversation.character, "press x to read"})
-			if (btnp(❎)) then		
-				conversation_state = "sign2"			
-			end
-		elseif conversation_state == "sign2" then
-			new_conversation({"owl's house this way"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-		elseif conversation_state == "sign" and player.x > 400 then
-			new_conversation({conversation.character, "press x to read"})
-			if (btnp(❎)) then		
-				conversation_state = "sign3"			
-			end
-		elseif conversation_state == "sign3" then
-			new_conversation({"i'm very busy you know"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-		end	
-	end
-end
-
-function draw_conversation()
-	-- this runs if conversation.active is true and determines longest sentence length
-	local maxSentenceWidth = 0
-	for i=1, #conversation.string do -- the # gets array length
-		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
-			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
-		end
-	end
-
-	-- define textbox with border (the -1 is for border and centred)
-	local conversationBox_x = camera_x + 64 - maxSentenceWidth *2 -1
-
-	-- if player close to screen bottom, draw text box at top, else draw at bottom
-	if (player.y < 200) then
-		conversationBox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
-	else
-		conversationBox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
-	end	
-	
-	local conversationBox_width = conversationBox_x+(maxSentenceWidth*4)  -- *4 to account for character width
-	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
-
-	-- draw outer border text box
-	rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 0)
-	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 12)
-
-	-- write text
-	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'		
-		local txt = conversation.string[i]
-		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		if (conversation_state == "start") and i == 1 
-		 or (conversation_state == "sign") and i == 1 
-		 then 
-			print(txt, tx, ty, 7) -- print first text line white		
-		else
-			print(txt, tx, ty, 1)
-		end
-	end
-end
-
-
--->8
--- word game functions
-function init_wordgame()
-	wordgame = {} -- create empty array to store multiple strings	
-	wordgame.pages = false
-	wordgame.string = {} -- empty array to store individual string?
-	wordgame.pages_answers = {} -- store page wordgame answers	
-	wordgame.pages_selection = 1	
-end
-
-function store_wordgame_questions(txt)
-	wordgame.string = txt
-	wordgame.pages = true -- draw game displays pages wordgame if this is true
-end
-
-function store_wordgame_answers(txt)
-	wordgame.pages_answers = txt
-end
-
-function launch_wordgame()
-	lostAnimal = animal.list[animal.active]
-	if lostAnimal == "fox" then
-		store_wordgame_questions({"a fox lives in a ?"})
-		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-		wordgame.correct_answer = 1				
-	elseif lostAnimal == "red panda" then
-		store_wordgame_questions({"a red panda lives in a ?"})
-		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-		wordgame.correct_answer = 3
-	end	
-end
-
-function draw_wordgame_questions() -- based on draw_conversation
- -- ** QUESTION LOGIC** 
-	local maxTextWidth = 0
-	for i=1, #wordgame.string do -- the # gets array length
-		if #wordgame.string[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #wordgame.string[i] -- set max width to longest element so box wide enough
-		end
-	end
-
-	-- define textbox with border
-	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
-
-	-- draw text box at top of screen
-	local textbox_y = camera_y + 16 -- controls vertical location of text box (0 top, 127 bottom)
-	
-	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #wordgame.string * 6 -- *6 for character height
-
-	-- draw outer border text box
-	--rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
-
-	-- write text
-	for i=1, #wordgame.string do  -- the # gets the legnth of the array 'text'
-		local txt = wordgame.string[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
-		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		print(txt, tx, ty, 1)
-	end
-
- -- ** ANSWER LOGIC ** 
-	-- #wordgame.pages_answers this is how many answers there are and thus how many boxes we need
-
-	-- determine longest line of text
-	local maxTextWidth = 0
-	for i=1, #wordgame.pages_answers do -- the # gets array length
-		if #wordgame.pages_answers[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #wordgame.pages_answers[i] -- set max width to longest element so box wide enough
-		end
-	end
-
-	-- horizontal text box location
-	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
-
-	-- vertical text box location
-	local textbox_yy = camera_y + 22 -- first question starts here
-	
-	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height2 = textbox_yy + 6 -- *6 for character height
-
-	-- write text
-	for i=1, #wordgame.pages_answers do  -- the # gets the legnth of the array 'text'
-		local txt = wordgame.pages_answers[i]
-		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
-		
-		if wordgame.pages_selection == i then
-			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
-		end
-		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
-		print(txt, tx, ty, 0) -- print the current possible answer
-		if correct == true then
-			print_centered("yes, well done!",102,11)
-			print_centered("press x to close",110,11)
-			currentObjective = "take the animal home!"
-			--inventory.state = ""			
-		elseif correct == false then
-			print_centered("i don't think that's right", 108, 8)
-		end
-		print_centered("UP,DOWN AND X TO SELECT", 120, 13)		
-	end
-
-	-- use up and down to select a question unless already correctly answered
-	if correct == true then
-		if (btnp(❎)) then			
-			inventory.state = ""
-			wordgame.pages = false
-		end
-	else
-		if (btnp(3)) then 
-			if wordgame.pages_selection > #wordgame.pages_answers-1 then
-				wordgame.pages_selection = 1
-				correct = none
-			else
-				wordgame.pages_selection += 1
-				correct = none
-			end
-		end
-		if (btnp(2)) then -- 2 is up
-			if wordgame.pages_selection == 1 then
-				wordgame.pages_selection = #wordgame.pages_answers
-				correct = none
-			else
-				wordgame.pages_selection -= 1
-				correct = none
-			end
-		end
-	end
-
-	-- check if correct
-	if (btnp(❎)) then
-		if wordgame.pages_selection == wordgame.correct_answer then 
-			correct = true
-			--animal.active += 1 -- this moves on to next animal but use it elsewhere instead
-		else correct = false end
-	end
+function draw_characters()
+	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
+	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
+	spr(owl.sprite,owl.x,owl.y,1,1,1)
+	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
+	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)				
 end
 
 
