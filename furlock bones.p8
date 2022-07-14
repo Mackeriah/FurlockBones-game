@@ -16,7 +16,9 @@ CTRL + X deletes a line of code!
 function _init()
 	-- debug_mode = false
 	camera_x, camera_y = 0,0
+	tmp_camera_x, tmp_camera_y = 0,0 -- don't remove this
 	activeGame = false
+	create_inventory()
 	init_music()
 	init_camera()	
 	map_swapper()
@@ -26,8 +28,8 @@ function _init()
 	create_signs()
 	init_conversation()
 	init_wordgame()
-	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once			
-	create_inventory()
+	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
+	init_objective()
 	lost_animals()	
 end
 
@@ -70,7 +72,10 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	--print("inv state: "..inventory.state,player.x-20,player.y-20,8)	
+	print("inv state: "..inventory.state,player.x-20,player.y-20,8)	
+	print(objective.current)
+	print(camera_x)
+	print(camera_y)
 end
 
 function draw_menu()
@@ -86,8 +91,7 @@ function draw_game()
 	if show_inventory == true then		
 		camera_x, camera_y = 0,0 --0,0 as I draw inventory in top left so
 		camera(camera_x,camera_y)
-		draw_inventory()
-		draw_objective()		
+		draw_inventory()		
 		if wordgame.active == true then draw_wordgame_questions() end
 	else
 		camera(camera_x,camera_y) -- run before map to avoid inventory stutter
@@ -101,8 +105,14 @@ end
 function create_inventory()
 	inventory={}
 	show_inventory = false
-	inventory.state = "objectives"
-	currentObjective = "goal: talk to brian"
+	inventory.state = "empty"
+	--[[ states: empty, questionView, answerView ]]
+end
+
+function init_objective()
+	objective={}
+	objective.active = false
+	objective.current = "talk to brian"
 end
 
 function lost_animals()
@@ -112,11 +122,11 @@ function lost_animals()
 end
 
 function on_inventory_button_press()
-	if (btnp(🅾️)) and show_inventory == false then
+	if (btnp(🅾️)) and inventory.state != "empty" then
 		show_inventory = true		
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
-	elseif (btnp(🅾️)) and show_inventory == true then
+	elseif (btnp(🅾️)) and inventory.state == "empty" then
 		show_inventory = false
 		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
@@ -130,9 +140,9 @@ function draw_inventory() -- really ISN'T an inventory so need to rename!
 	end
 end
 
-function draw_objective() -- draws current objective at top of screen
+function draw_objective() -- draws current objective at top of screen (31 char limit)
 	rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
-	print(currentObjective, camera_x + (#currentObjective +4), camera_y+2, 7)
+	print(objective.current, camera_x+2, camera_y+2, 8)
 end
 
 
@@ -173,7 +183,7 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
 			new_conversation({"i dont have anything","else to say!","bye!"})
-			currentObjective = "talk to wise old owl"
+			objective.current = "talk to wise old owl"
 			inventory.state = "display wordgame"
 			if (btnp(❎)) then
 				conversation_state = "none"
@@ -187,7 +197,7 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "owl" then		
 			new_conversation({"hurrumph!"})
-			currentObjective = "collect torn page pieces"			
+			objective.current = "collect page pieces 7/10"			
 			if (btnp(❎)) then		
 				conversation_state = "none"
 			end
@@ -363,7 +373,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 		if correct == true then
 			print_centered("yes, well done!",102,11)
 			print_centered("press x to close",110,11)
-			currentObjective = "take the animal home!"			
+			objective.current = "take the animal home!"			
 		elseif correct == false then
 			print_centered("i don't think that's right", 108, 8)
 		end
@@ -374,7 +384,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 	if correct == true then
 		if (btnp(❎)) then						
 			wordgame.active = false
-			inventory.state = "objectives"
+			inventory.state = "empty"
 		end
 	else
 		if (btnp(3)) then 
@@ -526,7 +536,7 @@ end
 
 function camera_follow_player()
 	if player.x > 60 and player.x <= (current_map_maximum_x -60) then 
-		camera_x = player.x - 60
+		camera_x = player.x - 60		
 	end
 	if player.y > 60 and player.y <= (current_map_maximum_y-60) then
 		camera_y = player.y - 60
@@ -692,7 +702,7 @@ end
 
 function create_owl()
 	owl={}
-	owl.x = 476
+	owl.x = 176
 	owl.y = 8
 	owl.sprite = 5
 	owl.time = 0
@@ -777,7 +787,7 @@ function toggle_debug_mode()
 end
 
 function print_centered(str, height, colour)
-	print(str, 64 - (#str * 2), height, colour) 
+	print(str, 64 - (#str * 2), height, colour)	
 end
 
 function log(text,overwrite) -- external logging file
