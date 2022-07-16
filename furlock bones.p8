@@ -17,8 +17,7 @@ function _init()
 	-- debug_mode = false
 	camera_x, camera_y = 0,0
 	tmp_camera_x, tmp_camera_y = 0,0 -- don't remove this
-	activeGame = false
-	create_inventory()
+	activeGame = false	
 	init_music()
 	init_camera()	
 	map_swapper()
@@ -54,8 +53,8 @@ function _update60()
 	if activeGame == true  then 
 		animate_player()
 		animate_owl()
-		on_inventory_button_press()
-		if show_inventory == false then -- stop player moving if inventory displayed
+		display_wordgame_on_button_press()		
+		if wordgame.displayed == false then -- stop player moving if wordgame displayed
 			move_player() -- MUST be before camera_follow_player
 			camera_follow_player() -- MUST be after move_player
 			conversation_system()
@@ -72,10 +71,10 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	print("inv state: "..inventory.state,player.x-20,player.y-20,8)	
-	print(objective.current)
-	print(camera_x)
-	print(camera_y)
+	-- print("wordgame state: "..wordgame.state,player.x-20,player.y-20,8)	
+	--print(objective.current)
+	--print(camera_x)
+	--print(camera_y)
 end
 
 function draw_menu()
@@ -88,13 +87,18 @@ function draw_menu()
 end
 
 function draw_game()
-	if show_inventory == true then		
-		camera_x, camera_y = 0,0 --0,0 as I draw inventory in top left so
+	if wordgame.displayed == true then
+		camera_x, camera_y = 0,0 --0,0 as I draw wordgame in top left
 		camera(camera_x,camera_y)
-		draw_inventory()		
-		if wordgame.active == true then draw_wordgame_questions() end
+		
+		rectfill(0, 0, 127, 127, 7) -- fill screen		
+		if (wordgame.state == "display wordgame") then		
+			prepare_wordgame()
+		end
+		
+		if wordgame.ready == true then draw_wordgame_questions() end
 	else
-		camera(camera_x,camera_y) -- run before map to avoid inventory stutter
+		camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
 		map(0,0,0,0,128,32) -- draw current map
 		draw_objective()
 		draw_characters()		
@@ -102,12 +106,6 @@ function draw_game()
 	end
 end
 
-function create_inventory()
-	inventory={}
-	show_inventory = false
-	inventory.state = "empty"
-	--[[ states: empty, questionView, answerView ]]
-end
 
 function init_objective()
 	objective={}
@@ -121,24 +119,18 @@ function lost_animals()
 	animal.active = 1
 end
 
-function on_inventory_button_press()
-	if (btnp(🅾️)) and inventory.state != "empty" then
-		show_inventory = true		
+function display_wordgame_on_button_press()
+	if (btnp(🅾️)) and wordgame.state != "empty" then			
+		wordgame.displayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
-	elseif (btnp(🅾️)) and inventory.state == "empty" then
-		show_inventory = false
+	elseif (btnp(🅾️)) and wordgame.state == "empty" then		
+		wordgame.displayed = false
 		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
 	end
 end
 
-function draw_inventory() -- really ISN'T an inventory so need to rename!
-	rectfill(0, 0, 127, 127, 7) -- fill screen		
-	if (inventory.state == "display wordgame") then
-		launch_wordgame()
-	end
-end
 
 function draw_objective() -- draws current objective at top of screen (31 char limit)
 	rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
@@ -167,8 +159,8 @@ end
 function conversation_system()
 	-- none == no conversation
 	-- start == player can choose to start conversation
-	-- levelx == player in conversation
-	if show_inventory == false then -- to stop buttons affecting conversations
+	-- levelx == player in conversation	
+	if wordgame.displayed == false then -- to stop buttons affecting conversations
 		if conversation_state == "start" then
 			new_conversation({conversation.character,"press x to talk"})
 			if (btnp(❎)) then
@@ -184,7 +176,7 @@ function conversation_system()
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
 			new_conversation({"i dont have anything","else to say!","bye!"})
 			objective.current = "talk to wise old owl"
-			inventory.state = "display wordgame"
+			wordgame.state = "display wordgame"
 			if (btnp(❎)) then
 				conversation_state = "none"
 			end
@@ -274,22 +266,24 @@ end
 function init_wordgame()
 	wordgame = {} -- create empty array to store multiple strings	
 	wordgame.string = {} -- empty array to store individual string?
-	wordgame.active = false	
+	wordgame.ready = false
 	wordgame.question = 1
 	wordgame.answers = {} -- store page wordgame answers	
 	wordgame.selectedAnswer = 1
+	wordgame.state = "empty"
+	wordgame.displayed = false
 end
 
 function store_wordgame_questions(txt)
 	wordgame.string = txt
-	wordgame.active = true -- draw game displays pages wordgame if this is true
+	wordgame.ready = true -- draw game displays pages wordgame if this is true
 end
 
 function store_wordgame_answers(txt)
 	wordgame.answers = txt
 end
 
-function launch_wordgame()
+function prepare_wordgame()
 	lostAnimal = animal.list[animal.active]
 	if lostAnimal == "fox" then
 		if wordgame.question == 1 then
@@ -371,8 +365,7 @@ function draw_wordgame_questions() -- based on draw_conversation
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
 		print(txt, tx, ty, 0) -- print the current possible answer
 		if correct == true then
-			print_centered("yes, well done!",102,11)
-			print_centered("press x to close",110,11)
+			print_centered("well done! press x to close",102,11)			
 			objective.current = "take the animal home!"			
 		elseif correct == false then
 			print_centered("i don't think that's right", 108, 8)
@@ -383,8 +376,8 @@ function draw_wordgame_questions() -- based on draw_conversation
 	-- use up and down to select a question unless already correctly answered
 	if correct == true then
 		if (btnp(❎)) then						
-			wordgame.active = false
-			inventory.state = "empty"
+			wordgame.ready = false
+			wordgame.state = "empty"
 		end
 	else
 		if (btnp(3)) then 
