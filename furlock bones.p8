@@ -138,11 +138,8 @@ function new_conversation(txt)
 	conversation.active = true -- draw game displays conversation if this is true
 end
 
-function conversation_system()
-	-- none == no conversation
-	-- start == player can choose to start conversation
-	-- levelx == player in conversation	
-	if wordgame.displayed == false then -- to stop buttons affecting conversations
+function conversation_system()	
+	if wordgame.displayed == false then -- to stop movement buttons affecting conversations
 		if conversation_state == "start" then
 			new_conversation({conversation.character,"press x to talk"})
 			if (btnp(❎)) then
@@ -246,9 +243,9 @@ end
 -->8
 -- word game functions
 function init_wordgame()
-	wordgame = {} -- create empty array to store multiple strings	
-	wordgame.string = {} -- empty array to store individual string?	
-	wordgame.answers = {} -- store page wordgame answers	
+	wordgame = {} -- empty array to store multiple strings	
+	wordgame.question = {} -- empty array to store question string
+	wordgame.answers = {} -- empty array to store answer strings
 	wordgame.pagesCollected = false
 	wordgame.selectedQuestion = 1
 	wordgame.selectedAnswer = 1
@@ -289,7 +286,7 @@ function prepare_wordgame()
 end
 
 function store_wordgame_questions(txt)
-	wordgame.string = txt	
+	wordgame.question = txt	
 end
 
 function store_wordgame_answers(txt)
@@ -297,8 +294,8 @@ function store_wordgame_answers(txt)
 end
 
 function wordgame_draw_question_list()
-	if (wordgame.state == "question_list") then
-		rectfill(0, 0, 127, 127, 7) -- fill screen
+	rectfill(0, 0, 127, 127, 7) -- fill screen
+	if (wordgame.state == "question_list") then		
 		print_centered("choose a question", 50, 8)
 		if (btnp(❎)) then
 			wordgame.state = "chosen_question"
@@ -308,12 +305,12 @@ function wordgame_draw_question_list()
 	end
 end
 
-function wordgame_draw_chosen_question() -- based on draw_conversation
+function wordgame_draw_chosen_question()
  -- ** QUESTION LOGIC** 
 	local maxTextWidth = 0
-	for i=1, #wordgame.string do -- the # gets array length
-		if #wordgame.string[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #wordgame.string[i] -- set max width to longest element so box wide enough
+	for i=1, #wordgame.question do -- the # gets array length
+		if #wordgame.question[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.question[i] -- set max width to longest element so box wide enough
 		end
 	end
 
@@ -324,15 +321,15 @@ function wordgame_draw_chosen_question() -- based on draw_conversation
 	local textbox_y = camera_y + 16 -- controls vertical location of text box (0 top, 127 bottom)
 	
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #wordgame.string * 6 -- *6 for character height
+	local textbox_height = textbox_y + #wordgame.question * 6 -- *6 for character height
 
 	-- draw outer border text box
 	--rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
 	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
 
 	-- write text
-	for i=1, #wordgame.string do  -- the # gets the legnth of the array 'text'
-		local txt = wordgame.string[i]
+	for i=1, #wordgame.question do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.question[i]
 		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
@@ -381,9 +378,7 @@ function wordgame_draw_chosen_question() -- based on draw_conversation
 
 	-- use up and down to select a question unless already correctly answered
 	if correct == true then
-		if (btnp(❎)) then			
-			wordgame.state = "question_list"
-		end
+		if (btnp(❎)) then wordgame.state = "question_list" end -- return to list of questions		
 	else
 		if (btnp(3)) then 
 			if wordgame.selectedAnswer > #wordgame.answers-1 then
