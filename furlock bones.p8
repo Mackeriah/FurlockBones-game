@@ -96,7 +96,7 @@ function draw_game()
 			prepare_wordgame()
 		end
 		
-		if wordgame.ready == true then draw_wordgame_questions() end
+		if wordgame.ready == true then draw_wordgame_chosen_question() end
 	else
 		camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
 		map(0,0,0,0,128,32) -- draw current map
@@ -107,30 +107,17 @@ function draw_game()
 end
 
 
-function init_objective()
-	objective={}
-	objective.active = false
-	objective.current = "talk to brian"
-end
-
 function lost_animals()
 	animal = {}	
 	animal.list = {"fox", "red panda"}
 	animal.active = 1
 end
 
-function display_wordgame_on_button_press()
-	if (btnp(🅾️)) and wordgame.state != "empty" then			
-		wordgame.displayed = true
-		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
-		tmp_camera_y = camera_y
-	elseif (btnp(🅾️)) and wordgame.state == "empty" then		
-		wordgame.displayed = false
-		camera_x = tmp_camera_x -- return camera to previous position
-		camera_y = tmp_camera_y
-	end
+function init_objective()
+	objective={}
+	objective.active = false
+	objective.current = "talk to brian"
 end
-
 
 function draw_objective() -- draws current objective at top of screen (31 char limit)
 	rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
@@ -271,7 +258,20 @@ function init_wordgame()
 	wordgame.answers = {} -- store page wordgame answers	
 	wordgame.selectedAnswer = 1
 	wordgame.state = "empty"
+	--[[ empty, question_list, chosen_question, completed]]
 	wordgame.displayed = false
+end
+
+function display_wordgame_on_button_press()
+	if (btnp(🅾️)) and wordgame.state != "empty" then			
+		wordgame.displayed = true
+		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
+		tmp_camera_y = camera_y
+	elseif (btnp(🅾️)) and wordgame.state == "empty" then		
+		wordgame.displayed = false
+		camera_x = tmp_camera_x -- return camera to previous position
+		camera_y = tmp_camera_y
+	end
 end
 
 function store_wordgame_questions(txt)
@@ -302,7 +302,7 @@ function prepare_wordgame()
 	end	
 end
 
-function draw_wordgame_questions() -- based on draw_conversation
+function draw_wordgame_chosen_question() -- based on draw_conversation
  -- ** QUESTION LOGIC** 
 	local maxTextWidth = 0
 	for i=1, #wordgame.string do -- the # gets array length
