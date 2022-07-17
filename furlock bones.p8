@@ -2,15 +2,15 @@ pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
 --[[  
+
+CS50 Final Project for Owen FitzGerald 2022: Furlock Bones: Consulting Dogtective
+
 ** REMINDERS **
 CONTROL +K +J = unfold all
 CONTROL +K +1 = fold at level 1 
 U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button) 
 CTRL + X deletes a line of code!
 --]]
-
---[[ CS50 Final Project for Owen FitzGerald 2022
-	 Furlock Bones: Consulting Dogtective ]]
 
 --init, update and draw functions
 function _init()
@@ -88,15 +88,10 @@ end
 
 function draw_game()
 	if wordgame.displayed == true then
-		camera_x, camera_y = 0,0 --0,0 as I draw wordgame in top left
-		camera(camera_x,camera_y)
-		
-		rectfill(0, 0, 127, 127, 7) -- fill screen		
-		if (wordgame.state == "display wordgame") then		
-			prepare_wordgame()
-		end
-		
-		if wordgame.ready == true then draw_wordgame_chosen_question() end
+		camera_x, camera_y = 0,0 
+		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
+		prepare_wordgame() -- get questions/anwers ready for current lost animal		
+		wordgame_draw_question_list()
 	else
 		camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
 		map(0,0,0,0,128,32) -- draw current map
@@ -162,8 +157,8 @@ function conversation_system()
 			end
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
 			new_conversation({"i dont have anything","else to say!","bye!"})
-			objective.current = "talk to wise old owl"
-			wordgame.state = "display wordgame"
+			objective.current = "talk to wise old owl"			
+			wordgame.pagesCollected = true
 			if (btnp(❎)) then
 				conversation_state = "none"
 			end
@@ -252,45 +247,36 @@ end
 -- word game functions
 function init_wordgame()
 	wordgame = {} -- create empty array to store multiple strings	
-	wordgame.string = {} -- empty array to store individual string?
-	wordgame.ready = false
-	wordgame.question = 1
+	wordgame.string = {} -- empty array to store individual string?	
 	wordgame.answers = {} -- store page wordgame answers	
+	wordgame.pagesCollected = false
+	wordgame.selectedQuestion = 1
 	wordgame.selectedAnswer = 1
-	wordgame.state = "empty"
+	wordgame.state = "question_list"
 	--[[ empty, question_list, chosen_question, completed]]
 	wordgame.displayed = false
 end
 
 function display_wordgame_on_button_press()
-	if (btnp(🅾️)) and wordgame.state != "empty" then			
+	if (btnp(🅾️)) and wordgame.pagesCollected == true and wordgame.displayed == false then
 		wordgame.displayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
-	elseif (btnp(🅾️)) and wordgame.state == "empty" then		
+	elseif (btnp(🅾️)) and wordgame.pagesCollected == true and wordgame.displayed == true then
 		wordgame.displayed = false
 		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
 	end
 end
 
-function store_wordgame_questions(txt)
-	wordgame.string = txt
-	wordgame.ready = true -- draw game displays pages wordgame if this is true
-end
-
-function store_wordgame_answers(txt)
-	wordgame.answers = txt
-end
-
 function prepare_wordgame()
 	lostAnimal = animal.list[animal.active]
 	if lostAnimal == "fox" then
-		if wordgame.question == 1 then
+		if wordgame.selectedQuestion == 1 then
 			store_wordgame_questions({"a fox lives in a ?"})
 			store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
 			wordgame.correct_answer = 1
-		elseif wordgame.question == 2 then
+		elseif wordgame.selectedQuestion == 2 then
 			store_wordgame_questions({"a fox likes to eat ?"})
 			store_wordgame_answers({"leaves", "bees", "people","chickens","sausages"})
 			wordgame.correct_answer = 4
@@ -302,7 +288,27 @@ function prepare_wordgame()
 	end	
 end
 
-function draw_wordgame_chosen_question() -- based on draw_conversation
+function store_wordgame_questions(txt)
+	wordgame.string = txt	
+end
+
+function store_wordgame_answers(txt)
+	wordgame.answers = txt
+end
+
+function wordgame_draw_question_list()
+	if (wordgame.state == "question_list") then
+		rectfill(0, 0, 127, 127, 7) -- fill screen
+		print_centered("choose a question", 50, 8)
+		if (btnp(❎)) then
+			wordgame.state = "chosen_question"
+		end
+	elseif (wordgame.state == "chosen_question") then
+		wordgame_draw_chosen_question()
+	end
+end
+
+function wordgame_draw_chosen_question() -- based on draw_conversation
  -- ** QUESTION LOGIC** 
 	local maxTextWidth = 0
 	for i=1, #wordgame.string do -- the # gets array length
@@ -375,9 +381,8 @@ function draw_wordgame_chosen_question() -- based on draw_conversation
 
 	-- use up and down to select a question unless already correctly answered
 	if correct == true then
-		if (btnp(❎)) then						
-			wordgame.ready = false
-			wordgame.state = "empty"
+		if (btnp(❎)) then			
+			wordgame.state = "question_list"
 		end
 	else
 		if (btnp(3)) then 
