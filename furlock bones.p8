@@ -90,7 +90,7 @@ function draw_game()
 	if wordgame.displayed == true then
 		camera_x, camera_y = 0,0 
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
-		wordgame_prepare() -- get questions/anwers ready for current lost animal		
+		wordgame_prepare_chosen_question() -- get questions/anwers ready for current lost animal		
 		wordgame_draw_question_list()
 	else
 		camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
@@ -253,23 +253,25 @@ function init_wordgame()
 	wordgame.displayed = false -- flag to check if displayed on screen or not
 end
 
-function wordgame_prepare()
-	lostAnimal = animal.list[animal.active]
-	if lostAnimal == "fox" then
-		if wordgame.selectedQuestion == 1 then
-			wordgame_store_questions({"a fox lives in a ?"})
+function wordgame_prepare_chosen_question()
+	if wordgame.state == "chosenQuestion" then
+		lostAnimal = animal.list[animal.active]
+		if lostAnimal == "fox" then
+			if wordgame.selectedQuestion == 1 then
+				wordgame_store_questions({"a fox lives in a ?"})
+				wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+				wordgame.correct_answer = 1
+			elseif wordgame.selectedQuestion == 2 then
+				wordgame_store_questions({"a fox likes to eat ?"})
+				wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
+				wordgame.correct_answer = 4
+			end
+		elseif lostAnimal == "red panda" then
+			wordgame_store_questions({"a red panda lives in a ?"})
 			wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-			wordgame.correct_answer = 1
-		elseif wordgame.selectedQuestion == 2 then
-			wordgame_store_questions({"a fox likes to eat ?"})
-			wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
-			wordgame.correct_answer = 4
-		end
-	elseif lostAnimal == "red panda" then
-		wordgame_store_questions({"a red panda lives in a ?"})
-		wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-		wordgame.correct_answer = 3
-	end	
+			wordgame.correct_answer = 3
+		end	
+	end
 end
 
 function wordgame_store_questions(txt)
@@ -295,50 +297,20 @@ end
 function wordgame_draw_question_list()
 	rectfill(0, 0, 127, 127, 7) -- fill screen
 	if (wordgame.state == "questionList") then		
-		print_centered("choose a question", 50, 8)
+		wordgame_store_answers({"a fox lives in a ?", "a fox likes to eat ?", "fox babies are called ?", "foxes are covered in ?"})
+		wordgame_questions_only()
+
 		if (btnp(❎)) then
 			wordgame.state = "chosenQuestion"
 		end
+
 	elseif (wordgame.state == "chosenQuestion") then
-		wordgame_draw_chosen_question()
+		wordgame_draw_chosen_question_and_answers()
 	end
 end
 
-function wordgame_draw_chosen_question()
- -- ** QUESTION LOGIC** 
-	local maxTextWidth = 0
-	for i=1, #wordgame.question do -- the # gets array length
-		if #wordgame.question[i] > maxTextWidth then -- loop through array and find longest text element
-			maxTextWidth = #wordgame.question[i] -- set max width to longest element so box wide enough
-		end
-	end
-
-	-- define textbox with border
-	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
-
-	-- draw text box at top of screen
-	local textbox_y = camera_y + 16 -- controls vertical location of text box (0 top, 127 bottom)
-	
-	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
-	local textbox_height = textbox_y + #wordgame.question * 6 -- *6 for character height
-
-	-- draw outer border text box
-	--rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 0)
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
-
-	-- write text
-	for i=1, #wordgame.question do  -- the # gets the legnth of the array 'text'
-		local txt = wordgame.question[i]
-		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
-		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		print(txt, tx, ty, 1)
-	end
-
- -- ** ANSWER LOGIC ** 
-	-- #wordgame.answers this is how many answers there are and thus how many boxes we need
-
-	-- determine longest line of text
+function wordgame_questions_only()
+	-- determine longest question
 	local maxTextWidth = 0
 	for i=1, #wordgame.answers do -- the # gets array length
 		if #wordgame.answers[i] > maxTextWidth then -- loop through array and find longest text element
@@ -364,7 +336,9 @@ function wordgame_draw_chosen_question()
 		if wordgame.selectedAnswer == i then
 			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 		end
-		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
+		
+		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12) -- this draws the box
+		
 		print(txt, tx, ty, 0) -- print the current possible answer
 		if correct == true then
 			print_centered("well done! press x to close",102,11)			
@@ -407,6 +381,114 @@ function wordgame_draw_chosen_question()
 		else correct = false end
 	end
 end
+
+function wordgame_draw_chosen_question_and_answers()
+ -- ** QUESTION LOGIC** 
+	local maxTextWidth = 0
+	for i=1, #wordgame.question do -- the # gets array length
+		if #wordgame.question[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.question[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- define textbox with border
+	local textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- draw text box at top of screen
+	local textbox_y = camera_y + 16 -- controls vertical location of text box (0 top, 127 bottom)
+	
+	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height = textbox_y + #wordgame.question * 6 -- *6 for character height
+
+	-- draw outer border text box	
+	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+	
+	-- write text
+	for i=1, #wordgame.question do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.question[i]
+		-- local tx = textbox_x +1 -- add 1 pixel of outside of box and text
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
+		print(txt, tx, ty, 1)
+	end
+	
+
+ -- ** ANSWER LOGIC ** 
+	-- #wordgame.answers this is how many answers there are and thus how many boxes we need
+
+	-- determine longest line of text
+	local maxTextWidth = 0
+	for i=1, #wordgame.answers do -- the # gets array length
+		if #wordgame.answers[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.answers[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- horizontal text box location
+	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+
+	-- vertical text box location
+	local textbox_yy = camera_y + 22 -- first question starts here
+	
+	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height2 = textbox_yy + 6 -- *6 for character height
+
+	-- write text
+	for i=1, #wordgame.answers do  -- the # gets the legnth of the array 'text'
+		local txt = wordgame.answers[i]
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
+		
+		if wordgame.selectedAnswer == i then
+			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+		end
+		
+		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,3) -- this draws the box
+		
+		print(txt, tx, ty, 0) -- prints the answers in the boxes
+		if correct == true then
+			print_centered("well done! press x to close",102,11)			
+			objective.current = "take the animal home!"			
+		elseif correct == false then
+			print_centered("i don't think that's right", 108, 8)
+		end
+		print_centered("UP,DOWN AND X TO SELECT", 120, 13)		
+	end
+
+	-- use up and down to select a question unless already correctly answered
+	if correct == true then
+		if (btnp(❎)) then wordgame.state = "questionList" end -- return to list of questions		
+	else
+		if (btnp(3)) then 
+			if wordgame.selectedAnswer > #wordgame.answers-1 then
+				wordgame.selectedAnswer = 1
+				correct = none
+			else
+				wordgame.selectedAnswer += 1
+				correct = none
+			end
+		end
+		if (btnp(2)) then -- 2 is up
+			if wordgame.selectedAnswer == 1 then
+				wordgame.selectedAnswer = #wordgame.answers
+				correct = none
+			else
+				wordgame.selectedAnswer -= 1
+				correct = none
+			end
+		end
+	end
+
+	-- check if correct
+	if (btnp(❎)) then
+		if wordgame.selectedAnswer == wordgame.correct_answer then 
+			correct = true
+			--animal.active += 1 -- this moves on to next animal but use it elsewhere instead
+		else correct = false end
+	end
+end
+
+
 
 
 -->8
