@@ -53,7 +53,7 @@ function _update60()
 	if activeGame == true  then 
 		animate_player()
 		animate_owl()
-		display_wordgame_on_button_press()		
+		wordgame_display_on_button_press()		
 		if wordgame.displayed == false then -- stop player moving if wordgame displayed
 			move_player() -- MUST be before camera_follow_player
 			camera_follow_player() -- MUST be after move_player
@@ -71,7 +71,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	-- print("wordgame state: "..wordgame.state,player.x-20,player.y-20,8)	
+	print("state: "..wordgame.state,player.x-20,player.y-40,8)	
 	--print(objective.current)
 	--print(camera_x)
 	--print(camera_y)
@@ -90,7 +90,7 @@ function draw_game()
 	if wordgame.displayed == true then
 		camera_x, camera_y = 0,0 
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
-		prepare_wordgame() -- get questions/anwers ready for current lost animal		
+		wordgame_prepare() -- get questions/anwers ready for current lost animal		
 		wordgame_draw_question_list()
 	else
 		camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
@@ -246,15 +246,41 @@ function init_wordgame()
 	wordgame = {} -- empty array to store multiple strings	
 	wordgame.question = {} -- empty array to store question string
 	wordgame.answers = {} -- empty array to store answer strings
-	wordgame.pagesCollected = false
+	wordgame.pagesCollected = false -- flag to check if player has collected all pages
 	wordgame.selectedQuestion = 1
 	wordgame.selectedAnswer = 1
-	wordgame.state = "question_list"
-	--[[ empty, question_list, chosen_question, completed]]
-	wordgame.displayed = false
+	wordgame.state = "questionList" --[[ questionList, chosenQuestion, completed]]
+	wordgame.displayed = false -- flag to check if displayed on screen or not
 end
 
-function display_wordgame_on_button_press()
+function wordgame_prepare()
+	lostAnimal = animal.list[animal.active]
+	if lostAnimal == "fox" then
+		if wordgame.selectedQuestion == 1 then
+			wordgame_store_questions({"a fox lives in a ?"})
+			wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+			wordgame.correct_answer = 1
+		elseif wordgame.selectedQuestion == 2 then
+			wordgame_store_questions({"a fox likes to eat ?"})
+			wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
+			wordgame.correct_answer = 4
+		end
+	elseif lostAnimal == "red panda" then
+		wordgame_store_questions({"a red panda lives in a ?"})
+		wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+		wordgame.correct_answer = 3
+	end	
+end
+
+function wordgame_store_questions(txt)
+	wordgame.question = txt	
+end
+
+function wordgame_store_answers(txt)
+	wordgame.answers = txt
+end
+
+function wordgame_display_on_button_press()
 	if (btnp(🅾️)) and wordgame.pagesCollected == true and wordgame.displayed == false then
 		wordgame.displayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
@@ -266,41 +292,14 @@ function display_wordgame_on_button_press()
 	end
 end
 
-function prepare_wordgame()
-	lostAnimal = animal.list[animal.active]
-	if lostAnimal == "fox" then
-		if wordgame.selectedQuestion == 1 then
-			store_wordgame_questions({"a fox lives in a ?"})
-			store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-			wordgame.correct_answer = 1
-		elseif wordgame.selectedQuestion == 2 then
-			store_wordgame_questions({"a fox likes to eat ?"})
-			store_wordgame_answers({"leaves", "bees", "people","chickens","sausages"})
-			wordgame.correct_answer = 4
-		end
-	elseif lostAnimal == "red panda" then
-		store_wordgame_questions({"a red panda lives in a ?"})
-		store_wordgame_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-		wordgame.correct_answer = 3
-	end	
-end
-
-function store_wordgame_questions(txt)
-	wordgame.question = txt	
-end
-
-function store_wordgame_answers(txt)
-	wordgame.answers = txt
-end
-
 function wordgame_draw_question_list()
 	rectfill(0, 0, 127, 127, 7) -- fill screen
-	if (wordgame.state == "question_list") then		
+	if (wordgame.state == "questionList") then		
 		print_centered("choose a question", 50, 8)
 		if (btnp(❎)) then
-			wordgame.state = "chosen_question"
+			wordgame.state = "chosenQuestion"
 		end
-	elseif (wordgame.state == "chosen_question") then
+	elseif (wordgame.state == "chosenQuestion") then
 		wordgame_draw_chosen_question()
 	end
 end
@@ -378,7 +377,7 @@ function wordgame_draw_chosen_question()
 
 	-- use up and down to select a question unless already correctly answered
 	if correct == true then
-		if (btnp(❎)) then wordgame.state = "question_list" end -- return to list of questions		
+		if (btnp(❎)) then wordgame.state = "questionList" end -- return to list of questions		
 	else
 		if (btnp(3)) then 
 			if wordgame.selectedAnswer > #wordgame.answers-1 then
