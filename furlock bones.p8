@@ -273,7 +273,7 @@ function wordgame_prepare_chosen_question()
 				wordgame.correct_answer = 4
 			elseif wordgame.selectedQuestion == 3 then
 				wordgame_store_questions({"fox babies are called ?"})
-				wordgame_store_answers({"plugs", "rugs", "cubs","chubs","scrubs"})
+				wordgame_store_answers({"plugs", "rugs", "kit or kitten","chubs","scrubs"})
 				wordgame.correct_answer = 3
 			elseif wordgame.selectedQuestion == 4 then
 				wordgame_store_questions({"foxes are covered in ?"})
@@ -310,7 +310,8 @@ end
 
 function wordgame_questions_only()
 	rectfill(0, 0, 127, 127, 7) -- draw background screen colour
-	print_centered("select a question", 6, 3)
+	print_centered("help furlock answer", 6, 3)
+	print_centered("the animal facts", 12, 3)
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 	wordgame.allQuestions = ({"foxes live in a ?", "foxes likes to eat ?", "fox babies are called ?", "foxes are covered in ?"})
 
@@ -490,17 +491,22 @@ function wordgame_draw_chosen_question_and_answers()
 			correct = true			
 		else correct = false end
 	end
-
 	
 	--[[ logic to auto-select correct question if already done 
+
+		ALTERNATIVE IDEA
+		player MUST pick correct answer before they can return to question list, so maybe instead
+		i can always shown green tick thing or highlight question in green after a question is viewed
+		because I know therefore it'll have been answered. but then IF the player views that question again
+		they just have to repick the correct answer
+
 		use an array for question 1-4 question[1] etc so for loop would be question[i]
 		this is so i know which question has been chosen
 		I think I can get this from wordgame.selectedQuestion sort of
 		then in that new array I can set each question to be true if answered correctly or not
 		if a question is already marked true then somehow :) set to green highlight thingy
 		glhf lol wp
-	]]
-	
+	]]	
 
 end
 
