@@ -71,7 +71,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	print("state: "..wordgame.correct,player.x-20,player.y-40,8)
+	print("convo: "..conversation_state,player.x-20,player.y-40,8)
 	--print("question: "..wordgame.selectedQuestion)	
 	--print(camera_y)
 end
@@ -176,6 +176,13 @@ function conversation_system()
 			if (btnp(❎)) then		
 				conversation_state = "none"
 			end
+		elseif conversation_state == "wordgame completed" and conversation.character == "owl" then
+		new_conversation({"Oh well done furlock!"})
+			objective.current = "send the animal home"			
+			if (btnp(❎)) then		
+				conversation_state = "none"
+			end
+
 
 		-- SIGNS
 		elseif conversation_state == "sign" and player.x < 400 then
@@ -262,8 +269,8 @@ function init_wordgame()
 end
 
 function wordgame_prepare_chosen_question()
+	lostAnimal = animal.list[animal.active]
 	if wordgame.state == "chosenQuestion" then
-		lostAnimal = animal.list[animal.active]
 		if lostAnimal == "fox" then			
 			if wordgame.selectedQuestion == 1 then
 				wordgame_store_questions({"foxes live in a ?"})
@@ -318,6 +325,8 @@ function wordgame_questions_only()
 
 	if wordgame.completed == true then
 		print_centered("YOU DID IT!!!", 100, 8)
+		conversation_state = "wordgame completed"
+		animal.active = 2
 	end
 
 	wordgame.allQuestions = ({"foxes live in a ?", "foxes likes to eat ?", "fox babies are called ?", "foxes are covered in ?"})
