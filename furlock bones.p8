@@ -71,7 +71,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	--print("q: "..wordgame.selectedQuestion,player.x-20,player.y-40,8)
+	print("state: "..wordgame.correct,player.x-20,player.y-40,8)
 	--print("question: "..wordgame.selectedQuestion)	
 	--print(camera_y)
 end
@@ -258,6 +258,7 @@ function init_wordgame()
 	wordgame.state = "questionList" --[[ questionList, chosenQuestion, completed]]
 	wordgame.displayed = false -- flag to check if displayed on screen or not
 	wordgame.completed = false
+	wordgame.correct = "empty"
 end
 
 function wordgame_prepare_chosen_question()
@@ -454,48 +455,42 @@ function wordgame_draw_chosen_question_and_answers()
 		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
 		
 		if wordgame.selectedAnswer == i then
-			if correct == true then 
+			if wordgame.correct == "true" then 
 				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,11) -- colour green to indicate correct
 				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- this draws the box
 			else
 				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,7) -- this draws the box
 			end
-		end	
-		
-		print(txt, tx, ty, 0) -- prints the answers in the boxes	
-	end
-
-	if correct == true then
-		print_centered("well done! press x to close",102,11)
-	elseif correct == false then
-		print_centered("i don't think that's right", 108, 8)
-	end
-	print_centered("UP,DOWN AND X TO SELECT", 120, 13)	
+		end
+		print(txt, tx, ty, 0) -- print the answers in the boxes	
+	end	
 
 	-- use up and down to select a question
-	if correct == true then -- dont let player move if already answered correctly
+	if wordgame.correct == "true" then -- stop answer selection if already correct and return to questions on x button
 		if (btnp(❎)) then 
-		wordgame.state = "questionList"
+			wordgame.correct = "empty"
+			wordgame.state = "questionList"
 		wordgame.selectedAnswer = 1 -- reset to 1 for next question
+		return -- quit function
 		end -- return to list of questions		
 	else
 		if (btnp(3)) then -- 3 is down
 			if wordgame.selectedAnswer > #wordgame.answers-1 then
 				wordgame.selectedAnswer = 1
-				correct = null
+				wordgame.correct = "empty"
 			else
 				wordgame.selectedAnswer += 1
-				correct = null
+				wordgame.correct = "empty"
 			end
 		end
 		if (btnp(2)) then -- 2 is up
 			if wordgame.selectedAnswer == 1 then
 				wordgame.selectedAnswer = #wordgame.answers
-				correct = null
+				wordgame.correct = "empty"
 			else
 				wordgame.selectedAnswer -= 1
-				correct = null
+				wordgame.correct = "empty"
 			end
 		end
 	end
@@ -503,11 +498,17 @@ function wordgame_draw_chosen_question_and_answers()
 	-- check if correct
 	if (btnp(❎)) then
 		if wordgame.selectedAnswer == wordgame.correct_answer then 
-			correct = true			
+			wordgame.correct = "true"	
 		else 
-			correct = false
+			wordgame.correct = "false"
 		end
 	end
+	if wordgame.correct == "true" then
+		print_centered("well done! press x to close",102,11)
+	elseif wordgame.correct == "false" then
+		print_centered("i don't think that's right", 108, 8)
+	end
+	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 end
 
 
