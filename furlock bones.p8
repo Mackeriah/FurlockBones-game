@@ -14,7 +14,6 @@ CTRL + X deletes a line of code!
 
 --init, update and draw functions
 function _init()
-	-- debug_mode = false
 	camera_x, camera_y = 0,0
 	tmp_camera_x, tmp_camera_y = 0,0 -- don't remove this
 	activeGame = false	
@@ -29,7 +28,8 @@ function _init()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
 	init_objective()
-	lost_animals()	
+	lost_animals()
+	sausage = false
 end
 
 function init_music()
@@ -69,9 +69,15 @@ end
 
 function _draw()
 	cls()
-	if activeGame == false then draw_menu() else draw_game() end	
+	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	print("convo: "..conversation_state,player.x-20,player.y-40,8)
+	if sausage == true then
+		print("word q: "..wordgame.question[1],player.x-20,player.y-20,8)
+		print(wordgame.question[2])
+		print(wordgame.question[3])
+		print(wordgame.question[4])
+	end
+	--print(wordgame.answered[3])
 	--print("question: "..wordgame.selectedQuestion)	
 	--print(camera_y)
 end
@@ -175,14 +181,7 @@ function conversation_system()
 			objective.current = "collect page pieces 7/10"			
 			if (btnp(❎)) then		
 				conversation_state = "none"
-			end
-		elseif conversation_state == "wordgame completed" and conversation.character == "owl" then
-		new_conversation({"Oh well done furlock!"})
-			objective.current = "send the animal home"			
-			if (btnp(❎)) then		
-				conversation_state = "none"
-			end
-
+			end		
 
 		-- SIGNS
 		elseif conversation_state == "sign" and player.x < 400 then
@@ -256,8 +255,8 @@ end
 function init_wordgame()
 	wordgame = {} -- empty array to store multiple strings	
 	wordgame.question = {} -- empty array to store question string
-	wordgame.allQuestions = {} -- stores list of all questions
-	wordgame.answeredQuestions = {} -- store question numbers when answered to check when all done
+	wordgame.allQuestions = {} -- stores list of all questions	(1-4 currently)		
+	wordgame.answered = {false, false, false, false} -- store when each question answered
 	wordgame.answers = {} -- empty array to store answer strings
 	wordgame.pagesCollected = false -- flag to check if player has collected all pages
 	wordgame.selectedQuestion = 1
@@ -318,21 +317,22 @@ function wordgame_display_on_button_press()
 end
 
 function wordgame_questions_only()
-	rectfill(0, 0, 127, 127, 7) -- draw background screen colour
+	rectfill(0, 0, 127, 127, 7) -- background colour
 	print_centered("help furlock answer", 6, 3)
 	print_centered("the animal facts", 12, 3)
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
-
-	if wordgame.completed == true then
-		print_centered("YOU DID IT!!!", 100, 8)
-		conversation_state = "wordgame completed"
-		animal.active = 2
-	end
+	if wordgame.completed == true then print_centered("YOU DID IT!!!", 100, 8) end
 
 	wordgame.allQuestions = ({"foxes live in a ?", "foxes likes to eat ?", "fox babies are called ?", "foxes are covered in ?"})
-
-	-- change state when player picks a question to answer
-	if (btnp(❎)) then wordgame.state = "chosenQuestion"	end
+		
+	-- let user pick a question and mark as answered
+	if (btnp(❎)) then 
+		wordgame.state = "chosenQuestion"		
+		--[[ this updates the answered array using whatever the chosen question number
+			 was and sets it as true, so that when all questions are true we know
+			 the player has completed the wordgame ]]
+		wordgame.answered[wordgame.selectedQuestion] = true
+	end
 
 	-- determine longest question
 	local maxTextWidth = 0
@@ -359,56 +359,41 @@ function wordgame_questions_only()
 		if wordgame.selectedQuestion == i then rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) end
 		
 		-- inner question box
-		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12)
+		if wordgame.answered[i] == true then
+			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- colour box green if already answered
+		else
+			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12)
+		end	
+		
 		-- question text
 		print(txt, tx, ty, 0)		
 	end
 
 	-- use up and down to select a question unless already correctly answered
-	if (btnp(3)) then -- 3 is down button
+	if (btnp(3)) then -- 3 is down button and loop back to top
 		if wordgame.selectedQuestion > #wordgame.allQuestions-1 then
 			wordgame.selectedQuestion = 1
 		else wordgame.selectedQuestion += 1 end
 	end
-	if (btnp(2)) then -- 2 is up button
+	if (btnp(2)) then -- 2 is up button and loop back to bottom
 		if wordgame.selectedQuestion == 1 then
 			wordgame.selectedQuestion = #wordgame.allQuestions
 		else wordgame.selectedQuestion -= 1 end
 	end	
 
-	-- let user pick a question and mark as answered
-	-- make this into a for loop, not sure why I struggled before!!!
-	if (btnp(❎)) then
-		if wordgame.selectedQuestion == 1 and wordgame.q1 != "complete" then
-			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
-			wordgame.q1 = "complete"
-		end
-		if wordgame.selectedQuestion == 2 and wordgame.q2 != "complete" then
-			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
-			wordgame.q2 = "complete"
-		end
-		if wordgame.selectedQuestion == 3 and wordgame.q3 != "complete" then
-			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
-			wordgame.q3 = "complete"
-		end
-		if wordgame.selectedQuestion == 4 and wordgame.q4 != "complete" then
-			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
-			wordgame.q4 = "complete"
-		end
-		wordgame.state = "chosenQuestion" -- display question
-	end
-
-	if (wordgame.q1 == "complete") 
-		and (wordgame.q2 == "complete") 
-		and (wordgame.q3 == "complete")
-		and (wordgame.q4 == "complete") then
+	if wordgame.answered[1] == true
+		and wordgame.answered[2] == true
+		and wordgame.answered[3] == true
+		and wordgame.answered[4] == true then
 			wordgame.completed = true
-	end
+	end	
+
 end
 
 function wordgame_draw_chosen_question_and_answers()
- -- ** QUESTION LOGIC** 
+ -- ** QUESTION LOGIC**
  	cls()
+	sausage = true
 	rectfill(0, 0, 127, 127, 7) -- draw background screen colour
 	local maxTextWidth = 0
 	for i=1, #wordgame.question do -- the # gets array length
@@ -882,14 +867,6 @@ end
 
 -->8
 -- back of house functions
-function toggle_debug_mode()	
-	if (btnp(🅾️)) and (debug_mode == false) then
-		debug_mode = true	
-	elseif (btnp(🅾️)) and (debug_mode == true) then
-	  	debug_mode = false
-	end	
-end
-
 function print_centered(str, height, colour)
 	print(str, 64 - (#str * 2), height, colour)	
 end
