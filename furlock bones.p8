@@ -30,7 +30,6 @@ function _init()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
 	init_objective()
 	lost_animals()	
-	ooooh = 0
 end
 
 function init_music()
@@ -74,7 +73,6 @@ function _draw()
 	-- player.x-20,player.y-20,8
 	--print("q: "..wordgame.selectedQuestion,player.x-20,player.y-40,8)
 	--print("question: "..wordgame.selectedQuestion)	
-	--print(camera_x)
 	--print(camera_y)
 end
 
@@ -318,7 +316,7 @@ function wordgame_questions_only()
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 
 	if wordgame.completed == true then
-		print_centered("COMPLETED!!!!!", 100, 13)
+		print_centered("YOU DID IT!!!", 100, 8)
 	end
 
 	wordgame.allQuestions = ({"foxes live in a ?", "foxes likes to eat ?", "fox babies are called ?", "foxes are covered in ?"})
@@ -357,26 +355,19 @@ function wordgame_questions_only()
 	end
 
 	-- use up and down to select a question unless already correctly answered
-	if (btnp(3)) then 
+	if (btnp(3)) then -- 3 is down button
 		if wordgame.selectedQuestion > #wordgame.allQuestions-1 then
 			wordgame.selectedQuestion = 1
-			
-		else
-			wordgame.selectedQuestion += 1
-			
-		end
+		else wordgame.selectedQuestion += 1 end
 	end
-	if (btnp(2)) then -- 2 is up
+	if (btnp(2)) then -- 2 is up button
 		if wordgame.selectedQuestion == 1 then
 			wordgame.selectedQuestion = #wordgame.allQuestions
-			
-		else
-			wordgame.selectedQuestion -= 1
-			
-		end
+		else wordgame.selectedQuestion -= 1 end
 	end	
 
 	-- let user pick a question and mark as answered
+	-- make this into a for loop, not sure why I struggled before!!!
 	if (btnp(❎)) then
 		if wordgame.selectedQuestion == 1 and wordgame.q1 != "complete" then
 			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
@@ -405,10 +396,9 @@ function wordgame_questions_only()
 	end
 end
 
-
-
 function wordgame_draw_chosen_question_and_answers()
  -- ** QUESTION LOGIC** 
+ 	cls()
 	rectfill(0, 0, 127, 127, 7) -- draw background screen colour
 	local maxTextWidth = 0
 	for i=1, #wordgame.question do -- the # gets array length
@@ -473,17 +463,18 @@ function wordgame_draw_chosen_question_and_answers()
 			end
 		end	
 		
-		print(txt, tx, ty, 0) -- prints the answers in the boxes
-		if correct == true then
-			print_centered("well done! press x to close",102,11)						
-		elseif correct == false then
-			print_centered("i don't think that's right", 108, 8)
-		end
-		print_centered("UP,DOWN AND X TO SELECT", 120, 13)		
+		print(txt, tx, ty, 0) -- prints the answers in the boxes	
 	end
 
+	if correct == true then
+		print_centered("well done! press x to close",102,11)
+	elseif correct == false then
+		print_centered("i don't think that's right", 108, 8)
+	end
+	print_centered("UP,DOWN AND X TO SELECT", 120, 13)	
+
 	-- use up and down to select a question
-	if correct == true then -- dont let player move if answered correctly
+	if correct == true then -- dont let player move if already answered correctly
 		if (btnp(❎)) then 
 		wordgame.state = "questionList"
 		wordgame.selectedAnswer = 1 -- reset to 1 for next question
@@ -492,19 +483,19 @@ function wordgame_draw_chosen_question_and_answers()
 		if (btnp(3)) then -- 3 is down
 			if wordgame.selectedAnswer > #wordgame.answers-1 then
 				wordgame.selectedAnswer = 1
-				correct = none
+				correct = null
 			else
 				wordgame.selectedAnswer += 1
-				correct = none
+				correct = null
 			end
 		end
 		if (btnp(2)) then -- 2 is up
 			if wordgame.selectedAnswer == 1 then
 				wordgame.selectedAnswer = #wordgame.answers
-				correct = none
+				correct = null
 			else
 				wordgame.selectedAnswer -= 1
-				correct = none
+				correct = null
 			end
 		end
 	end
@@ -513,7 +504,9 @@ function wordgame_draw_chosen_question_and_answers()
 	if (btnp(❎)) then
 		if wordgame.selectedAnswer == wordgame.correct_answer then 
 			correct = true			
-		else correct = false end
+		else 
+			correct = false
+		end
 	end
 end
 
