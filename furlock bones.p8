@@ -30,6 +30,7 @@ function _init()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
 	init_objective()
 	lost_animals()	
+	ooooh = 0
 end
 
 function init_music()
@@ -71,17 +72,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end	
 	-- player.x-20,player.y-20,8
-	print("q: "..wordgame.selectedQuestion,player.x-20,player.y-40,8)
-	print(wordgame.answeredQuestions[1])
-	print(wordgame.answeredQuestions[2])
-	print(wordgame.answeredQuestions[3])
-	print(wordgame.answeredQuestions[4])
-	for v in all(wordgame.answeredQuestions) do 
-			print(v) 
-			if v == 1 then
-				print("yes")
-			end
-	end
+	--print("q: "..wordgame.selectedQuestion,player.x-20,player.y-40,8)
 	--print("question: "..wordgame.selectedQuestion)	
 	--print(camera_x)
 	--print(camera_y)
@@ -267,7 +258,8 @@ function init_wordgame()
 	wordgame.selectedQuestion = 1
 	wordgame.selectedAnswer = 1
 	wordgame.state = "questionList" --[[ questionList, chosenQuestion, completed]]
-	wordgame.displayed = false -- flag to check if displayed on screen or not	
+	wordgame.displayed = false -- flag to check if displayed on screen or not
+	wordgame.completed = false
 end
 
 function wordgame_prepare_chosen_question()
@@ -324,6 +316,11 @@ function wordgame_questions_only()
 	print_centered("help furlock answer", 6, 3)
 	print_centered("the animal facts", 12, 3)
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
+
+	if wordgame.completed == true then
+		print_centered("COMPLETED!!!!!", 100, 13)
+	end
+
 	wordgame.allQuestions = ({"foxes live in a ?", "foxes likes to eat ?", "fox babies are called ?", "foxes are covered in ?"})
 
 	-- change state when player picks a question to answer
@@ -379,19 +376,36 @@ function wordgame_questions_only()
 		end
 	end	
 
-	-- let user pick a question
+	-- let user pick a question and mark as answered
 	if (btnp(❎)) then
+		if wordgame.selectedQuestion == 1 and wordgame.q1 != "complete" then
+			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
+			wordgame.q1 = "complete"
+		end
+		if wordgame.selectedQuestion == 2 and wordgame.q2 != "complete" then
+			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
+			wordgame.q2 = "complete"
+		end
+		if wordgame.selectedQuestion == 3 and wordgame.q3 != "complete" then
+			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
+			wordgame.q3 = "complete"
+		end
+		if wordgame.selectedQuestion == 4 and wordgame.q4 != "complete" then
+			add(wordgame.answeredQuestions, wordgame.selectedQuestion)
+			wordgame.q4 = "complete"
+		end
+		wordgame.state = "chosenQuestion" -- display question
+	end
 
-		
-
-		add (wordgame.answeredQuestions, wordgame.selectedQuestion)
-		-- for v in all(wordgame.answeredQuestions) do 
-		-- 	print(v) 
-		-- end
-
-		wordgame.state = "chosenQuestion"		
+	if (wordgame.q1 == "complete") 
+		and (wordgame.q2 == "complete") 
+		and (wordgame.q3 == "complete")
+		and (wordgame.q4 == "complete") then
+			wordgame.completed = true
 	end
 end
+
+
 
 function wordgame_draw_chosen_question_and_answers()
  -- ** QUESTION LOGIC** 
@@ -501,23 +515,6 @@ function wordgame_draw_chosen_question_and_answers()
 			correct = true			
 		else correct = false end
 	end
-	
-	--[[ logic to auto-select correct question if already done 
-
-		ALTERNATIVE IDEA
-		player MUST pick correct answer before they can return to question list, so maybe instead
-		i can always shown green tick thing or highlight question in green after a question is viewed
-		because I know therefore it'll have been answered. but then IF the player views that question again
-		they just have to repick the correct answer
-
-		use an array for question 1-4 question[1] etc so for loop would be question[i]
-		this is so i know which question has been chosen
-		I think I can get this from wordgame.selectedQuestion sort of
-		then in that new array I can set each question to be true if answered correctly or not
-		if a question is already marked true then somehow :) set to green highlight thingy
-		glhf lol wp
-	]]	
-
 end
 
 
