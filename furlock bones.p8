@@ -538,13 +538,13 @@ function move_player()
 		-- if player still moving
 		if (player.velocity_x != 0) or (player.velocity_y != 0) then
 
-			-- call check_if_next_to_wall function for collision before letting player move
+			-- call stop_at_wall function for collision before letting player move
 			-- essentially this allows play to move diaganolly along a solid object, as without this
-			-- the can_move code prevents them moving
-			check_if_next_to_wall(player)
+			-- the check_if_map_solid code prevents them moving
+			stop_at_wall(player)
 
 			-- check player isn't trying to move into a solid object
-			if (can_move(player, player.velocity_x, player.velocity_y)) then
+			if (check_if_map_solid(player, player.velocity_x, player.velocity_y)) then
 				--actually move the player to the new location
 				player.x += player.velocity_x
 				player.y += player.velocity_y
@@ -556,7 +556,7 @@ function move_player()
 				temp_direction_y = player.velocity_y
 				
 				--make tempx,tempy shorter and shorter until we find a new position the player can move to
-				while (not can_move(player,temp_direction_x,temp_direction_y)) do
+				while (not check_if_map_solid(player,temp_direction_x,temp_direction_y)) do
 					
 					--if x movement has been shortened so much that it's practically 0, set it to 0
 					if (abs(temp_direction_x) <= 0.1) then
@@ -605,7 +605,7 @@ end
 
 -->8
 -- player collision functions
-function check_if_next_to_wall(player)
+function stop_at_wall(player)
 	-- if player next to a wall stop them moving in that direction
 	-- essentially this allows player to move along a wall holding two buttons. e.g. up and left
 	-- what happens is that we ignore the left movement as it is set to zero meaning that we only
@@ -613,8 +613,8 @@ function check_if_next_to_wall(player)
 	-- player moving left
 	if (player.velocity_x < 0) then
 		--check both left corners for a wall
-		local wall_top_left = solid(player.x -1, player.y)
-		local wall_btm_left = solid(player.x -1, player.y + player.height)
+		local wall_top_left = is_sprite_solid(player.x -1, player.y)
+		local wall_btm_left = is_sprite_solid(player.x -1, player.y + player.height)
 		-- if wall in that direction, set x movement to 0
 		if (wall_top_left or wall_btm_left) then
 			player.velocity_x = 0
@@ -622,8 +622,8 @@ function check_if_next_to_wall(player)
 
 	-- player moving right
 	elseif (player.velocity_x > 0) then		
-		local wall_top_right = solid(player.x + player.width + 1, player.y)
-		local wall_btm_right = solid(player.x + player.width + 1, player.y + player.height)		
+		local wall_top_right = is_sprite_solid(player.x + player.width + 1, player.y)
+		local wall_btm_right = is_sprite_solid(player.x + player.width + 1, player.y + player.height)		
 		if (wall_top_right or wall_btm_right) then
 			player.velocity_x = 0
 		end
@@ -631,23 +631,23 @@ function check_if_next_to_wall(player)
 
 	-- player moving up
 	if (player.velocity_y < 0) then		
-		local wall_top_left = solid(player.x, player.y - 1)
-		local wall_top_right = solid(player.x + player.width, player.y - 1)		
+		local wall_top_left = is_sprite_solid(player.x, player.y - 1)
+		local wall_top_right = is_sprite_solid(player.x + player.width, player.y - 1)		
 		if (wall_top_left or wall_top_right) then
 			player.velocity_y = 0
 		end
 
 	-- player moving down
 	elseif (player.velocity_y > 0) then		
-		local wall_btm_left = solid(player.x, player.y + player.height + 1)
-		local wall_btm_right = solid(player.x, player.y + player.height + 1)		
+		local wall_btm_left = is_sprite_solid(player.x, player.y + player.height + 1)
+		local wall_btm_right = is_sprite_solid(player.x, player.y + player.height + 1)		
 		if (wall_btm_right or wall_btm_left) then
 			player.velocity_y = 0
 		end
 	end 
 end
 
-function can_move(object,direction_x,direction_y)
+function check_if_map_solid(object,direction_x,direction_y)
 	--this function takes an object (only player currently) and it's x,y speed. It uses these
 	--to check the four corners of the object to see it can move into that spot. (a map tile
 	--marked as solid would prevent movement into that spot.)
@@ -660,17 +660,17 @@ function can_move(object,direction_x,direction_y)
 
 	-- get x,y for each corner based on where trying to move, then use solid to convert that to a 
 	-- map tile location and check if any solid sprites there
-	local top_left_solid = solid(next_left, next_top)
-	local btm_left_solid = solid(next_left, next_bottom)
-	local top_right_solid = solid(next_right, next_top)
-	local btm_right_solid = solid(next_right, next_bottom)
+	local top_left_solid = is_sprite_solid(next_left, next_top)
+	local btm_left_solid = is_sprite_solid(next_left, next_bottom)
+	local top_right_solid = is_sprite_solid(next_right, next_top)
+	local btm_right_solid = is_sprite_solid(next_right, next_bottom)
 
 	--if all of those locations are NOT solid, the object can move into that spot.
 	-- this is why it's return NOT so we get (I think) a true returned as if all 4 are false we can move there
 	return not (top_left_solid or btm_left_solid or	top_right_solid or btm_right_solid)
 end
 
-function solid(x,y)	
+function is_sprite_solid(x,y)	
 	--checks x,y of player/object against the map to see if sprite marked as solid
 	-- divide x,y by 8 to get map coordinates
 	local map_x = flr(x/8)
