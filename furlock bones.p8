@@ -66,7 +66,9 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(wordgame.answered[3])
+	print("convo: "..conversation_state,player.x-20,player.y-20,8)
+	print(wordgame.displayed)
+	print(conversation.active)
 	--print("question: "..wordgame.selectedQuestion)
 end
 
@@ -137,21 +139,23 @@ function new_conversation(txt)
 end
 
 function conversation_system()	
-	if wordgame.displayed == false then -- to stop movement buttons affecting conversations
+	if wordgame.displayed == false then -- stop menu buttons affecting conversations
+
+		if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
+	
 		if conversation_state == "start" then
-			new_conversation({conversation.character,"press x to talk"})
-			if (btnp(❎)) then
-				conversation_state = "level1"
-			end	
+			new_conversation({conversation.character,"PRESS X TO TALK"})
+			if (btnp(❎)) then conversation_state = "level1" end	
+
 			
 		-- BRIAN
 		elseif conversation_state == "level1" and conversation.character == "brian" then
-			new_conversation({"ruff! morning furlock!"}) 
-			if (btnp(❎)) then		
+			new_conversation({"ruff! morning furlock!","PRESS X TO CONTINUE"}) 
+			if (btnp(❎)) then
 				conversation_state = "level2"
 			end
 		elseif conversation_state == "level2" and conversation.character == "brian" then		
-			new_conversation({"i dont have anything","else to say!","bye!"})
+			new_conversation({"i dont have anything","else to say!","bye!","PRESS X TO CONTINUE"})
 			objective.current = "talk to wise old owl"			
 			wordgame.pagesCollected = true
 			if (btnp(❎)) then
@@ -160,12 +164,12 @@ function conversation_system()
 
 		-- OWL
 		elseif conversation_state == "level1" and conversation.character == "owl" then
-			new_conversation({"hmm, what now furlock?"}) 
+			new_conversation({"hmm, what now furlock?","PRESS X TO CONTINUE"}) 
 			if (btnp(❎)) then		
 				conversation_state = "level2"
 			end
 		elseif conversation_state == "level2" and conversation.character == "owl" then		
-			new_conversation({"hurrumph!"})
+			new_conversation({"hurrumph!","PRESS X TO CONTINUE"})
 			objective.current = "collect page pieces 7/10"			
 			if (btnp(❎)) then		
 				conversation_state = "none"
@@ -197,7 +201,7 @@ function conversation_system()
 end
 
 function draw_conversation()
-	-- this runs if conversation.active is true and determines longest sentence length
+	-- this runs if conversation.active is true and determines longest sentence length	
 	local maxSentenceWidth = 0
 	for i=1, #conversation.string do -- the # gets array length
 		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
@@ -212,29 +216,31 @@ function draw_conversation()
 	if (player.y < 200) then
 		conversationBox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
 	else
-		conversationBox_y = camera_y + 5 -- controls vertical location of text box (0 top, 127 bottom)
+		conversationBox_y = camera_y + 12 -- controls vertical location of text box (0 top, 127 bottom)
 	end	
 	
 	local conversationBox_width = conversationBox_x+(maxSentenceWidth*4)  -- *4 to account for character width
 	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
 
 	-- draw outer border text box
-	rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 0)
-	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 12)
+	rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 1)
+	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 7)
 
 	-- write text
 	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'		
 		local txt = conversation.string[i]
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		if (conversation_state == "start") and i == 1 
-		 or (conversation_state == "sign") and i == 1 
-		 then 
-			print(txt, tx, ty, 7) -- print first text line white		
+		-- if (conversation_state == "start") and i == 1 
+		--  or (conversation_state == "sign") and i == 1 
+		--  then 
+		-- 	print(txt, tx, ty, 1) -- print first text line white		
+		if i == #conversation.string then -- if we're on last line
+			print(txt, tx, ty, 13) -- print last text line grey
 		else
-			print(txt, tx, ty, 1)
-		end
-	end
+			print(txt, tx, ty, 12)
+		end		
+	end		
 end
 
 
@@ -743,12 +749,14 @@ end
 function brian_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
 	brian.speed = 0
-  		if conversation_state == "none" then			
-			conversation_state = "start"
-			conversation.character = "brian"
-			brian.wait = true
-			brian.waitTime = time()
-		end 
+		if wordgame.displayed == false then
+			if conversation_state == "none" then			
+				conversation_state = "start"
+				conversation.character = "brian"
+				brian.wait = true
+				brian.waitTime = time()
+			end 
+		end
 	else
 		if conversation.character == "brian" then -- if player walks away instead of starting conversation			
 			brian.speed = 0.2	 	
