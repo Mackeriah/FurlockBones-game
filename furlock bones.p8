@@ -66,9 +66,9 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	print("convo: "..conversation_state,player.x-20,player.y-20,8)
-	print(wordgame.displayed)
-	print(conversation.active)
+	--print("convo: "..conversation_state,player.x-20,player.y-20,8)
+	--print(wordgame.displayed)
+	--print(conversation.active)
 	--print("question: "..wordgame.selectedQuestion)
 end
 
@@ -85,10 +85,10 @@ function draw_game()
 	if wordgame.displayed == true then
 		camera_x, camera_y = 0,0 
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
-		wordgame_prepare_chosen_question() -- get questions/anwers ready for current lost animal
+		wordgame_prepare_chosen_question()
 		
 		if wordgame.state == "questionList" then 
-			wordgame_questions_only()						
+			wordgame_draw_questions()						
 		elseif wordgame.state == "chosenQuestion" then
 			wordgame_draw_chosen_question_and_answers()
 		end
@@ -138,66 +138,62 @@ function new_conversation(txt)
 	conversation.active = true -- draw game displays conversation if this is true
 end
 
-function conversation_system()	
-	if wordgame.displayed == false then -- stop menu buttons affecting conversations
+function conversation_system()
+	if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
 
-		if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
-	
-		if conversation_state == "start" then
-			new_conversation({conversation.character,"PRESS X TO TALK"})
-			if (btnp(❎)) then conversation_state = "level1" end	
+	if conversation_state == "start" then
+		new_conversation({conversation.character,"PRESS X TO TALK"})
+		if (btnp(❎)) then conversation_state = "level1" end	
 
-			
-		-- BRIAN
-		elseif conversation_state == "level1" and conversation.character == "brian" then
-			new_conversation({"ruff! morning furlock!","PRESS X TO CONTINUE"}) 
-			if (btnp(❎)) then
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and conversation.character == "brian" then		
-			new_conversation({"i dont have anything","else to say!","bye!","PRESS X TO CONTINUE"})
-			objective.current = "talk to wise old owl"			
-			wordgame.pagesCollected = true
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
+	-- BRIAN
+	elseif conversation_state == "level1" and conversation.character == "brian" then
+		new_conversation({"ruff! morning furlock!","PRESS X TO CONTINUE"}) 
+		if (btnp(❎)) then
+			conversation_state = "level2"
+		end
+	elseif conversation_state == "level2" and conversation.character == "brian" then		
+		new_conversation({"i dont have anything","else to say!","bye!","PRESS X TO CONTINUE"})
+		objective.current = "talk to wise old owl"			
+		wordgame.pagesCollected = true
+		if (btnp(❎)) then
+			conversation_state = "none"
+		end
 
-		-- OWL
-		elseif conversation_state == "level1" and conversation.character == "owl" then
-			new_conversation({"hmm, what now furlock?","PRESS X TO CONTINUE"}) 
-			if (btnp(❎)) then		
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and conversation.character == "owl" then		
-			new_conversation({"hurrumph!","PRESS X TO CONTINUE"})
-			objective.current = "collect page pieces 7/10"			
-			if (btnp(❎)) then		
-				conversation_state = "none"
-			end		
+	-- OWL
+	elseif conversation_state == "level1" and conversation.character == "owl" then
+		new_conversation({"hmm, what now furlock?","PRESS X TO CONTINUE"}) 
+		if (btnp(❎)) then		
+			conversation_state = "level2"
+		end
+	elseif conversation_state == "level2" and conversation.character == "owl" then		
+		new_conversation({"hurrumph!","PRESS X TO CONTINUE"})
+		objective.current = "collect page pieces 7/10"			
+		if (btnp(❎)) then		
+			conversation_state = "none"
+		end		
 
-		-- SIGNS
-		elseif conversation_state == "sign" and player.x < 400 then
-			new_conversation({conversation.character, "press x to read"})
-			if (btnp(❎)) then		
-				conversation_state = "sign2"			
-			end
-		elseif conversation_state == "sign2" then
-			new_conversation({"owl's house this way"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-		elseif conversation_state == "sign" and player.x > 400 then
-			new_conversation({conversation.character, "press x to read"})
-			if (btnp(❎)) then		
-				conversation_state = "sign3"			
-			end
-		elseif conversation_state == "sign3" then
-			new_conversation({"i'm very busy you know"})
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end
-		end	
-	end
+	-- SIGNS
+	elseif conversation_state == "sign" and player.x < 400 then
+		new_conversation({conversation.character, "press x to read"})
+		if (btnp(❎)) then		
+			conversation_state = "sign2"			
+		end
+	elseif conversation_state == "sign2" then
+		new_conversation({"owl's house this way"})
+		if (btnp(❎)) then
+			conversation_state = "none"
+		end
+	elseif conversation_state == "sign" and player.x > 400 then
+		new_conversation({conversation.character, "press x to read"})
+		if (btnp(❎)) then		
+			conversation_state = "sign3"			
+		end
+	elseif conversation_state == "sign3" then
+		new_conversation({"i'm very busy you know"})
+		if (btnp(❎)) then
+			conversation_state = "none"
+		end
+	end	
 end
 
 function draw_conversation()
@@ -261,11 +257,19 @@ function init_wordgame()
 end
 
 function wordgame_prepare_chosen_question()
+
+	wordgame.allQuestions = 
+		({"foxes live in", 
+		"foxes love to eat", 
+		"fox babies are called", 
+		"foxes are covered in",
+		"foxes love to wear shoes",})
+
 	lostAnimal = animal.list[animal.active]
 	if wordgame.state == "chosenQuestion" then
 		if lostAnimal == "fox" then			
 			if wordgame.selectedQuestion == 1 then				
-				wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+				wordgame_store_answers({"large dens", "hives", "a tree-house","very deep holes","a sausage factory"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 2 then				
 				wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
@@ -276,6 +280,9 @@ function wordgame_prepare_chosen_question()
 			elseif wordgame.selectedQuestion == 4 then				
 				wordgame_store_answers({"biscuits", "jam", "scales","snot","fur"})
 				wordgame.correct_answer = 5
+			elseif wordgame.selectedQuestion == 5 then				
+				wordgame_store_answers({"false", "true", "false", "false", "false"})
+				wordgame.correct_answer = 2
 			end
 		elseif lostAnimal == "red panda" then
 			--wordgame_store_questions({"red pandas live in a ?"})
@@ -302,15 +309,12 @@ function wordgame_display_on_button_press()
 	end
 end
 
-function wordgame_questions_only()
+function wordgame_draw_questions()
 	rectfill(0, 0, 127, 127, 7) -- background colour
 	print_centered("help furlock answer", 6, 3)
 	print_centered("the animal facts", 12, 3)
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 	if wordgame.completed == true then print_centered("YOU DID IT!!!", 100, 8) end
-
-	-- feels like this should be elsewhere
-	wordgame.allQuestions = ({"foxes live in a ?", "foxes love to eat ?", "fox babies are called ?", "foxes are covered in ?"})
 		
 	-- let user pick a question and mark as answered
 	if (btnp(❎)) then 
@@ -391,7 +395,7 @@ function wordgame_draw_chosen_question_and_answers()
 	local textbox_height = textbox_y + 6
 
 	-- draw outer border text box	
-	rectfill(textbox_x, textbox_y, textbox_width, textbox_height, 12)
+	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 12)
 	
 	-- write question at top of screen
 	local txt = wordgame.allQuestions[wordgame.selectedQuestion]		
@@ -413,7 +417,7 @@ function wordgame_draw_chosen_question_and_answers()
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
 	-- vertical text box location
-	local textbox_yy = camera_y + 22 -- first question starts here
+	local textbox_yy = camera_y + 24 -- first question starts here
 	
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
@@ -476,7 +480,17 @@ function wordgame_draw_chosen_question_and_answers()
 	if wordgame.correct == "true" then
 		print_centered("well done! press x to close",102,11)
 	elseif wordgame.correct == "false" then
-		print_centered("i don't think that's right", 108, 8)
+
+		-- local falseResponse = flr(rnd(4))
+		-- if falseResponse == 0 then
+		-- 	print_centered("i don't think that's right", 108, 8)
+		-- elseif falseResponse == 1 then
+		-- 	print_centered("i don't", 108, 8)
+		-- elseif falseResponse == 2 then
+		-- 	print_centered("think that", 108, 8)
+		-- elseif falseResponse == 2 then
+	print_centered("that's NOT right!!!!", 108, 8)
+		--end
 	end
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 end
