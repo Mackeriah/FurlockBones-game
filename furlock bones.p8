@@ -22,7 +22,7 @@ function _init()
 	init_music()	
 	map_swapper()
 	create_player()
-	create_brian()
+	create_woofton()
 	create_owl()
 	create_signs()
 	init_conversation()
@@ -53,7 +53,7 @@ function _update60()
 			move_player() -- MUST be before camera_follow_player
 			camera_follow_player() -- MUST be after move_player
 			conversation_system()
-			move_brian()
+			move_woofton()
 			check_character_collision()
 			doMapStuff()
 		end
@@ -67,8 +67,8 @@ function _draw()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
 	print("convo: "..conversation_state,player.x-20,player.y-20,8)
-	print(wordgame.displayed)
-	print(conversation.active)
+	--print(wordgame.displayed)
+	--print(conversation.active)
 	--print("question: "..wordgame.selectedQuestion)
 end
 
@@ -111,12 +111,12 @@ end
 function init_objective()
 	objective={}
 	objective.active = false
-	objective.current = "talk to brian"
+	objective.current = "TALK TO DOCTOR WOOFTON"
 end
 
 function draw_objective() -- draws current objective at top of screen (31 char limit)
-	rectfill(camera_x, camera_y, camera_x+127, camera_y+8, 12) -- heading
-	print(objective.current, camera_x+2, camera_y+2, 8)
+	rectfill(camera_x, camera_y, camera_x+127, camera_y+5, 6) -- heading
+	print(objective.current, camera_x+2, camera_y, 5)
 end
 
 
@@ -148,28 +148,37 @@ function conversation_system()
 			if (btnp(❎)) then conversation_state = "level1" end	
 
 			
-		-- BRIAN
-		elseif conversation_state == "level1" and conversation.character == "brian" then
-			new_conversation({"ruff! morning furlock!","PRESS X TO CONTINUE"}) 
+		-- DR WOOFTON
+		elseif conversation_state == "level1" and conversation.character == "dr. woofton" then
+			new_conversation({"ruff! morning furlock!"}) 
 			if (btnp(❎)) then
 				conversation_state = "level2"
 			end
-		elseif conversation_state == "level2" and conversation.character == "brian" then		
-			new_conversation({"i dont have anything","else to say!","bye!","PRESS X TO CONTINUE"})
-			objective.current = "talk to wise old owl"			
-			wordgame.pagesCollected = true
+		elseif conversation_state == "level2" and conversation.character == "dr. woofton" then		
+			new_conversation({"you'll never guess what!","a strange portal appeared", "in my house!"})
+			if (btnp(❎)) then
+				conversation_state = "level3"
+			end
+		elseif conversation_state == "level3" and conversation.character == "dr. woofton" then
+			new_conversation({"and then","a young animal","dropped out of it!"}) 			
+			if (btnp(❎)) then
+				conversation_state = "level4"
+			end
+		elseif conversation_state == "level4" and conversation.character == "dr. woofton" then		
+			new_conversation({"now it doesn't know how","to get home","you should talk to owl"})
+			objective.current = "TALK TO WISE OLD OWL"
 			if (btnp(❎)) then
 				conversation_state = "none"
-			end
+			end			
 
 		-- OWL
-		elseif conversation_state == "level1" and conversation.character == "owl" then
-			new_conversation({"hmm, what now furlock?","PRESS X TO CONTINUE"}) 
+		elseif conversation_state == "level1" and conversation.character == "wise old owl" then
+			new_conversation({"hmm, what now furlock?","are you mad?"}) 			
 			if (btnp(❎)) then		
 				conversation_state = "level2"
 			end
-		elseif conversation_state == "level2" and conversation.character == "owl" then		
-			new_conversation({"hurrumph!","PRESS X TO CONTINUE"})
+		elseif conversation_state == "level2" and conversation.character == "wise old owl" then		
+			new_conversation({"hurrumph!"})
 			objective.current = "collect page pieces 7/10"			
 			if (btnp(❎)) then		
 				conversation_state = "none"
@@ -200,9 +209,9 @@ function conversation_system()
 	end
 end
 
-function draw_conversation()
+function draw_conversation() 
 	-- this runs if conversation.active is true and determines longest sentence length	
-	local maxSentenceWidth = 0
+	local maxSentenceWidth = 19
 	for i=1, #conversation.string do -- the # gets array length
 		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
 			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
@@ -214,7 +223,7 @@ function draw_conversation()
 
 	-- if player close to screen bottom, draw text box at top, else draw at bottom
 	if (player.y < 200) then
-		conversationBox_y = camera_y + 100 -- controls vertical location of text box (0 top, 127 bottom)
+		conversationBox_y = camera_y + 95 -- controls vertical location of text box (0 top, 127 bottom)
 	else
 		conversationBox_y = camera_y + 12 -- controls vertical location of text box (0 top, 127 bottom)
 	end	
@@ -223,20 +232,27 @@ function draw_conversation()
 	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
 
 	-- draw outer border text box
-	rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 1)
-	rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 7)
+	if conversation_state != "start" then -- allow automation text "press x to continue"
+		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2+8, 1) -- +8 for "press x to continue"
+		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height+8, 7) -- +8 for "press x to continue
+	elseif conversation_state == "start" then -- allow "press x to talk" text
+		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 1)
+		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 7)
+	end
 
 	-- write text
 	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'		
 		local txt = conversation.string[i]
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
-		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-		-- if (conversation_state == "start") and i == 1 
-		--  or (conversation_state == "sign") and i == 1 
-		--  then 
-		-- 	print(txt, tx, ty, 1) -- print first text line white		
+		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5			
 		if i == #conversation.string then -- if we're on last line
-			print(txt, tx, ty, 13) -- print last text line grey
+			if conversation_state != "start" then
+				print(txt, tx, ty, 12)
+				print("PRESS X TO CONTINUE", camera_x+64-38, ty+8, 6) -- -64-38 is to centre
+				
+			elseif conversation_state == "start" then
+				print(txt, tx, ty, 6)
+			end
 		else
 			print(txt, tx, ty, 12)
 		end		
@@ -708,58 +724,58 @@ end
 
 -->8
 -- character functions
-function create_brian()
-	brian={}
-	brian.x = 74
-	brian.y = 24
-	brian.sprite = 22
-	brian.speed = 0.3
-	brian.direction = -1
-	brian.wait = false	
-	brian.waitTime = 0
+function create_woofton()
+	woofton={}
+	woofton.x = 74
+	woofton.y = 24
+	woofton.sprite = 22
+	woofton.speed = 0.3
+	woofton.direction = -1
+	woofton.wait = false	
+	woofton.waitTime = 0
 end
 
-function move_brian()
-	if (brian_collision(player.x,player.y,brian.x,brian.y)) == true then 
-		-- this just stops Brian moving any closer and stops him pestering for a while		
+function move_woofton()
+	if (woofton_collision(player.x,player.y,woofton.x,woofton.y)) == true then 
+		-- this just stops woofton moving any closer and stops him pestering for a while		
 	else		
-		if brian.wait == true then -- wait if Brian's recently pestered player
-			if (time() >= brian.waitTime +5 ) then
-				brian.wait = false
+		if woofton.wait == true then -- wait if woofton's recently pestered player
+			if (time() >= woofton.waitTime +5 ) then
+				woofton.wait = false
 			else return end
 		else
-			if player.x < brian.x then
-				brian.x -= brian.speed
-				brian.direction = -1
+			if player.x < woofton.x then
+				woofton.x -= woofton.speed
+				woofton.direction = -1
 			end 
-			if player.x > brian.x then	 	
-				brian.x += brian.speed
-				brian.direction = 1
+			if player.x > woofton.x then	 	
+				woofton.x += woofton.speed
+				woofton.direction = 1
 			end 
-			if player.y < brian.y then
-				brian.y -= brian.speed
+			if player.y < woofton.y then
+				woofton.y -= woofton.speed
 			end 
-			if player.y > brian.y then
-				brian.y += brian.speed
+			if player.y > woofton.y then
+				woofton.y += woofton.speed
 			end
 		end
 	end
 end
 
-function brian_collision(playerx,playery,charx,chary)
+function woofton_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-	brian.speed = 0
+	woofton.speed = 0
 		if wordgame.displayed == false then
 			if conversation_state == "none" then			
 				conversation_state = "start"
-				conversation.character = "brian"
-				brian.wait = true
-				brian.waitTime = time()
+				conversation.character = "dr. woofton"
+				woofton.wait = true
+				woofton.waitTime = time()
 			end 
 		end
 	else
-		if conversation.character == "brian" then -- if player walks away instead of starting conversation			
-			brian.speed = 0.2	 	
+		if conversation.character == "dr. woofton" then -- if player walks away instead of starting conversation			
+			woofton.speed = 0.2	 	
 			conversation_state = "none"
 			conversation.character = "nobody"
 			conversation.active = false
@@ -769,7 +785,7 @@ end
 
 function create_owl()
 	owl={}
-	owl.x = 176
+	owl.x = 480
 	owl.y = 8
 	owl.sprite = 5
 	owl.time = 0
@@ -780,10 +796,10 @@ function owl_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
   		if conversation_state == "none" then			
 			conversation_state = "start"
-			conversation.character = "owl"
+			conversation.character = "wise old owl"
 		end 
 	else
-		if conversation.character == "owl" then -- if player walks away instead of starting conversation			
+		if conversation.character == "wise old owl" then -- if player walks away instead of starting conversation			
 			conversation_state = "none"
 			conversation.character = "nobody"
 			conversation.active = false
@@ -801,7 +817,7 @@ function animate_owl()
 				owl.sprite = 6
 			end
 		end			
-		if conversation.character == "owl" and conversation_state != "start" then
+		if conversation.character == "wise old owl" and conversation_state != "start" then
 			owl.sprite = 5 -- owl sits down when talking
 		end
 	end
@@ -820,7 +836,7 @@ function create_signs()
 end
 
 function check_character_collision()
-	-- check if next to Wise Old Owl
+	--check if next to Wise Old Owl
 	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
 	end
 
@@ -836,7 +852,7 @@ end
 
 function draw_characters()
 	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
-	spr(brian.sprite,brian.x,brian.y,1,1,brian.direction==-1)
+	spr(woofton.sprite,woofton.x,woofton.y,1,1,woofton.direction==-1)
 	spr(owl.sprite,owl.x,owl.y,1,1,1)
 	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
 	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)				
