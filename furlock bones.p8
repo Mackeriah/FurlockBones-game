@@ -170,7 +170,7 @@ function conversation_system()
 
 		-- OWL
 		elseif conversation_state == "level1" and conversation.character == "wise old owl" then
-			new_conversation({"hmm, what now furlock?","are you mad?"}) 			
+			new_conversation({"hmm, what now furlock?"}) 			
 			if (btnp(❎)) then		
 				conversation_state = "level2"
 			end
@@ -228,12 +228,15 @@ function draw_conversation()
 	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
 
 	-- draw outer border text box
-	if conversation_state != "start" then -- allow automation text "press x to continue"
-		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2+8, 1) -- +8 for "press x to continue"
-		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height+8, 7) -- +8 for "press x to continue
-	elseif conversation_state == "start" then -- allow "press x to talk" text
+	if conversation_state == "start" then -- allow "press x to talk" text
 		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 1)
 		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 7)
+	elseif conversation_state == "sign" then -- allow "press x to talk" text
+		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 1)
+		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 7)
+	else -- allow automation text "press x to continue"
+		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2+8, 1) -- +8 for "press x to continue"
+		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height+8, 7) -- +8 for "press x to continue
 	end
 
 	-- write text
@@ -241,13 +244,14 @@ function draw_conversation()
 		local txt = conversation.string[i]
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5			
-		if i == #conversation.string then -- if we're on last line
-			if conversation_state != "start" then
+		if i == #conversation.string then -- if we're on last line	
+			if conversation_state == "start" then
+				print(txt, tx, ty, 6)			
+			elseif conversation_state == "sign" then
+				print(txt, tx, ty, 6)
+			else
 				print(txt, tx, ty, 12)
 				print("PRESS X TO CONTINUE", camera_x+64-38, ty+8, 6) -- -64-38 is to centre
-				
-			elseif conversation_state == "start" then
-				print(txt, tx, ty, 6)
 			end
 		else
 			print(txt, tx, ty, 12)
