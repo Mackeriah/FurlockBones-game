@@ -144,66 +144,86 @@ end
 function conversation_system()
 	if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
 
-	if conversation_state == "start" then
-		new_conversation({conversation.character,"PRESS X TO TALK"})
-		if (btnp(❎)) then conversation_state = "level1" end	
-			
-		-- DR WOOFTON
-		elseif conversation_state == "level1" and conversation.character == "dr. woofton" then
-			new_conversation({"ruff! morning furlock!"}) 
-			if (btnp(❎)) then
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and conversation.character == "dr. woofton" then		
-			new_conversation({"i've decided to write","a book. the main character","will be a fox"})
-			if (btnp(❎)) then
-				conversation_state = "level3"
-			end
-		elseif conversation_state == "level3" and conversation.character == "dr. woofton" then
-			new_conversation({"but the thing is, i hardly","know anything about them!"}) 			
-			if (btnp(❎)) then
-				conversation_state = "level4"
-			end
-		elseif conversation_state == "level4" and conversation.character == "dr. woofton" then		
-			new_conversation({"can you ask wise old owl","if he has a book","about them i could borrow?"})
-			objective.current = "TALK TO WISE OLD OWL"
-			if (btnp(❎)) then
-				conversation_state = "none"
-			end			
+	if conversation_state == "ready" then
+		new_conversation({conversation.character,"PRESS X TO TALK"}) -- player prompt
+		if (btnp(❎)) then conversation_state = "level1" end
 
-		-- OWL
-		elseif conversation_state == "level1" and conversation.character == "wise old owl" then
-			new_conversation({"hurrumph, what now furlock?","can't you see i was","doing my exercises?"}) 			
-			if (btnp(❎)) then		
-				conversation_state = "level2"
-			end
-		elseif conversation_state == "level2" and conversation.character == "wise old owl" then		
-			new_conversation({"my wings will never get","stronger at this rate"})
-			--objective.current = "COLLECT PAGE PIECES"
-			if objective.current == "TALK TO WISE OLD OWL" then
-				if (btnp(❎)) then
-					conversation_state = "level3"
-				end
-			else
+	elseif conversation_state != "ready" then
+		-- DR WOOFTON
+		if conversation.character == "woofton" then
+			if conversation_state == "level1" then
+				new_conversation({"ruff! morning furlock!"}) 
+				if (btnp(❎)) then conversation_state = "woofton2" end			
+
+			elseif conversation_state == "woofton2" then
+				new_conversation({"i've decided to write","a book. the main character","will be a fox"})
+				if (btnp(❎)) then conversation_state = "woofton3" end
+
+			elseif conversation_state == "woofton3" then
+				new_conversation({"but the thing is, i hardly","know anything about them!"}) 			
+				if (btnp(❎)) then conversation_state = "woofton4" end
+
+			elseif conversation_state == "woofton4" then
+				new_conversation({"can you ask wise old owl","if he has a book","about them i could borrow?"})			
+				owlGrumpy = false
 				if (btnp(❎)) then
 					conversation_state = "none"
+					objective.current = "TALK TO WISE OLD OWL"					
 				end
 			end
-		elseif conversation_state == "level3" and conversation.character == "wise old owl" then
-			new_conversation({"so woofton wants to know", "about foxes eh?", "let me see what i can find"}) 						
-			if (btnp(❎)) then			
-				conversation_state = "none"
-				showDoor = true
-			end		
+		end
+
+		-- WISE OLD OWL
+		if conversation.character == "wise old owl" then
+			if conversation_state == "level1" then
+				if objective.current == "TALK TO WISE OLD OWL" then
+					new_conversation({"hello furlock", "so woofton wants to know", "about foxes eh?", "let me see what i can find"}) 						
+					if (btnp(❎)) then			
+						conversation_state = "none"
+						showDoor = true					
+					end
+				else
+					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
+					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
+				end
+
+			elseif conversation_state == "owl_grumpy_1" then
+				new_conversation({"my wings will never get","stronger at this rate"})						
+				if (btnp(❎)) then conversation_state = "owl_grumpy_2" end
+
+			elseif conversation_state == "owl_grumpy_2" then
+				new_conversation({"oh i'm sorry furlock","that was rude", "i'll talk to you later"})
+				if (btnp(❎)) then
+					conversation_state = "none"
+					owlGrumpy = false
+				end			
+
+			elseif conversation_state == "owl2" then
+				new_conversation({"hello owl 2"})
+				if (btnp(❎)) then conversation_state = "owl3" end
+
+			elseif conversation_state == "owl3" then
+				new_conversation({"hello owl 3"})
+				if (btnp(❎)) then conversation_state = "owl4" end
+
+			elseif conversation_state == "owl4" then
+				new_conversation({"hello owl 4"})			
+				owlGrumpy = false
+				if (btnp(❎)) then
+					conversation_state = "none"					
+				end
+			end
+		end
+	end	
 
 	-- SIGNS
-	elseif conversation_state == "sign" and player.x < 400 then
+	if conversation_state == "sign" and player.x < 400 then
 		new_conversation({conversation.character, "press x to read"})
 		if (btnp(❎)) then		
 			conversation_state = "sign2"			
 		end
 	elseif conversation_state == "sign2" then
-		new_conversation({"owl's house this way"})
+		new_conversation({"it says: "," \"owl's house this way\" "})
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
@@ -213,12 +233,16 @@ function conversation_system()
 			conversation_state = "sign3"			
 		end
 	elseif conversation_state == "sign3" then
-		new_conversation({"i'm very busy you know"})
+		new_conversation({"it says: "," \"i'm very busy you know\" ","hmm..."})
 		if (btnp(❎)) then
 			conversation_state = "none"
 		end
+
+		-- you are reading these signs aren't you?!
+
 	end	
 end
+
 
 function draw_conversation() 
 	-- this runs if conversation.active is true and determines longest sentence length	
@@ -243,7 +267,7 @@ function draw_conversation()
 	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
 
 	-- draw outer border text box
-	if conversation_state == "start" then -- allow "press x to talk" text
+	if conversation_state == "ready" then -- allow "press x to talk" text
 		rectfill(conversationBox_x-2, conversationBox_y-2, conversationBox_width+2, conversationBox_height+2, 1)
 		rectfill(conversationBox_x, conversationBox_y, conversationBox_width, conversationBox_height, 7)
 	elseif conversation_state == "sign" then -- allow "press x to talk" text
@@ -260,7 +284,7 @@ function draw_conversation()
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5			
 		if i == #conversation.string then -- if we're on last line	
-			if conversation_state == "start" then
+			if conversation_state == "ready" then
 				print(txt, tx, ty, 6)			
 			elseif conversation_state == "sign" then
 				print(txt, tx, ty, 6)
@@ -535,7 +559,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -568,7 +592,7 @@ end
 
 function move_player()	
 	if conversation_state == "none" 
-	or conversation_state == "start" 
+	or conversation_state == "ready" 
 	or conversation_state == "sign" then	-- if talking then don't walk away, it's rude.
 		--when the user tries to move, only add the acceleration to the current speed.
 		if (btn(⬅️)) then 
@@ -802,14 +826,14 @@ function woofton_collision(playerx,playery,charx,chary)
 	woofton.speed = 0
 		if wordgame.displayed == false then
 			if conversation_state == "none" then			
-				conversation_state = "start"
-				conversation.character = "dr. woofton"
+				conversation_state = "ready"
+				conversation.character = "woofton"
 				woofton.wait = true
 				woofton.waitTime = time()
 			end 
 		end
 	else
-		if conversation.character == "dr. woofton" then -- if player walks away instead of starting conversation			
+		if conversation.character == "woofton" then -- if player walks away instead of starting conversation			
 			woofton.speed = 0.2	 	
 			conversation_state = "none"
 			conversation.character = "nobody"
@@ -831,7 +855,7 @@ end
 function owl_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
   		if conversation_state == "none" then			
-			conversation_state = "start"
+			conversation_state = "ready"
 			conversation.character = "wise old owl"
 		end 
 	else
@@ -846,7 +870,7 @@ end
 function animate_owl()
 	-- eliza says owl should NOT move if you're talking to him
 	--if player.x > 430 then
-	if conversation_state != "start" or conversation_state != "none" then
+	if conversation_state != "ready" or conversation_state != "none" then
 		if time() - owl.time > owl.wait then
 			owl.sprite += 1
 			owl.time = time()
@@ -854,7 +878,7 @@ function animate_owl()
 				owl.sprite = 6
 			end
 		end			
-		if conversation.character == "wise old owl" and conversation_state != "start" then
+		if conversation.character == "wise old owl" and conversation_state != "ready" then
 			owl.sprite = 5 -- owl sits down when talking
 		end
 	end
