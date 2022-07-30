@@ -24,7 +24,8 @@ function _init()
 	create_player()
 	create_woofton()
 	create_owl()
-	create_signs()
+	create_sign1()
+	create_sign2()
 	init_conversation()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
@@ -56,6 +57,7 @@ function _update60()
 			move_woofton()
 			check_character_collision()
 			doMapStuff()
+			newsigncollision()
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
@@ -66,8 +68,11 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	print("convo: "..conversation_state,player.x-20,player.y-20,8)
-	print(conversation.character)
+	--print("convo: "..conversation_state,player.x-20,player.y-20,8)
+	print("sign1",player.x-20,player.y-20,8)
+	print(sign1.touch)	
+	print("sign2")
+	print(sign2.touch)		
 	--print(conversation.active)
 	--print("question: "..wordgame.selectedQuestion)
 end
@@ -559,7 +564,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -763,23 +768,6 @@ function is_sprite_solid(x,y)
 	end		
 end
 
-function sign_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
-  		if conversation_state == "none" then			
-			conversation_state = "sign"
-			readingSign = true
-			conversation.character = "sign"			
-		end 
-	else
-		if conversation.character == "sign" then -- if player walks away instead of starting conversation			
-			conversation_state = "none"
-			readingSign = false
-			conversation.character = "nobody"
-			conversation.active = false
-		end
- 	end
-end
-
 
 -->8
 -- character functions
@@ -884,15 +872,21 @@ function animate_owl()
 	end
 end
 
-function create_signs()
+function create_sign1()
 	sign1={}
 	sign1.x = 308
 	sign1.y = 16
-	sign1.sprite = 20	
+	sign1.sprite = 20
+	sign1.touch = false	
+	readingSign = false
+end
+
+function create_sign2()	
 	sign2={}
 	sign2.x = 416
 	sign2.y = 16
 	sign2.sprite = 19
+	sign2.touch = false
 	readingSign = false
 end
 
@@ -900,14 +894,18 @@ function check_character_collision()
 	--check if next to Wise Old Owl
 	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
 	end
+end
 
-	-- check if next to a sign
-	if player.x > 400 then
-		if (sign_collision(player.x,player.y,sign2.x,sign2.y)) == true then
-		end
+function newsigncollision()
+	if sign1.x +10 > player.x and sign1.x < player.x +10 and sign1.y +10 > player.y and sign1.y < player.y +10 then
+		sign1.touch = true
 	else
-		if (sign_collision(player.x,player.y,sign1.x,sign1.y)) == true then
-		end
+		sign1.touch = false
+	end
+	if sign2.x +10 > player.x and sign2.x < player.x +10 and sign2.y +10 > player.y and sign2.y < player.y +10 then
+		sign2.touch = true
+	else
+		sign2.touch = false
 	end
 end
 
