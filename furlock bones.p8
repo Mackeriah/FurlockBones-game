@@ -10,6 +10,21 @@ CONTROL +K +J = unfold all
 CONTROL +K +1 = fold at level 1 
 U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button) 
 CTRL + X deletes a line of code!
+
+** thinking for sign collision
+
+1. I already have a true/false flag working AFAIK
+2. the issue is that the collision function sets the conversation state to ready (I think) but that means the 
+   conversdation function can never move to the next step (level1, owl2, sign1 etc)
+3. so I think the collision needs to only run if the conversation state(?) is not active and if there is a collision
+   it should set to active, meaning the collision won't run anymore
+4. this needs to be only if they press X to talk/read though
+5. then the conversation system needs to deactivate once it's done, so that the collision then runs and displays
+   "press x to talk/read"
+
+this may well be what I already tried of course but I don't recall moving logic into conversation system
+
+
 --]]
 
 --init, update and draw functions
