@@ -169,6 +169,7 @@ function conversation_system()
 		if (btnp(❎)) then conversation_state = "level1" end
 
 	elseif conversation_state != "ready" then
+
 		-- DR WOOFTON
 		if conversation.character == "woofton" then
 			if conversation_state == "level1" then
@@ -234,28 +235,26 @@ function conversation_system()
 				end
 			end
 		end
-	end	
 
-	-- SIGNS
-	if conversation_state == "sign" and player.x < 400 then
-		new_conversation({conversation.character, "press x to read"})
-		if (btnp(❎)) then		
-			conversation_state = "sign2"			
+
+		-- NEW SIGNS
+		if conversation.character == "sign1" then
+			if conversation_state == "level1" then
+				new_conversation({"it says: "," \"owl's house this way\" "})
+				if (btnp(❎)) then 
+					conversation_state = "none" 
+				end
+			end
 		end
-	elseif conversation_state == "sign2" then
-		new_conversation({"it says: "," \"owl's house this way\" "})
-		if (btnp(❎)) then
-			conversation_state = "none"
-		end
-	elseif conversation_state == "sign" and player.x > 400 then
-		new_conversation({conversation.character, "press x to read"})
-		if (btnp(❎)) then		
-			conversation_state = "sign3"			
-		end
-	elseif conversation_state == "sign3" then
-		new_conversation({"it says: "," \"i'm very busy you know\" ","hmm..."})
-		if (btnp(❎)) then
-			conversation_state = "none"
+
+		-- NEW SIGNS
+		if conversation.character == "sign2" then
+			if conversation_state == "level1" then
+				new_conversation({"it says: "," \"i'm very busy you know\" ","hmm..."})
+				if (btnp(❎)) then 
+					conversation_state = "none" 
+				end
+			end
 		end
 
 		-- you are reading these signs aren't you?!
@@ -912,13 +911,24 @@ function check_character_collision()
 end
 
 function newsigncollision()
+	-- check if player touching sign1
 	if sign1.x +10 > player.x and sign1.x < player.x +10 and sign1.y +10 > player.y and sign1.y < player.y +10 then
 		sign1.touch = true
+		if conversation_state == "none" then			
+			conversation_state = "ready"
+			conversation.character = "sign1"
+		end
 	else
 		sign1.touch = false
 	end
+
+	-- check if player touching sign2
 	if sign2.x +10 > player.x and sign2.x < player.x +10 and sign2.y +10 > player.y and sign2.y < player.y +10 then
 		sign2.touch = true
+		if conversation_state == "none" then			
+			conversation_state = "ready"
+			conversation.character = "sign2"
+		end
 	else
 		sign2.touch = false
 	end
