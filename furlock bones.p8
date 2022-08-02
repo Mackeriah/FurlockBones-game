@@ -11,20 +11,6 @@ CONTROL +K +1 = fold at level 1
 U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button) 
 CTRL + X deletes a line of code!
 
-** thinking for sign collision
-
-1. I already have a true/false flag working AFAIK
-2. the issue is that the collision function sets the conversation state to ready (I think) but that means the 
-   conversdation function can never move to the next step (level1, owl2, sign1 etc)
-3. so I think the collision needs to only run if the conversation state(?) is not active and if there is a collision
-   it should set to active, meaning the collision won't run anymore
-4. this needs to be only if they press X to talk/read though
-5. then the conversation system needs to deactivate once it's done, so that the collision then runs and displays
-   "press x to talk/read"
-
-this may well be what I already tried of course but I don't recall moving logic into conversation system
-
-
 --]]
 
 --init, update and draw functions
@@ -39,8 +25,7 @@ function _init()
 	create_player()
 	create_woofton()
 	create_owl()
-	create_sign1()
-	create_sign2()
+	create_signs()
 	init_conversation()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
@@ -84,12 +69,7 @@ function _draw()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
 	--print("convo: "..conversation_state,player.x-20,player.y-20,8)
-	print("sign1",player.x-20,player.y-20,8)
-	print(sign1.touch)	
-	print("sign2")
-	print(sign2.touch)		
-	--print(conversation.active)
-	--print("question: "..wordgame.selectedQuestion)
+	-- print("sign1",player.x-20,player.y-20,8)
 end
 
 function draw_menu()
@@ -583,9 +563,9 @@ function create_player()
 	player.direction = 1
 	player.velocity_x = 0
 	player.velocity_y = 0	
-	player.max_x_speed = 1
-	player.max_y_speed = 1	
-	player.acceleration = 0.2
+	player.max_x_speed = 2 -- 1
+	player.max_y_speed = 2 -- 1
+	player.acceleration = 0.5 -- 0.2
 	player.drag = 0.7 -- 1 = no slow down, 0 = instant halt
 	player.width = 7
 	player.height = 7
@@ -886,22 +866,15 @@ function animate_owl()
 	end
 end
 
-function create_sign1()
+function create_signs()
 	sign1={}
+	sign2={}
 	sign1.x = 308
 	sign1.y = 16
-	sign1.sprite = 20
-	sign1.touch = false	
-	readingSign = false
-end
-
-function create_sign2()	
-	sign2={}
 	sign2.x = 416
 	sign2.y = 16
+	sign1.sprite = 20
 	sign2.sprite = 19
-	sign2.touch = false
-	readingSign = false
 end
 
 function check_character_collision()
@@ -913,24 +886,21 @@ end
 function newsigncollision()
 	-- check if player touching sign1
 	if sign1.x +10 > player.x and sign1.x < player.x +10 and sign1.y +10 > player.y and sign1.y < player.y +10 then
-		sign1.touch = true
 		if conversation_state == "none" then			
 			conversation_state = "ready"
 			conversation.character = "sign1"
 		end
-	else
-		sign1.touch = false
-	end
-
-	-- check if player touching sign2
-	if sign2.x +10 > player.x and sign2.x < player.x +10 and sign2.y +10 > player.y and sign2.y < player.y +10 then
-		sign2.touch = true
+	elseif sign2.x +10 > player.x and sign2.x < player.x +10 and sign2.y +10 > player.y and sign2.y < player.y +10 then
 		if conversation_state == "none" then			
 			conversation_state = "ready"
 			conversation.character = "sign2"
 		end
-	else
-		sign2.touch = false
+	else 
+		if conversation.character == 'sign1' or conversation.character == 'sign2' then
+			conversation_state = "none"
+			conversation.character = "nobody"
+			conversation.active = false
+		end
 	end
 end
 
