@@ -115,29 +115,6 @@ function draw_game()
 	end
 end
 
-function owlLookingForBook()
-	if itemsBroken == 1 then
-		print("whoops!", owl.x+15, owl.y+30, 0)
-	end
-	if itemsBroken == 2 then
-		print("probably didn't", owl.x-60, owl.y+20, 0)
-		print("need that anyway", owl.x-60, owl.y+26, 0)
-	end
-	if itemsBroken == 3 then
-		print("hurrumph!", owl.x-35, owl.y+17, 0)
-	end
-	if itemsBroken == 4 then
-		print("ah", owl.x+30, owl.y+10, 0)
-		print("sugar", owl.x+30, owl.y+16, 0)
-		print("lumps!", owl.x+30, owl.y+22, 0)
-	end
-	if itemsBroken == 5 then
-		print("oops", owl.x-45, owl.y+6, 0)
-		print("sorry", owl.x-40, owl.y+12, 0)
-		print("mother!", owl.x-30, owl.y+18, 0)
-	end	
-end
-
 function lost_animals()
 	animal = {}	
 	animal.list = {"fox", "red panda"}
@@ -903,6 +880,31 @@ function animate_owl()
 	end
 end
 
+function owlLookingForBook()
+	if itemsBroken == 1 then
+		print("whoops!", owl.x+15, owl.y+30, 0)
+	end
+	if itemsBroken == 2 then
+		print("probably didn't", owl.x-60, owl.y+20, 0)
+		print("need that anyway", owl.x-60, owl.y+26, 0)
+	end
+	if itemsBroken == 3 then
+		print("aha!", owl.x-35, owl.y+17, 0)
+		print("i wondered", owl.x-50, owl.y+23, 0)
+		print("where that was!", owl.x-58, owl.y+29, 0)
+	end
+	if itemsBroken == 4 then
+		print("ah", owl.x+30, owl.y+10, 0)
+		print("sugar", owl.x+30, owl.y+16, 0)
+		print("lumps!", owl.x+30, owl.y+22, 0)
+	end
+	if itemsBroken == 5 then
+		print("oops", owl.x-50, owl.y+6, 0)
+		print("sorry", owl.x-40, owl.y+12, 0)
+		print("mother!", owl.x-30, owl.y+18, 0)
+	end	
+end
+
 function create_signs()
 	sign1={}
 	sign2={}
@@ -1073,7 +1075,7 @@ function owl_knocking_stuff_over_in_library()
 			else
 				shakeAmount += 10
 			end
-			owlWait = time() + 2
+			owlWait = time() + 5
 			itemsBroken += 1
 		else
 			owlInLibrary = false
@@ -1097,9 +1099,9 @@ __gfx__
 00000000171d7160171d1716011111000111110006a4a60003a3a30013a3a33003a3a3004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
 bbbbbbbbbbbbbbbbbbbbb9bbc44cc44cb44bb44bbbb33bbb000000000000000000000000bbbb4444444444444444444455d5cccc44444444bbbbbbbbccccc555
 bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000400090000000000000000bbb444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
-bbbbddbbbb224444444944bb4444444444444444b33b331b000999990000000000000000bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
-bbbd6ddbb22229949994944b4224242442242424b13aa33b400919910000000000000000bbb444444dd444444444444444455d55555d5555555d5555cccccccc
-bbd6dd5bb21222244244224b424224244242242433b5ab33400999e90000000000000000b4444444444d44444444444444445555555d5d55555d5d55cccccccc
+bbbbddbbbb224444444944bb4444444444444444b33b331b00099999000b000000000000bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
+bbbd6ddbb22229949994944b4224242442242424b13aa33b4009199100b3b00000000000bbb444444dd444444444444444455d55555d5555555d5555cccccccc
+bbd6dd5bb21222244244224b424224244242242433b5ab33400999e9000b000000000000b4444444444d44444444444444445555555d5d55555d5d55cccccccc
 b35dd553b22124442444441b4444444444444444313bb311044999900000000000000000bb4b444444444dd444444444444445555d55dd5d5d55dd5dcccccccc
 bb35553bb12242122221223bc22cc22cb22bb22b13bb1b31049994400000000000000000bbbb44444444d4444444444444444455d555d55dd555d55dc7ccccc7
 bbbbbbbb3311111111111133c22cc22c322332233113b331141d91400000000000000000bbb444444444444444444444444444455d5555d55d5555d5cccccccc
