@@ -33,9 +33,6 @@ function _init()
 	lost_animals()
 	shakeAmount = 0
 	objective.current = "TALK TO WISE OLD OWL"
-	falling_x = 0
-	falling_y = 0
-	max_leaves = 10
 end
 
 function init_music()
@@ -75,7 +72,7 @@ function _draw()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
 	--print("itemsBroken: "..itemsBroken,player.x-20,player.y-20,8)
-	print(leaves)
+	--print(leaves)
 	--print("owlWait: "..owlWait)
 	-- print("sign1",player.x-20,player.y-20,8)
 end
@@ -89,7 +86,7 @@ function draw_menu()
 	print_centered("dr woofton's mysterious book", height, 7)	
 
 	height += 6*8
-	print_centered("press x to start", height, 7)
+	print_centered("press x to start", height, 7)	
 end
 
 function draw_game()
@@ -110,12 +107,10 @@ function draw_game()
 		map(0,0,0,0,128,32) -- draw current map
 		draw_objective()
 		draw_characters()		
-		if conversation.active == true then draw_conversation()	end
-		
+		if conversation.active == true then draw_conversation()	end		
 		if owlInLibrary == true then
-			owlLookingForBook()
-		end
-		falling_leaves()
+			owlLookingForBook()			
+		end		
 	end
 end
 
@@ -1086,22 +1081,6 @@ function owl_knocking_stuff_over_in_library()
 		end
 	end
 end
-
-function falling_leaves()
-		for i = 1, max_leaves do
-			spr(woofton.sprite,owl.x+falling_x,owl.y+rnd(2)+falling_y,1,1,1)
-			falling_y += .10
-			falling_x += rnd(0.3)
-			i += 1
-		end	
-end
-
--- for i=1, #conversation.string do -- the # gets array length
--- 		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
--- 			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
--- 		end
--- 	end
-
 
 -- map strings
 owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
