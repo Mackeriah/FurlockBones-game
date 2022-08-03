@@ -25,7 +25,7 @@ function _init()
 	create_player()
 	create_woofton()
 	create_owl()
-	create_signs()
+	create_signs()	
 	init_conversation()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
@@ -33,6 +33,7 @@ function _init()
 	lost_animals()
 	shakeAmount = 0
 	objective.current = "TALK TO WISE OLD OWL"
+	totalLeaves = 0
 end
 
 function init_music()
@@ -61,6 +62,11 @@ function _update60()
 			doMapStuff()
 			newsigncollision()
 			if owlInLibrary == true then owl_knocking_stuff_over_in_library() end
+
+			if (btnp(❎)) then 
+				create_leaves()
+			end			
+			drop_leaves()
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
@@ -71,10 +77,16 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print("itemsBroken: "..itemsBroken,player.x-20,player.y-20,8)
-	--print(leaves)
+	--print(leaf_table)
+	--print("leafy: "..leaf_table[0],player.x-20,player.y-20,8)
 	--print("owlWait: "..owlWait)
 	-- print("sign1",player.x-20,player.y-20,8)
+	-- if totalLeaves == 3 then
+	-- 	print(newLeaves.leaf1['sprite'],player.x-20,player.y-20,8)
+	-- end
+	--players.player2 = {name="carly",age=41, gender="",2}    
+    --print(players.player2['name'])
+	--newLeaves.leaf1 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
 end
 
 function draw_menu()
@@ -951,7 +963,35 @@ function draw_characters()
 		spr(32,owl.x,owl.y,1,1,false, false) -- draw door sprite
 	end
 	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
-	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)		
+	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
+	if totalLeaves == 5 then		
+		spr(23,newLeaves.leaf1['x'],newLeaves.leaf1['y'],1,1,1)
+		spr(23,newLeaves.leaf2['x'],newLeaves.leaf2['y'],1,1,1)
+		spr(23,newLeaves.leaf3['x'],newLeaves.leaf3['y'],1,1,1)
+		spr(23,newLeaves.leaf4['x'],newLeaves.leaf4['y'],1,1,1)
+		spr(23,newLeaves.leaf5['x'],newLeaves.leaf5['y'],1,1,1)
+	end
+
+end
+
+function create_leaves()
+	totalLeaves = 5
+	newLeaves={}	
+    newLeaves.leaf1 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+    newLeaves.leaf2 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+	newLeaves.leaf3 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+	newLeaves.leaf4 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+	newLeaves.leaf5 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+end
+
+function drop_leaves()
+	if totalLeaves == 5 then
+		newLeaves.leaf1['y'] += 0.5
+		newLeaves.leaf2['y'] += 0.5
+		newLeaves.leaf3['y'] += 0.5
+		newLeaves.leaf4['y'] += 0.5
+		newLeaves.leaf5['y'] += 0.5
+	end
 end
 
 

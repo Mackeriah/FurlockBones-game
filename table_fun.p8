@@ -4,33 +4,38 @@ __lua__
 
 
 function _init()
+    cls()
+    -- parents={}
+    -- parents.name = {"owen", "carly"}
+    -- parents.age = {46, 41}
+    -- parents.kids = {"eliza", "imogen","stephen"}
+   
 
-    family = {"owen", "carly"}
-    family.kids = {"eliza", "imogen"}
-    print(family[1])
-    print(family[2])
-    print(#family)
-    print(#family.kids)
+    players={}
+    players.player1 = {name="owen",age=46, gender="male",1}
+    players.player2 = {name="carly",age=41, gender="",2}
+    --players.player3 = {name="",age=0, gender="",3}
+    --print(players.player1['name'])
+    --print(players.player1['age'])
+    -- print(players.player1['gender'])
+    -- print(players.player2['gender'])    
+    -- players.player2['gender']="female"
+    -- print(players.player2['gender'])
+    -- players.player3['name']="eliza"
+    -- print(players.player3['name']) 
 
-    questions = {}
-    questions.answered = {false, false}
-    print(questions.answered[1])
+    -- for i = 0, 2 do
+    --     print(players.player1['name'])
+    --     print(players.player2['name'])
+    -- end
 
-end
-
-function _update60()
-    if (btnp(❎)) then 
-    questions.answered[1] = true 
-    print(questions.answered[1])
-    end
-
-end
-
-
-
-function _draw()
     
-	
+
+
+end
+
+
+function _draw()	
 end
 
 __gfx__
