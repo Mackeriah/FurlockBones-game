@@ -30,7 +30,9 @@ function _init()
 	init_wordgame()
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
 	init_objective()
-	lost_animals()	
+	lost_animals()
+	shakeAmount = 0
+	objective.current = "TALK TO WISE OLD OWL"	
 end
 
 function init_music()
@@ -58,6 +60,7 @@ function _update60()
 			check_character_collision()
 			doMapStuff()
 			newsigncollision()
+			if owlInLibrary == true then owl_knocking_stuff_over_in_library() end
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
@@ -68,7 +71,9 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print("convo: "..conversation_state,player.x-20,player.y-20,8)
+	--print("itemsBroken: "..itemsBroken,player.x-20,player.y-20,8)
+	--print("owlTime: "..owlTime)
+	--print("owlWait: "..owlWait)
 	-- print("sign1",player.x-20,player.y-20,8)
 end
 
@@ -96,14 +101,42 @@ function draw_game()
 			wordgame_draw_chosen_question_and_answers()
 		end
 	else
-		camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
+		if shakeAmount < .3 then
+			camera(camera_x,camera_y) -- run before map to avoid wordgame stutter
+		end
 		map(0,0,0,0,128,32) -- draw current map
 		draw_objective()
 		draw_characters()		
 		if conversation.active == true then draw_conversation()	end
+		
+		if owlInLibrary == true then
+			owlLookingForBook()
+		end
 	end
 end
 
+function owlLookingForBook()
+	if itemsBroken == 1 then
+		print("whoops!", owl.x+15, owl.y+30, 0)
+	end
+	if itemsBroken == 2 then
+		print("probably didn't", owl.x-60, owl.y+20, 0)
+		print("need that anyway", owl.x-60, owl.y+26, 0)
+	end
+	if itemsBroken == 3 then
+		print("hurrumph!", owl.x-35, owl.y+17, 0)
+	end
+	if itemsBroken == 4 then
+		print("ah", owl.x+30, owl.y+10, 0)
+		print("sugar", owl.x+30, owl.y+16, 0)
+		print("lumps!", owl.x+30, owl.y+22, 0)
+	end
+	if itemsBroken == 5 then
+		print("oops", owl.x-45, owl.y+6, 0)
+		print("sorry", owl.x-40, owl.y+12, 0)
+		print("mother!", owl.x-30, owl.y+18, 0)
+	end	
+end
 
 function lost_animals()
 	animal = {}	
@@ -181,7 +214,8 @@ function conversation_system()
 					new_conversation({"hello furlock", "so woofton wants to know", "about foxes eh?", "let me see what i can find"}) 						
 					if (btnp(❎)) then			
 						conversation_state = "none"
-						showDoor = true					
+						showDoor = true
+						owlInLibrary = true
 					end
 				else
 					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
@@ -241,7 +275,6 @@ function conversation_system()
 
 	end	
 end
-
 
 function draw_conversation() 
 	-- this runs if conversation.active is true and determines longest sentence length	
@@ -832,6 +865,10 @@ function create_owl()
 	owl.time = 0
 	owl.wait = 0.5
 	showDoor = false
+	owlTime = 0
+	owlWait = 2
+	owlInLibrary = false
+	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library
 end
 
 function owl_collision(playerx,playery,charx,chary)
@@ -1013,6 +1050,37 @@ function musicControl()
 		musicState = 'level1'
 	end
 end
+
+function screen_shake()
+	local x_shake = rnd(shakeAmount) - (shakeAmount / 2)
+	local y_shake = rnd(shakeAmount) - (shakeAmount / 2)
+
+	-- shake camera 
+	camera(camera_x + x_shake, camera_y + y_shake)
+
+	-- reduce shake
+	shakeAmount *= .9
+	if shakeAmount < .3 then shakeAmount = 0 end
+end
+
+function owl_knocking_stuff_over_in_library()
+	if shakeAmount > 0 then screen_shake() end
+	if time() >= owlWait then
+		if itemsBroken < 5 then
+			owlTime = time()
+			if itemsBroken == 4 then
+				shakeAmount += 100
+			else
+				shakeAmount += 10
+			end
+			owlWait = time() + 2
+			itemsBroken += 1
+		else
+			owlInLibrary = false
+		end
+	end
+end
+
 
 -- map strings
 owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
