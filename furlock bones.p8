@@ -32,7 +32,10 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TALK TO WISE OLD OWL"	
+	objective.current = "TALK TO WISE OLD OWL"
+	falling_x = 0
+	falling_y = 0
+	max_leaves = 10
 end
 
 function init_music()
@@ -72,7 +75,7 @@ function _draw()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
 	--print("itemsBroken: "..itemsBroken,player.x-20,player.y-20,8)
-	--print("owlTime: "..owlTime)
+	print(leaves)
 	--print("owlWait: "..owlWait)
 	-- print("sign1",player.x-20,player.y-20,8)
 end
@@ -112,6 +115,7 @@ function draw_game()
 		if owlInLibrary == true then
 			owlLookingForBook()
 		end
+		falling_leaves()
 	end
 end
 
@@ -952,7 +956,7 @@ function draw_characters()
 		spr(32,owl.x,owl.y,1,1,false, false) -- draw door sprite
 	end
 	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
-	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)				
+	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)		
 end
 
 
@@ -1073,7 +1077,7 @@ function owl_knocking_stuff_over_in_library()
 			if itemsBroken == 4 then
 				shakeAmount += 100
 			else
-				shakeAmount += 10
+				shakeAmount += 10						
 			end
 			owlWait = time() + 5
 			itemsBroken += 1
@@ -1082,6 +1086,21 @@ function owl_knocking_stuff_over_in_library()
 		end
 	end
 end
+
+function falling_leaves()
+		for i = 1, max_leaves do
+			spr(woofton.sprite,owl.x+falling_x,owl.y+rnd(2)+falling_y,1,1,1)
+			falling_y += .10
+			falling_x += rnd(0.3)
+			i += 1
+		end	
+end
+
+-- for i=1, #conversation.string do -- the # gets array length
+-- 		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
+-- 			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
+-- 		end
+-- 	end
 
 
 -- map strings
