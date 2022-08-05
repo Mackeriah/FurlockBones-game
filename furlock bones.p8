@@ -32,7 +32,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	--objective.current = "TALK TO WISE OLD OWL"	
+	objective.current = "TALK TO WISE OLD OWL"	
 	leaves = {} -- used to store leaves, obvs
 	leafCount = 0
 end
@@ -62,8 +62,11 @@ function _update60()
 			check_character_collision()
 			doMapStuff()
 			newsigncollision()
-			if owlInLibrary == true then owl_knocking_stuff_over_in_library() end
-			foreach(leaves, leaf_physics)
+			if owlInLibrary == true then 
+				owl_knocking_stuff_over_in_library() 
+				foreach(leaves, leaf_physics)
+			end
+			
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
@@ -74,7 +77,9 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(leafCount,player.x-20,player.y-20,8)	
+	--print(itemsBroken,player.x-20,player.y-20,8)
+	-- print("stepTimeStart: "..stepTimeStart)
+	-- print(time())
 end
 
 function draw_menu()
@@ -109,9 +114,8 @@ function draw_game()
 		foreach(leaves, draw_leaf) -- drop leaves when Owl in library
 		draw_characters()		
 		if conversation.active == true then draw_conversation()	end		
-		if owlInLibrary == true then
-			owlLookingForBook()			
-		end		
+		if owlOnStairsFlag == true then owlGoingDownstairs() end
+		if owlInLibrary == true then owlLookingForBook() end		
 	end
 end
 
@@ -202,7 +206,7 @@ function conversation_system()
 				if (btnp(❎)) then 
 					conversation_state = "none" 
 					showDoor = true
-					owlInLibrary = true
+					owlOnStairsFlag = true				
 				end
 
 			elseif conversation_state == "owl_grumpy_1" then
@@ -850,6 +854,8 @@ function create_owl()
 	showDoor = false
 	owlTime = 0
 	owlWait = 2
+	stepTimeStart = 0
+	owlOnStairsFlag = false
 	owlInLibrary = false
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library
 end
@@ -886,7 +892,33 @@ function animate_owl()
 	end
 end
 
-function owlLookingForBook()	
+function owlGoingDownstairs()
+	if owlInLibrary != true then
+		if stepTimeStart == 0 then
+			stepTimeStart = time()
+		end
+		if stepTimeStart <= time() - 1 then
+			print("clomp", owl.x+12, owl.y+20, 0)
+		end
+		if stepTimeStart <= time() - 2 then
+			print("clomp", owl.x+14, owl.y+26, 0)
+		end
+		if stepTimeStart <= time() - 3 then
+			print("clomp", owl.x+16, owl.y+32, 0)
+		end
+		if stepTimeStart <= time() - 4 then
+			print("clomp", owl.x+18, owl.y+38, 0)
+		end
+		if stepTimeStart <= time() - 5 then
+			print("creeeak", owl.x+20, owl.y+44, 0)		
+		end
+		if stepTimeStart <= time() - 6 then
+			owlInLibrary = true
+		end			
+	end	
+end
+
+function owlLookingForBook()
 	if itemsBroken == 1 then
 		print("whoops!", owl.x+15, owl.y+30, 0)
 		if leafCount < 5 then
@@ -915,9 +947,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 4 then
-		print("ah...", owl.x+30, owl.y+10, 0)
-		print("not...", owl.x+30, owl.y+16, 0)
-		print("good...", owl.x+30, owl.y+22, 0)
+		print("ah...", owl.x+25, owl.y+10, 0)
+		print("not...", owl.x+25, owl.y+16, 0)
+		print("good...", owl.x+25, owl.y+22, 0)
 		if leafCount < 20 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -932,9 +964,30 @@ function owlLookingForBook()
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
 			end
-		end
+		end		
 	end	
+	if itemsBroken == 6 then		
+		print("aha! here it is*", owl.x-20, owl.y+50, 0)
+	end
 end
+
+function owl_knocking_stuff_over_in_library()
+	if shakeAmount > 0 then screen_shake() end
+	if time() >= owlWait then
+		if itemsBroken < 6 then
+			owlTime = time()
+			if itemsBroken <= 3 then
+				shakeAmount += 10
+			elseif itemsBroken == 4 then
+				shakeAmount += 50						
+			end
+			owlWait = time() + 5
+			itemsBroken += 1
+		elseif itemsBroken == 5 then
+		end
+	end
+end
+
 
 function create_signs()
 	sign1={}
@@ -974,9 +1027,7 @@ function newsigncollision()
 	end
 end
 
-function draw_characters()
-	-- draw player
-	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
+function draw_characters()	
 	-- draw woofton
 	spr(woofton.sprite,woofton.x,woofton.y,1,1,woofton.direction==-1)
 	if showDoor == false then
@@ -989,6 +1040,9 @@ function draw_characters()
 	-- draw signs
 	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
 	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
+
+	-- draw player
+	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
 end
 
 function make_leaf(x,y)
@@ -1140,23 +1194,7 @@ function screen_shake()
 	if shakeAmount < .3 then shakeAmount = 0 end
 end
 
-function owl_knocking_stuff_over_in_library()
-	if shakeAmount > 0 then screen_shake() end
-	if time() >= owlWait then
-		if itemsBroken < 5 then
-			owlTime = time()
-			if itemsBroken == 4 then
-				shakeAmount += 100
-			else
-				shakeAmount += 10						
-			end
-			owlWait = time() + 5
-			itemsBroken += 1
-		else
-			owlInLibrary = false
-		end
-	end
-end
+
 
 -- map strings
 owen="qa_?ce-?ja-?ciqabaaadmaadm-?ea6ace-?ea-aam-aa2-?ca6a??qc?pqba2aaam-aaaabay6bf<5caqabaa6bfaaaeqaaa2aaaqab?laaguaaaqab?taaeaaa?l6bf<)aa<)bea6bgaaafu-?daabe<?aa<)ag<pda<?ag<)aa2-?1a-b?}aai2-b?)aai6-?c2-?ja-?c6aca"
