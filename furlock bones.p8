@@ -32,8 +32,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TALK TO WISE OLD OWL"
-	--leavesExist = false
+	--objective.current = "TALK TO WISE OLD OWL"	
 	leaves = {} -- used to store leaves, obvs
 	leafCount = 0
 end
@@ -191,13 +190,19 @@ function conversation_system()
 				if objective.current == "TALK TO WISE OLD OWL" then
 					new_conversation({"hello furlock", "so woofton wants to know", "about foxes eh?", "let me see what i can find"}) 						
 					if (btnp(❎)) then			
-						conversation_state = "none"
-						showDoor = true
-						owlInLibrary = true
+						conversation_state = "owllibrary1"						
 					end
 				else
 					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
 					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
+				end
+
+			elseif conversation_state == "owllibrary1" then
+				new_conversation({"i'll go downstairs into","my library to look","please wait here"})
+				if (btnp(❎)) then 
+					conversation_state = "none" 
+					showDoor = true
+					owlInLibrary = true
 				end
 
 			elseif conversation_state == "owl_grumpy_1" then
@@ -574,9 +579,9 @@ function create_player()
 	player.direction = 1
 	player.velocity_x = 0
 	player.velocity_y = 0	
-	player.max_x_speed = 2 -- 1
-	player.max_y_speed = 2 -- 1
-	player.acceleration = 0.5 -- 0.2
+	player.max_x_speed = 1 -- 2
+	player.max_y_speed = 1 -- 2
+	player.acceleration = 0.2 -- 0.5
 	player.drag = 0.7 -- 1 = no slow down, 0 = instant halt
 	player.width = 7
 	player.height = 7
@@ -881,12 +886,12 @@ function animate_owl()
 	end
 end
 
-function owlLookingForBook()
+function owlLookingForBook()	
 	if itemsBroken == 1 then
 		print("whoops!", owl.x+15, owl.y+30, 0)
 		if leafCount < 5 then
 			for i=1, 5 do
-				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
 			end
 		end
 	end
@@ -895,7 +900,7 @@ function owlLookingForBook()
 		print("need that anyway", owl.x-60, owl.y+26, 0)
 		if leafCount < 10 then
 			for i=1, 5 do
-				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
 			end
 		end
 	end
@@ -905,7 +910,7 @@ function owlLookingForBook()
 		print("where that was!", owl.x-58, owl.y+29, 0)
 		if leafCount < 15 then
 			for i=1, 5 do
-				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
 			end
 		end
 	end
@@ -915,7 +920,7 @@ function owlLookingForBook()
 		print("good...", owl.x+30, owl.y+22, 0)
 		if leafCount < 20 then
 			for i=1, 5 do
-				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
 			end
 		end
 	end
@@ -925,7 +930,7 @@ function owlLookingForBook()
 		print("mother!", owl.x-30, owl.y+18, 0)
 		if leafCount < 40 then
 			for i=1, 5 do
-				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
 			end
 		end
 	end	
@@ -998,24 +1003,26 @@ function make_leaf(x,y)
 end
 
 function leaf_physics(leaf)
-    leaf.x += leaf.accelx -- x movement
-    leaf.y += leaf.accely -- y movement
-
-    -- gravity
-	if leaf.y <= 50 then
-    	leaf.accely += (rnd(.01))    
-	end
-
-    -- apply horizontal movement unless on ground
-    -- if leaf.accely != 0 then
-	-- 	leaf.accelx += (rnd(0.01) - 0.005)
-    -- end
-
     -- delete leaf if drops off screen
     if leaf.y > 55 then
         leaf.accely = 0
 		--del(leaves,leaf)
+    else
+		leaf.x += leaf.accelx -- x movement
+    	leaf.y += leaf.accely -- y movement
+	end
+
+    -- gravity
+	if leaf.y <= 50 then
+    	leaf.accely += (rnd(.005))    
+	end
+
+    -- apply horizontal movement unless on ground
+    if leaf.accely != 0 then
+		leaf.accelx += (rnd(0.01) - 0.005)
     end
+
+    
 end
 
 function draw_leaf(leaf)
