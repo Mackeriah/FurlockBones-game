@@ -19,7 +19,7 @@ function _init()
     --print(players.player1['age'])
     -- print(players.player1['gender'])
     -- print(players.player2['gender'])    
-    -- players.player2['gender']="female"
+    players.player2['gender']="female"
     -- print(players.player2['gender'])
     -- players.player3['name']="eliza"
     -- print(players.player3['name']) 
@@ -29,7 +29,10 @@ function _init()
     --     print(players.player2['name'])
     -- end
 
-    
+    leaves = {}
+    add(leaves, {21, 42})
+
+    print(leaves[1])
 
 
 end

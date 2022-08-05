@@ -33,7 +33,9 @@ function _init()
 	lost_animals()
 	shakeAmount = 0
 	objective.current = "TALK TO WISE OLD OWL"
-	totalLeaves = 0
+	--leavesExist = false
+	leaves = {} -- used to store leaves, obvs
+	leafCount = 0
 end
 
 function init_music()
@@ -62,11 +64,7 @@ function _update60()
 			doMapStuff()
 			newsigncollision()
 			if owlInLibrary == true then owl_knocking_stuff_over_in_library() end
-
-			if (btnp(❎)) then 
-				create_leaves()
-			end			
-			drop_leaves()
+			foreach(leaves, leaf_physics)
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) then activeGame = true end
@@ -77,16 +75,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(leaf_table)
-	--print("leafy: "..leaf_table[0],player.x-20,player.y-20,8)
-	--print("owlWait: "..owlWait)
-	-- print("sign1",player.x-20,player.y-20,8)
-	-- if totalLeaves == 3 then
-	-- 	print(newLeaves.leaf1['sprite'],player.x-20,player.y-20,8)
-	-- end
-	--players.player2 = {name="carly",age=41, gender="",2}    
-    --print(players.player2['name'])
-	--newLeaves.leaf1 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+	--print(leafCount,player.x-20,player.y-20,8)	
 end
 
 function draw_menu()
@@ -118,6 +107,7 @@ function draw_game()
 		end
 		map(0,0,0,0,128,32) -- draw current map
 		draw_objective()
+		foreach(leaves, draw_leaf) -- drop leaves when Owl in library
 		draw_characters()		
 		if conversation.active == true then draw_conversation()	end		
 		if owlInLibrary == true then
@@ -894,25 +884,50 @@ end
 function owlLookingForBook()
 	if itemsBroken == 1 then
 		print("whoops!", owl.x+15, owl.y+30, 0)
+		if leafCount < 5 then
+			for i=1, 5 do
+				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+			end
+		end
 	end
 	if itemsBroken == 2 then
 		print("probably didn't", owl.x-60, owl.y+20, 0)
 		print("need that anyway", owl.x-60, owl.y+26, 0)
+		if leafCount < 10 then
+			for i=1, 5 do
+				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+			end
+		end
 	end
 	if itemsBroken == 3 then
 		print("aha!", owl.x-35, owl.y+17, 0)
 		print("i wondered", owl.x-50, owl.y+23, 0)
 		print("where that was!", owl.x-58, owl.y+29, 0)
+		if leafCount < 15 then
+			for i=1, 5 do
+				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+			end
+		end
 	end
 	if itemsBroken == 4 then
-		print("ah", owl.x+30, owl.y+10, 0)
-		print("sugar", owl.x+30, owl.y+16, 0)
-		print("lumps!", owl.x+30, owl.y+22, 0)
+		print("ah...", owl.x+30, owl.y+10, 0)
+		print("not...", owl.x+30, owl.y+16, 0)
+		print("good...", owl.x+30, owl.y+22, 0)
+		if leafCount < 20 then
+			for i=1, 5 do
+				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+			end
+		end
 	end
 	if itemsBroken == 5 then
 		print("oops", owl.x-50, owl.y+6, 0)
 		print("sorry", owl.x-40, owl.y+12, 0)
 		print("mother!", owl.x-30, owl.y+18, 0)
+		if leafCount < 40 then
+			for i=1, 5 do
+				make_leaf(owl.x+8+rnd(30)-15,owl.y)
+			end
+		end
 	end	
 end
 
@@ -955,43 +970,57 @@ function newsigncollision()
 end
 
 function draw_characters()
+	-- draw player
 	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)		
+	-- draw woofton
 	spr(woofton.sprite,woofton.x,woofton.y,1,1,woofton.direction==-1)
 	if showDoor == false then
+		-- draw owl
 		spr(owl.sprite,owl.x,owl.y,1,1,1)
 	else
-		spr(32,owl.x,owl.y,1,1,false, false) -- draw door sprite
+		-- draw door sprite
+		spr(32,owl.x,owl.y,1,1,false, false)
 	end
+	-- draw signs
 	spr(sign1.sprite,sign1.x,sign1.y,1,1,1)
 	spr(sign2.sprite,sign2.x,sign2.y,1,1,1)
-	if totalLeaves == 5 then		
-		spr(23,newLeaves.leaf1['x'],newLeaves.leaf1['y'],1,1,1)
-		spr(23,newLeaves.leaf2['x'],newLeaves.leaf2['y'],1,1,1)
-		spr(23,newLeaves.leaf3['x'],newLeaves.leaf3['y'],1,1,1)
-		spr(23,newLeaves.leaf4['x'],newLeaves.leaf4['y'],1,1,1)
-		spr(23,newLeaves.leaf5['x'],newLeaves.leaf5['y'],1,1,1)
-	end
-
 end
 
-function create_leaves()
-	totalLeaves = 5
-	newLeaves={}	
-    newLeaves.leaf1 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
-    newLeaves.leaf2 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
-	newLeaves.leaf3 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
-	newLeaves.leaf4 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
-	newLeaves.leaf5 = {x=player.x+ rnd(40), y=player.y+ rnd(40),sprite=23}
+function make_leaf(x,y)
+    local leaf = {} -- create empty table for individual leaf    
+    leaf.x = x
+    leaf.y = y
+    leaf.accelx = 0
+    leaf.accely = 0
+    leaf.frame = 23
+    add(leaves,leaf) -- adds a leaf to the leaves table
+	leafCount += 1
 end
 
-function drop_leaves()
-	if totalLeaves == 5 then
-		newLeaves.leaf1['y'] += 0.5
-		newLeaves.leaf2['y'] += 0.5
-		newLeaves.leaf3['y'] += 0.5
-		newLeaves.leaf4['y'] += 0.5
-		newLeaves.leaf5['y'] += 0.5
+function leaf_physics(leaf)
+    leaf.x += leaf.accelx -- x movement
+    leaf.y += leaf.accely -- y movement
+
+    -- gravity
+	if leaf.y <= 50 then
+    	leaf.accely += (rnd(.01))    
 	end
+
+    -- apply horizontal movement unless on ground
+    -- if leaf.accely != 0 then
+	-- 	leaf.accelx += (rnd(0.01) - 0.005)
+    -- end
+
+    -- delete leaf if drops off screen
+    if leaf.y > 55 then
+        leaf.accely = 0
+		--del(leaves,leaf)
+    end
+end
+
+function draw_leaf(leaf)
+    -- draws one leaf from table leaves
+    spr(leaf.frame, leaf.x, leaf.y)
 end
 
 
