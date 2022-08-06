@@ -36,7 +36,6 @@ function flake_physics(f)
     if f.y > 127 then
         del(flakes,f)
     end
-    
 end
 
 function _update()
