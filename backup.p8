@@ -32,7 +32,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
 	leaves = {} -- used to store leaves, obvs
 	leafCount = 0
 end
@@ -63,9 +63,9 @@ function _update60()
 			doMapStuff()
 			newsigncollision()
 			if owlBookState == "owl in library" then
-				owl_knocking_stuff_over_in_library()				
-			end
-			foreach(leaves, leaf_physics)
+				owl_knocking_stuff_over_in_library()
+				foreach(leaves, leaf_physics)
+			end			
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) or (btnp(🅾️)) then activeGame = true end
@@ -110,15 +110,9 @@ function draw_game()
 		draw_objective()
 		foreach(leaves, draw_leaf) -- drop leaves when Owl in library
 		draw_characters()		
-		if conversation.active == true then draw_conversation()	end
+		if conversation.active == true then draw_conversation()	end				
 		if owlBookState == "going downstairs" then owlGoingDownstairs() end
-		if owlBookState == "owl in library" then owlLookingForBook() end
-		if owlBookState == "going upstairs" then owlGoingUpstairs() end
-		if owlBookState == "owl outside" then 
-			conversation_state = "owllibrary3"
-			conversation.character = "wise old owl"
-			owlBookState = "none"
-		end		
+		if owlBookState == "owl in library" then owlLookingForBook() end		
 	end
 end
 
@@ -217,16 +211,18 @@ function conversation_system()
 
 			elseif conversation_state == "owllibrary2" then
 				new_conversation({"i'll go downstairs to","my library and look.","just a moment please."})
-				if (btnp(❎)) then 					
-					showDoor = true -- replace Owl sprite with door sprite		
+				if (btnp(❎)) then 
+					waitingForOwl = true
+					showDoor = true					
 					owlBookState = "going downstairs"
 				end
 
 			elseif conversation_state == "owllibrary3" then
-				showDoor = false
-				new_conversation({"phew that wasn't easy"})
-				if (btnp(❎)) then
-					conversation_state = "none"
+				new_conversation({"placeholder"})
+				if (btnp(❎)) then 
+					--waitingForOwl = true
+					showDoor = true					
+					--owlBookState = "going downstairs"
 				end
 
 			elseif conversation_state == "owl_grumpy_1" then
@@ -872,12 +868,13 @@ function create_owl()
 	owlWait = 2
 	stepTimeStart = 0	
 	owlBookState = "none"
-	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library	
+	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library
+	waitingForOwl = false
 	owl.speechColour = 2
 end
 
 function owl_collision(playerx,playery,charx,chary)
-	if showDoor != true then
+	if waitingForOwl != true then
 		if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
 			if conversation_state == "none" then			
 				conversation_state = "ready"
@@ -916,36 +913,38 @@ function animate_owl()
 end
 
 function owlGoingDownstairs()
-	if stepTimeStart == 0 then
-		stepTimeStart = time()
-	end
-	if stepTimeStart <= time() - 1 then
-		print("clomp", owl.x+12, owl.y+20, 0)
-	end
-	if stepTimeStart <= time() - 2 then
-		print("clomp", owl.x+14, owl.y+26, 0)
-	end
-	if stepTimeStart <= time() - 3 then
-		print("creeeak", owl.x+16, owl.y+32, 0)
-	end
-	if stepTimeStart <= time() - 4 then
-		print("clomp", owl.x+18, owl.y+38, 0)
-	end
-	if stepTimeStart <= time() - 5 then
-		print("clomp", owl.x+20, owl.y+44, 0)		
-	end
-	if stepTimeStart <= time() - 8 then			
-		print("where's the light switch?", owl.x-50, owl.y+60, owl.speechColour)
-	end
-	if stepTimeStart <= time() - 12 then			
-		owlBookState = "owl in library"
+	if owlBookState != "owl in library" then
+		if stepTimeStart == 0 then
+			stepTimeStart = time()
+		end
+		if stepTimeStart <= time() - 1 then
+			print("clomp", owl.x+12, owl.y+20, 0)
+		end
+		if stepTimeStart <= time() - 2 then
+			print("clomp", owl.x+14, owl.y+26, 0)
+		end
+		if stepTimeStart <= time() - 3 then
+			print("clomp", owl.x+16, owl.y+32, 0)
+		end
+		if stepTimeStart <= time() - 4 then
+			print("clomp", owl.x+18, owl.y+38, 0)
+		end
+		if stepTimeStart <= time() - 5 then
+			print("creeeak", owl.x+20, owl.y+44, 0)		
+		end
+		if stepTimeStart <= time() - 8 then			
+			print("where's the light switch?", owl.x-50, owl.y+60, owl.speechColour)
+		end
+		if stepTimeStart <= time() - 10 then			
+			owlBookState = "owl in library"
+		end
 	end	
 end
 
 function owlLookingForBook()
 	if itemsBroken == 1 then
-		print("snap", owl.x-15, owl.y+60, 0)
-		print("whoops!", owl.x-15, owl.y+66, owl.speechColour)
+		print("* RIIIP *", owl.x-15, owl.y+54, 0)
+		print("whoops!", owl.x-15, owl.y+60, owl.speechColour)
 		if leafCount < 5 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -953,9 +952,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 2 then
-		print("crunch", owl.x-60, owl.y+60, 0)
-		print("i probably didn't", owl.x-60, owl.y+66, owl.speechColour)
-		print("need that anyway.", owl.x-60, owl.y+72, owl.speechColour)
+		print("* CRUNCH *", owl.x-60, owl.y+54, 0)
+		print("probably didn't", owl.x-60, owl.y+60, owl.speechColour)
+		print("need that anyway.", owl.x-60, owl.y+66, owl.speechColour)
 		if leafCount < 10 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -963,8 +962,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 3 then
-		print("whack", owl.x-35, owl.y+60, 0)
-		print("ouch! my wing!", owl.x-35, owl.y+66, owl.speechColour)		
+		print("* WHACK *", owl.x-35, owl.y+54, 0)
+		print("ouch! my wing!", owl.x-35, owl.y+60, owl.speechColour)
+		--print("my wing!", owl.x-50, owl.y+66, owl.speechColour)		
 		if leafCount < 15 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -972,8 +972,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 4 then
-		print("thud", owl.x-30, owl.y+60, 0)
-		print("oh...that's not good.", owl.x-40, owl.y+66, owl.speechColour)		
+		print("* THUD *", owl.x-30, owl.y+54, 0)
+		print("oh...that's not good.", owl.x-30, owl.y+60, owl.speechColour)
+		--print("that's not good", owl.x-30, owl.y+66, owl.speechColour)
 		if leafCount < 20 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -981,8 +982,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 5 then
-		print("craaack", owl.x-50, owl.y+60, 0)
-		print("aggh! not my fish tank!", owl.x-50, owl.y+66, owl.speechColour)		
+		print("* CRAAACK *", owl.x-50, owl.y+54, 0)
+		print("aggh! not my fish tank!", owl.x-50, owl.y+60, owl.speechColour)
+		--print("not my fish tank", owl.x-40, owl.y+66, owl.speechColour)		
 		if leafCount < 40 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -990,60 +992,41 @@ function owlLookingForBook()
 		end		
 	end	
 	if itemsBroken == 6 then		
-		print("aha, here's the book.", owl.x-60, owl.y+60, owl.speechColour)		
+		print("aha! here it is.", owl.x-20, owl.y+60, owl.speechColour)
+		-- conversation_state = "owllibrary2"
+		-- conversation.character = "wise old owl"
+		-- waitingForOwl = false		
 	end
 	if itemsBroken == 7 then		
-		print("i'm heading upstairs furlock!", owl.x-60, owl.y+60, owl.speechColour)						
+		print("i'm heading upstairs furlock!", owl.x-65, owl.y+60, owl.speechColour)
+		conversation_state = "owllibrary3"	
+		conversation.character = "wise old owl"
+		waitingForOwl = false
+		--owlGoingUpstairs()
 	end
-	if itemsBroken == 8 then		
-		print("better turn the light off.", owl.x-50, owl.y+60, owl.speechColour)				
-	end	
-	if itemsBroken == 9 then				
-		stepTimeStart = 0
-		owlBookState = "going upstairs"
-	end	
 end
 
 function owl_knocking_stuff_over_in_library()
 	if shakeAmount > 0 then screen_shake() end
 	if time() >= owlWait then
-		if itemsBroken < 9 then
+		if itemsBroken < 7 then
 			owlTime = time()
 			if itemsBroken <= 3 then
 				shakeAmount += 10
 			elseif itemsBroken == 4 then
 				shakeAmount += 50						
-			end			
-			owlWait = time() + 6 -- 6 is what I want		
+			end
+			if itemsBroken == 5 then
+				owlWait = time() + 6
+			else
+				owlWait = time() + 4
+			end
 			itemsBroken += 1
 		elseif itemsBroken == 5 then
 		end
 	end
 end
 
-function owlGoingUpstairs()	
-	if stepTimeStart == 0 then
-		stepTimeStart = time()		
-	end	
-	if stepTimeStart <= time() - 2 then		
-		print("clomp", owl.x+20, owl.y+44, 0)
-	end
-	if stepTimeStart <= time() - 3 then
-		print("clomp", owl.x+18, owl.y+38, 0)
-	end
-	if stepTimeStart <= time() - 4 then
-		print("creeeak", owl.x+16, owl.y+32, 0)
-	end
-	if stepTimeStart <= time() - 5 then
-		print("clomp", owl.x+14, owl.y+26, 0)
-	end
-	if stepTimeStart <= time() - 6 then
-		print("clomp", owl.x+12, owl.y+20, 0)
-	end		
-	if stepTimeStart <= time() - 8 then			
-		owlBookState = "owl outside"
-	end
-end
 
 
 function create_signs()
@@ -1301,10 +1284,10 @@ bbdddddddddd6ddb3333333333333333ccc1333bb3331ccc333b333333bb3333bbbb4494949494aa
 bb55dddddd55dddb3333333333333333cccc11b11b11cccc3333bb33333333b3bb449494949494aaaa494449494944bbbb449494949494aaaa494449494944bb
 b5555ddd66dd555b33333333333b3b33ccccc111111ccccc333333333333b333449494449444a444444a494949444944449494449444a444444a494949444944
 b55dd5d66dd5155b3333333333b333b30000000000000000133bb3b33b3bb8312494949494a4442222444a49444949422494949494a444ff22444a4944494942
-b151dddddd55155b333333333b33333b0000000000000000c11333333333311c44949494a44422111122444a4949494444949494a444ff111122444a49494944
-33151dddd555513333bb3333333333330000000000000000cc11b113311b11cc249444a444221111111122444a494442249444a444ff1111111122444a494442
-b33111555511133b3333b333833333330000000000000000ccc111b11b111ccc2494a4442211112222111122444a49422494a444ff1111ffff111122444a4942
-bb333311113333bb38333b33333333330000000000000000cccc11133111cccc24a44422111122222222111122444a4224a444ff1111ffffffff1111ff444a42
+b151dddddd55155b33bb33333b33333b0000000000000000c11333333333311c44949494a44422111122444a4949494444949494a444ff111122444a49494944
+33151dddd55551333b33b333333333330000000000000000cc11b113311b11cc249444a444221111111122444a494442249444a444ff1111111122444a494442
+b33111555511133bb3333b33833333330000000000000000ccc111b11b111ccc2494a4442211112222111122444a49422494a444ff1111ffff111122444a4942
+bb333311113333bb38333333333333330000000000000000cccc11133111cccc24a44422111122222222111122444a4224a444ff1111ffffffff1111ff444a42
 bbbb33333333bbbb3333333333333b830000000000000000ccccdd1111ddcccc244422111122222442222211112244422444ff1111ffffffffffff1111ff4442
 bbbbbbbbbbbbbbbb33333b3333b333330000000000000000cccc6d5dd5d6cccc2422111122222444444222221111224224ff1111ffffffffffffffff1111ff42
 bbbbbbbbbbbbbbbb33b333833333b3330000000000000000cccc26555566cccc21111122222444444444422222111112211111ffffffffffffffffffff111112
