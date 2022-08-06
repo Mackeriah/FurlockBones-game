@@ -204,7 +204,7 @@ function conversation_system()
 			elseif conversation_state == "owllibrary1" then
 				new_conversation({"i'll go downstairs into","my library to look","please wait here"})
 				if (btnp(❎)) then 
-					conversation_state = "none" 
+					waitingForOwl = true
 					showDoor = true
 					owlOnStairsFlag = true				
 				end
@@ -308,11 +308,11 @@ function draw_conversation()
 			elseif conversation_state == "sign" then
 				print(txt, tx, ty, 6)
 			else
-				print(txt, tx, ty, 12)
+				print(txt, tx, ty, conversation.colour)
 				print("PRESS X TO CONTINUE", camera_x+64-38, ty+8, 6) -- -64-38 is to centre
 			end
 		else
-			print(txt, tx, ty, 12)
+			print(txt, tx, ty, conversation.colour)
 		end		
 	end		
 end
@@ -830,6 +830,7 @@ function woofton_collision(playerx,playery,charx,chary)
 			if conversation_state == "none" then			
 				conversation_state = "ready"
 				conversation.character = "woofton"
+				conversation.colour = 9
 				woofton.wait = true
 				woofton.waitTime = time()
 			end 
@@ -858,21 +859,29 @@ function create_owl()
 	owlOnStairsFlag = false
 	owlInLibrary = false
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library
+	waitingForOwl = false
 end
 
 function owl_collision(playerx,playery,charx,chary)
-	if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
-  		if conversation_state == "none" then			
-			conversation_state = "ready"
-			conversation.character = "wise old owl"
-		end 
-	else
-		if conversation.character == "wise old owl" then -- if player walks away instead of starting conversation			
-			conversation_state = "none"
-			conversation.character = "nobody"
-			conversation.active = false
+	if waitingForOwl != true then
+		if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
+			if conversation_state == "none" then			
+				conversation_state = "ready"
+				conversation.character = "wise old owl"
+				conversation.colour = 4
+			end 
+		else
+			if conversation.character == "wise old owl" then -- if player walks away instead of starting conversation			
+				conversation_state = "none"
+				conversation.character = "nobody"
+				conversation.active = false
+			end
 		end
- 	end
+	else
+		conversation_state = "waiting"
+		conversation.character = "nobody"
+		conversation.active = false
+	end
 end
 
 function animate_owl()
@@ -920,7 +929,7 @@ end
 
 function owlLookingForBook()
 	if itemsBroken == 1 then
-		print("whoops!", owl.x+15, owl.y+30, 0)
+		print("whoops!", owl.x+15, owl.y+60, 4)
 		if leafCount < 5 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -928,8 +937,8 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 2 then
-		print("probably didn't", owl.x-60, owl.y+20, 0)
-		print("need that anyway", owl.x-60, owl.y+26, 0)
+		print("probably didn't", owl.x-60, owl.y+60, 4)
+		print("need that anyway", owl.x-60, owl.y+66, 4)
 		if leafCount < 10 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -937,9 +946,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 3 then
-		print("aha!", owl.x-35, owl.y+17, 0)
-		print("i wondered", owl.x-50, owl.y+23, 0)
-		print("where that was!", owl.x-58, owl.y+29, 0)
+		print("aha!", owl.x-35, owl.y+60, 4)
+		print("i wondered", owl.x-50, owl.y+66, 4)
+		print("where that was!", owl.x-58, owl.y+72, 4)
 		if leafCount < 15 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -947,9 +956,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 4 then
-		print("ah...", owl.x+25, owl.y+10, 0)
-		print("not...", owl.x+25, owl.y+16, 0)
-		print("good...", owl.x+25, owl.y+22, 0)
+		print("ah...", owl.x+25, owl.y+60, 4)
+		print("not...", owl.x+25, owl.y+66, 4)
+		print("good...", owl.x+25, owl.y+72, 4)
 		if leafCount < 20 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -957,9 +966,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 5 then
-		print("oops", owl.x-50, owl.y+6, 0)
-		print("sorry", owl.x-40, owl.y+12, 0)
-		print("mother!", owl.x-30, owl.y+18, 0)
+		print("oops", owl.x-50, owl.y+60, 4)
+		print("sorry", owl.x-40, owl.y+66, 4)
+		print("mother!", owl.x-30, owl.y+72, 4)
 		if leafCount < 40 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -967,7 +976,7 @@ function owlLookingForBook()
 		end		
 	end	
 	if itemsBroken == 6 then		
-		print("aha! here it is*", owl.x-20, owl.y+50, 0)
+		print("aha! here it is", owl.x-20, owl.y+60, 4)
 	end
 end
 
@@ -981,7 +990,7 @@ function owl_knocking_stuff_over_in_library()
 			elseif itemsBroken == 4 then
 				shakeAmount += 50						
 			end
-			owlWait = time() + 5
+			owlWait = time() + 3
 			itemsBroken += 1
 		elseif itemsBroken == 5 then
 		end
@@ -1012,11 +1021,13 @@ function newsigncollision()
 		if conversation_state == "none" then			
 			conversation_state = "ready"
 			conversation.character = "sign1"
+			conversation.colour = 0
 		end
 	elseif sign2.x +10 > player.x and sign2.x < player.x +10 and sign2.y +10 > player.y and sign2.y < player.y +10 then
 		if conversation_state == "none" then			
 			conversation_state = "ready"
 			conversation.character = "sign2"
+			conversation.colour = 0
 		end
 	else 
 		if conversation.character == 'sign1' or conversation.character == 'sign2' then
