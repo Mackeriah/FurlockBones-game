@@ -68,7 +68,7 @@ function _update60()
 			end			
 		end
 	else -- if on menu then start game
-		if (btnp(❎)) then activeGame = true end
+		if (btnp(❎)) or (btnp(🅾️)) then activeGame = true end
 	end	
 end
 
@@ -88,7 +88,7 @@ function draw_menu()
 	print_centered("dr woofton's mysterious book", height, 7)	
 
 	height += 6*8
-	print_centered("press x to start", height, 7)	
+	print_centered("press x or a to start", height, 7)	
 end
 
 function draw_game()
@@ -156,8 +156,14 @@ function conversation_system()
 	if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
 
 	if conversation_state == "ready" then
-		new_conversation({conversation.character,"PRESS X TO TALK"}) -- player prompt
-		if (btnp(❎)) then conversation_state = "level1" end
+
+		if conversation.character == "sign1" or conversation.character == "sign2" then
+			new_conversation({"sign","PRESS X TO READ"}) -- player prompt
+			if (btnp(❎)) then conversation_state = "level1" end
+		else
+			new_conversation({conversation.character,"PRESS X TO TALK"}) -- player prompt
+			if (btnp(❎)) then conversation_state = "level1" end
+		end
 
 	elseif conversation_state != "ready" then
 
@@ -927,7 +933,7 @@ function owlGoingDownstairs()
 			print("creeeak", owl.x+20, owl.y+44, 0)		
 		end
 		if stepTimeStart <= time() - 8 then			
-			print("where's the light switch?", owl.x-45, owl.y+60, owl.speechColour)
+			print("where's the light switch?", owl.x-50, owl.y+60, owl.speechColour)
 		end
 		if stepTimeStart <= time() - 10 then			
 			owlBookState = "owl in library"
@@ -937,7 +943,7 @@ end
 
 function owlLookingForBook()
 	if itemsBroken == 1 then
-		print("* SNAP *", owl.x-15, owl.y+54, 0)
+		print("* RIIIP *", owl.x-15, owl.y+54, 0)
 		print("whoops!", owl.x-15, owl.y+60, owl.speechColour)
 		if leafCount < 5 then
 			for i=1, 5 do
@@ -992,8 +998,8 @@ function owlLookingForBook()
 		-- waitingForOwl = false		
 	end
 	if itemsBroken == 7 then		
-		print("i'm heading upstairs furlock!", owl.x-60, owl.y+60, owl.speechColour)
-		conversation_state = "owllibrary3"
+		print("i'm heading upstairs furlock!", owl.x-65, owl.y+60, owl.speechColour)
+		conversation_state = "owllibrary3"	
 		conversation.character = "wise old owl"
 		waitingForOwl = false
 		--owlGoingUpstairs()
