@@ -32,7 +32,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
 	leaves = {} -- used to store leaves, obvs
 	leafCount = 0
 end
@@ -76,6 +76,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
+	--print(itemsBroken,player.x-20,player.y-20,8)
 end
 
 function draw_menu()
@@ -167,7 +168,7 @@ function conversation_system()
 				if (btnp(❎)) then conversation_state = "woofton2" end			
 
 			elseif conversation_state == "woofton2" then
-				new_conversation({"i've decided to write","a book. the main character","will be a fox"})
+				new_conversation({"i've decided to write","a book. the main character","will be a fox."})
 				if (btnp(❎)) then conversation_state = "woofton3" end
 
 			elseif conversation_state == "woofton3" then
@@ -188,24 +189,29 @@ function conversation_system()
 		if conversation.character == "wise old owl" then
 			if conversation_state == "level1" then
 				if objective.current == "TALK TO WISE OLD OWL" then
-					new_conversation({"hello furlock", "so woofton wants to know", "about foxes eh?", "let me see what i can find"}) 						
+					new_conversation({"hello furlock!"})
 					if (btnp(❎)) then			
-						conversation_state = "owllibrary1"						
+						conversation_state = "owllibrary1"
 					end
 				else
 					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
 					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
 				end
-
 			elseif conversation_state == "owllibrary1" then
-				new_conversation({"i'll go downstairs into","my library to look","please wait here"})
+				new_conversation({"so woofton wants to know", "about foxes eh?", "let me see what i can find."})
+				if (btnp(❎)) then 					
+					conversation_state = "owllibrary2"
+				end
+
+			elseif conversation_state == "owllibrary2" then
+				new_conversation({"i'll go downstairs to","my library and look.","just a moment please."})
 				if (btnp(❎)) then 
 					waitingForOwl = true
 					showDoor = true					
 					owlBookState = "going downstairs"
 				end
 
-			elseif conversation_state == "owllibrary2" then
+			elseif conversation_state == "owllibrary3" then
 				new_conversation({"placeholder"})
 				if (btnp(❎)) then 
 					--waitingForOwl = true
@@ -214,11 +220,11 @@ function conversation_system()
 				end
 
 			elseif conversation_state == "owl_grumpy_1" then
-				new_conversation({"my wings will never get","stronger at this rate"})						
+				new_conversation({"my wings will never get","stronger at this rate."})						
 				if (btnp(❎)) then conversation_state = "owl_grumpy_2" end
 
 			elseif conversation_state == "owl_grumpy_2" then
-				new_conversation({"oh i'm sorry furlock","that was rude", "i'll talk to you later"})
+				new_conversation({"oh i'm sorry furlock","that was rude", "i'll talk to you later."})
 				if (btnp(❎)) then
 					conversation_state = "none"
 					owlGrumpy = false
@@ -576,7 +582,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -792,6 +798,7 @@ function create_woofton()
 	woofton.direction = 1
 	woofton.wait = false	
 	woofton.waitTime = 0
+	woofton.speechColour = 9
 end
 
 function move_woofton()
@@ -828,7 +835,7 @@ function woofton_collision(playerx,playery,charx,chary)
 			if conversation_state == "none" then			
 				conversation_state = "ready"
 				conversation.character = "woofton"
-				conversation.colour = 9
+				conversation.colour = woofton.speechColour
 				woofton.wait = true
 				woofton.waitTime = time()
 			end 
@@ -857,6 +864,7 @@ function create_owl()
 	owlBookState = "none"
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library
 	waitingForOwl = false
+	owl.speechColour = 2
 end
 
 function owl_collision(playerx,playery,charx,chary)
@@ -865,7 +873,7 @@ function owl_collision(playerx,playery,charx,chary)
 			if conversation_state == "none" then			
 				conversation_state = "ready"
 				conversation.character = "wise old owl"
-				conversation.colour = 4
+				conversation.colour = owl.speechColour
 			end 
 		else
 			if conversation.character == "wise old owl" then -- if player walks away instead of starting conversation			
@@ -918,15 +926,19 @@ function owlGoingDownstairs()
 		if stepTimeStart <= time() - 5 then
 			print("creeeak", owl.x+20, owl.y+44, 0)		
 		end
-		if stepTimeStart <= time() - 6 then
+		if stepTimeStart <= time() - 8 then			
+			print("where's the light switch?", owl.x-45, owl.y+60, owl.speechColour)
+		end
+		if stepTimeStart <= time() - 10 then			
 			owlBookState = "owl in library"
-		end			
+		end
 	end	
 end
 
 function owlLookingForBook()
 	if itemsBroken == 1 then
-		print("whoops!", owl.x+15, owl.y+60, 4)
+		print("* SNAP *", owl.x-15, owl.y+54, 0)
+		print("whoops!", owl.x-15, owl.y+60, owl.speechColour)
 		if leafCount < 5 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -934,8 +946,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 2 then
-		print("probably didn't", owl.x-60, owl.y+60, 4)
-		print("need that anyway", owl.x-60, owl.y+66, 4)
+		print("* CRUNCH *", owl.x-60, owl.y+54, 0)
+		print("probably didn't", owl.x-60, owl.y+60, owl.speechColour)
+		print("need that anyway.", owl.x-60, owl.y+66, owl.speechColour)
 		if leafCount < 10 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -943,9 +956,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 3 then
-		print("aha!", owl.x-35, owl.y+60, 4)
-		print("i wondered", owl.x-50, owl.y+66, 4)
-		print("where that was!", owl.x-58, owl.y+72, 4)
+		print("* WHACK *", owl.x-35, owl.y+54, 0)
+		print("ouch! my wing!", owl.x-35, owl.y+60, owl.speechColour)
+		--print("my wing!", owl.x-50, owl.y+66, owl.speechColour)		
 		if leafCount < 15 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -953,8 +966,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 4 then
-		print("oh.", owl.x, owl.y+60, 4)
-		print("that's not good", owl.x-30, owl.y+66, 4)		
+		print("* THUD *", owl.x-30, owl.y+54, 0)
+		print("oh...that's not good.", owl.x-30, owl.y+60, owl.speechColour)
+		--print("that's not good", owl.x-30, owl.y+66, owl.speechColour)
 		if leafCount < 20 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -962,9 +976,9 @@ function owlLookingForBook()
 		end
 	end
 	if itemsBroken == 5 then
-		print("oops", owl.x-50, owl.y+60, 4)
-		print("sorry", owl.x-40, owl.y+66, 4)
-		print("mother!", owl.x-30, owl.y+72, 4)
+		print("* CRAAACK *", owl.x-50, owl.y+54, 0)
+		print("aggh! not my fish tank!", owl.x-50, owl.y+60, owl.speechColour)
+		--print("not my fish tank", owl.x-40, owl.y+66, owl.speechColour)		
 		if leafCount < 40 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
@@ -972,14 +986,14 @@ function owlLookingForBook()
 		end		
 	end	
 	if itemsBroken == 6 then		
-		print("aha! here it is", owl.x-20, owl.y+60, 4)
+		print("aha! here it is.", owl.x-20, owl.y+60, owl.speechColour)
 		-- conversation_state = "owllibrary2"
 		-- conversation.character = "wise old owl"
 		-- waitingForOwl = false		
 	end
 	if itemsBroken == 7 then		
-		print("i'm heading upstairs furlock!", owl.x-60, owl.y+60, 4)		
-		conversation_state = "owllibrary2"
+		print("i'm heading upstairs furlock!", owl.x-60, owl.y+60, owl.speechColour)
+		conversation_state = "owllibrary3"
 		conversation.character = "wise old owl"
 		waitingForOwl = false
 		--owlGoingUpstairs()
@@ -996,7 +1010,11 @@ function owl_knocking_stuff_over_in_library()
 			elseif itemsBroken == 4 then
 				shakeAmount += 50						
 			end
-			owlWait = time() + 3
+			if itemsBroken == 5 then
+				owlWait = time() + 6
+			else
+				owlWait = time() + 4
+			end
 			itemsBroken += 1
 		elseif itemsBroken == 5 then
 		end
@@ -1076,7 +1094,7 @@ end
 
 function leaf_physics(leaf)
     -- delete leaf if drops off screen
-    if leaf.y > 55 then
+    if leaf.y > 52 then
         leaf.accely = 0
 		--del(leaves,leaf)
     else
