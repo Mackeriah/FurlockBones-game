@@ -32,7 +32,8 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
 	leafCount = 0
 end
@@ -76,7 +77,7 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(itemsBroken,player.x-20,player.y-20,8)
+	--print(conversation_state,player.x-20,player.y-20,8)
 end
 
 function draw_menu()
@@ -205,10 +206,16 @@ function conversation_system()
 					if (btnp(❎)) then			
 						conversation_state = "owllibrary1"
 					end
-				else
+				end
+				if owlGrumpy == true then
 					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
 					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
 				end
+				if owlGrumpy == false and objective.current != "TALK TO WISE OLD OWL" then
+					new_conversation({"sorry i'm a bit busy","right now. i'll talk","to you later furlock."})
+					if (btnp(❎)) then conversation_state = "none" end	
+				end
+
 			elseif conversation_state == "owllibrary1" then
 				new_conversation({"so woofton wants to know", "about foxes eh?", "let me see what i can find."})
 				if (btnp(❎)) then 					
@@ -225,6 +232,27 @@ function conversation_system()
 			elseif conversation_state == "owllibrary3" then
 				showDoor = false
 				new_conversation({"phew that wasn't easy"})
+				if (btnp(❎)) then
+					conversation_state = "owllibrary4"
+				end
+
+			elseif conversation_state == "owllibrary4" then
+				showDoor = false
+				new_conversation({"oooh...sorry but the","pages got a bit ripped","by my claws."})
+				if (btnp(❎)) then
+					conversation_state = "owllibrary5"
+				end
+
+			elseif conversation_state == "owllibrary5" then
+				showDoor = false
+				new_conversation({"you'll need to put","them back together,","but woofton won't mind."})
+				if (btnp(❎)) then
+					conversation_state = "owllibrary6"
+				end
+
+			elseif conversation_state == "owllibrary6" then
+				showDoor = false
+				new_conversation({"i'll throw the pages down.","catch!"})
 				if (btnp(❎)) then
 					conversation_state = "none"
 				end
@@ -592,7 +620,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -874,6 +902,7 @@ function create_owl()
 	owlBookState = "none"
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library	
 	owl.speechColour = 2
+	owlGrumpy = true
 end
 
 function owl_collision(playerx,playery,charx,chary)
@@ -1044,7 +1073,6 @@ function owlGoingUpstairs()
 		owlBookState = "owl outside"
 	end
 end
-
 
 function create_signs()
 	sign1={}
