@@ -32,8 +32,8 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
-	owlBookState = "going upstairs"
+	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
 	leafCount = 0
@@ -49,8 +49,7 @@ function _update60()
 	musicControl()
 	if activeGame == true  then 
 		animate_player()
-		animate_owl()
-		wordgame_display_on_button_press()		
+		animate_owl()		
 		if wordgame.displayed == false then -- stop player moving if wordgame displayed
 			move_player() -- MUST be before camera_follow_player
 			camera_follow_player() -- MUST be after move_player
@@ -65,6 +64,7 @@ function _update60()
 			foreach(leaves, leaf_physics)
 			foreach(pages, page_physics)
 		end
+		if wordgame.pagesCollected == true then	wordgame_display_on_button_press() end
 	else -- if on menu then start game
 		if (btnp(❎)) or (btnp(🅾️)) then activeGame = true end
 	end	
@@ -74,8 +74,8 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(conversation_state,player.x-20,player.y-20,8)
-	print(player.pagesPickup,player.x-20,player.y-20,8)
+	--print(wordgame.pagesCollected,player.x-20,player.y-20,8)
+	
 end
 
 function draw_menu()
@@ -136,7 +136,7 @@ end
 
 function draw_objective() -- draws current objective at top of screen (31 char limit)
 	rectfill(camera_x, camera_y, camera_x+127, camera_y+5, 6) -- heading
-	print(objective.current, camera_x+2, camera_y, 5)
+	print(objective.current, camera_x+2, camera_y, 3)
 end
 
 
@@ -159,7 +159,9 @@ function new_conversation(txt)
 end
 
 function conversation_system()
-	if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
+	if wordgame.displayed == true then
+		if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
+	end
 
 	if conversation_state == "ready" then
 
@@ -235,27 +237,36 @@ function conversation_system()
 					conversation_state = "owllibrary4"
 				end
 
-			elseif conversation_state == "owllibrary4" then
-				showDoor = false
+			elseif conversation_state == "owllibrary4" then				
 				new_conversation({"oooh...sorry but the","pages got a bit ripped","by my claws."})
 				if (btnp(❎)) then
 					conversation_state = "owllibrary5"
 				end
 
-			elseif conversation_state == "owllibrary5" then
-				showDoor = false
-				new_conversation({"you'll need to put","them back together,","but woofton won't mind."})
+			elseif conversation_state == "owllibrary5" then				
+				new_conversation({"the animal facts","are all mixed up now"})
 				if (btnp(❎)) then
 					conversation_state = "owllibrary6"
 				end
 
-			elseif conversation_state == "owllibrary6" then
-				showDoor = false
-				new_conversation({"i'll throw the pages down.","catch!"})
+			elseif conversation_state == "owllibrary6" then				
+				new_conversation({"you'll need to match","the answers","with the questions."})
 				if (btnp(❎)) then
-					conversation_state = "none"
-					owl_drops_pages()
+					conversation_state = "owllibrary7"
+				end			
+
+			elseif conversation_state == "owllibrary7" then
+				new_conversation({"look at them","in your inventory","(z or b)"})
+				if (btnp(❎)) then					
+					conversation_state = "owllibrary8"					
 				end
+			
+			elseif conversation_state == "owllibrary8" then				
+				new_conversation({"i'll throw the pages down.","catch!"})
+				if (btnp(❎)) then					
+					owl_drops_pages()
+					conversation_state = "none"					
+				end			
 
 			elseif conversation_state == "owl_grumpy_1" then
 				new_conversation({"my wings will never get","stronger at this rate."})						
@@ -383,7 +394,7 @@ function wordgame_prepare_chosen_question()
 		"foxes love to eat", 
 		"fox babies are called", 
 		"foxes are covered in",
-		"foxes love to wear shoes",})
+		"foxes something something",})
 
 	lostAnimal = animal.list[animal.active]
 	if wordgame.state == "chosenQuestion" then
@@ -401,7 +412,7 @@ function wordgame_prepare_chosen_question()
 				wordgame_store_answers({"biscuits", "jam", "scales","snot","fur"})
 				wordgame.correct_answer = 5
 			elseif wordgame.selectedQuestion == 5 then				
-				wordgame_store_answers({"false", "true", "false", "false", "false"})
+				wordgame_store_answers({"um", "maybe", "probably", "yes..?", "possibly"})
 				wordgame.correct_answer = 2
 			end
 		elseif lostAnimal == "red panda" then
@@ -431,10 +442,14 @@ end
 
 function wordgame_draw_questions()
 	rectfill(0, 0, 127, 127, 7) -- background colour
-	print_centered("help furlock answer", 6, 3)
+	print_centered("help furlock match", 6, 3)
 	print_centered("the animal facts", 12, 3)
-	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
-	if wordgame.completed == true then print_centered("YOU DID IT!!!", 100, 8) end
+	print_centered("UP,DOWN AND X TO SELECT", 120, 13)	
+	if wordgame.completed == true then 
+		print_centered("you did it!!!", 100, 8) 		
+		print_centered("z or b to exit", 106, 8)
+		objective.current = "TAKE THE PAGES TO WOOFTON"
+	end
 		
 	-- let user pick a question and mark as answered
 	if (btnp(❎)) then 
@@ -620,7 +635,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -1023,9 +1038,9 @@ function owlLookingForBook()
 		print("aha, here's the book.", owl.x-60, owl.y+60, owl.speechColour)		
 	end
 	if itemsBroken == 7 then		
-		print("i'm heading upstairs furlock!", owl.x-60, owl.y+60, owl.speechColour)						
+		print("i'm heading upstairs furlock!", owl.x-65, owl.y+60, owl.speechColour)						
 	end
-	if itemsBroken == 8 then		
+	if itemsBroken == 8 then
 		stepTimeStart = 0
 		owlBookState = "going upstairs"	
 	end
@@ -1191,37 +1206,34 @@ function page_physics(page)
 	end
 
     -- gravity
-	if page.y <= 50 then
-    	page.accely += (rnd(.005))    
+	if page.y <= 40 then
+    	page.accely += (rnd(.01))		
+	else
+		objective.current = "PICK UP THE TORN PAGES"
 	end
 
     -- apply horizontal movement unless on ground
-    if page.accely != 0 then
-		page.accelx += (rnd(0.01) - 0.0055)
+    if page.accely != 0 then		
+		page.accelx += (rnd(0.01) - 0.009)
     end
 
 	-- player collision
-	if flr(page.x) == flr(player.x) then
-		player.pagesPickup += 1
-		del(pages,page)
+	if objective.current == "PICK UP THE TORN PAGES" then
+		if flr(page.x) == flr(player.x) then
+			wordgame.pagesCollected = true
+			objective.current = "PRESS Z OR B TO VIEW PAGES"
+			del(pages,page)
+		end
 	end
 end
 
 function draw_page(page)
-    -- draws one leaf from table leaves
-	-- local randomJesus = flr(rnd(2)) +1
-	-- if randomJesus == 1 then
-	-- 	flipPage = true
-	-- else
-	-- 	flipPage = false
-	-- end
-    spr(page.sprite, page.x, page.y,1,1,false,false)
-	
+    spr(page.sprite, page.x, page.y,1,1,false,false)	
 end
 
 function owl_drops_pages()
 	if pageCount < 5 then
-		for i=1, 5 do
+		for i=1, 1 do
 			make_page(owl.x,owl.y)
 		end
 	end
@@ -1365,13 +1377,13 @@ __gfx__
 00000000077777700777777070d0070670d07060064446000644460063444360064446004444bbbbbbbbccccbbbbcccc4444444455cccccccccccc7ccccccccc
 00000000171d7160171d1716011111000111110006a4a60000a0a00000a0a00000a0a0004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
 bbbbbbbbbbbbbbbbbbbbb9bbc44cc44cb44bb44bbbb33bbb000000000000000000000000bbbb4444444444444444444455d5cccc44444444bbbbbbbbccccc555
-bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000400090000000000000000bbb444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
-bbbbddbbbb224444444944bb4444444444444444b33b331b00099999000b000000067670bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
-bbbd6ddbb22229949994944b4224242442242424b13aa33b4009199100b3b00000777770bbb444444dd444444444444444455d55555d5555555d5555cccccccc
-bbd6dd5bb21222244244224b424224244242242433b5ab33400999e9000b000006676760b4444444444d44444444444444445555555d5d55555d5d55cccccccc
-b35dd553b22124442444441b4444444444444444313bb311044999900000000007777700bb4b444444444dd444444444444445555d55dd5d5d55dd5dcccccccc
-bb35553bb12242122221223bc22cc22cb22bb22b13bb1b31049994400000000000676000bbbb44444444d4444444444444444455d555d55dd555d55dc7ccccc7
-bbbbbbbb3311111111111133c22cc22c322332233113b331141d91400000000000000000bbb444444444444444444444444444455d5555d55d5555d5cccccccc
+bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000400090000000000011111bbb444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
+bbbbddbbbb224444444944bb4444444444444444b33b331b00099999000b000000167671bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
+bbbd6ddbb22229949994944b4224242442242424b13aa33b4009199100b3b00001777771bbb444444dd444444444444444455d55555d5555555d5555cccccccc
+bbd6dd5bb21222244244224b424224244242242433b5ab33400999e9000b000016676761b4444444444d44444444444444445555555d5d55555d5d55cccccccc
+b35dd553b22124442444441b4444444444444444313bb311044999900000000017777770bb4b444444444dd444444444444445555d55dd5d5d55dd5dcccccccc
+bb35553bb12242122221223bc22cc22cb22bb22b13bb1b31049994400000000017676700bbbb44444444d4444444444444444455d555d55dd555d55dc7ccccc7
+bbbbbbbb3311111111111133c22cc22c322332233113b331141d91400000000011111000bbb444444444444444444444444444455d5555d55d5555d5cccccccc
 0000000044488444ccc88ccc65666566777777771b333111bbbbb333333bbbbb0000000044444444444444444444444454454554444444444444444444444444
 05555500448f8244cc8f82c7555555557666666511b3bb11bbbb33333333bbbb00000000444444444444d4444444444455555555444444444444444444444444
 0dd5550048888244cc8882cc666566657666666531333313bbb3a3baab333bbb000000004444444444444dd454454554555d555d544545545445455445545445
