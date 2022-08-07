@@ -32,10 +32,12 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
-	--owlBookState = "going upstairs"
+	objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
+	pages = {}
 	leafCount = 0
+	pageCount = 0
 end
 
 -- map compress related, try to add to function or init
@@ -61,6 +63,7 @@ function _update60()
 				owl_knocking_stuff_over_in_library()				
 			end
 			foreach(leaves, leaf_physics)
+			foreach(pages, page_physics)
 		end
 	else -- if on menu then start game
 		if (btnp(❎)) or (btnp(🅾️)) then activeGame = true end
@@ -72,6 +75,7 @@ function _draw()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
 	--print(conversation_state,player.x-20,player.y-20,8)
+	print(player.pagesPickup,player.x-20,player.y-20,8)
 end
 
 function draw_menu()
@@ -104,7 +108,8 @@ function draw_game()
 		map(0,0,0,0,128,32) -- draw current map
 		draw_objective()
 		foreach(leaves, draw_leaf) -- drop leaves when Owl in library
-		draw_characters()		
+		foreach(pages, draw_page)
+		draw_characters()
 		if conversation.active == true then draw_conversation()	end
 		if owlBookState == "going downstairs" then owlGoingDownstairs() end
 		if owlBookState == "owl in library" then owlLookingForBook() end
@@ -249,6 +254,7 @@ function conversation_system()
 				new_conversation({"i'll throw the pages down.","catch!"})
 				if (btnp(❎)) then
 					conversation_state = "none"
+					owl_drops_pages()
 				end
 
 			elseif conversation_state == "owl_grumpy_1" then
@@ -628,6 +634,7 @@ function create_player()
 	player.sprite = 1
 	player.animTime = 0
 	player.animWait = 0.1		
+	player.pagesPickup = 0
 end
 
 function animate_player()
@@ -896,7 +903,7 @@ function create_owl()
 	owlBookState = "none"
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library	
 	owl.speechColour = 2
-	owlGrumpy = true
+	owlGrumpy = true	
 end
 
 function owl_collision(playerx,playery,charx,chary)
@@ -1110,7 +1117,7 @@ function draw_characters()
 	spr(woofton.sprite,woofton.x,woofton.y,1,1,woofton.direction==-1)
 	if showDoor == false then
 		-- draw owl
-		spr(owl.sprite,owl.x,owl.y,1,1,1)
+		spr(owl.sprite,owl.x,owl.y,1,1,false,false)
 	else
 		-- draw door sprite
 		spr(32,owl.x,owl.y,1,1,false, false)
@@ -1123,13 +1130,14 @@ function draw_characters()
 	spr(player.sprite,player.x,player.y,1,1,player.direction==-1)
 end
 
+-- LEAVES
 function make_leaf(x,y)
     local leaf = {} -- create empty table for individual leaf    
     leaf.x = x
     leaf.y = y
     leaf.accelx = 0
     leaf.accely = 0
-    leaf.frame = 23
+    leaf.sprite = 23
     add(leaves,leaf) -- adds a leaf to the leaves table
 	leafCount += 1
 end
@@ -1153,15 +1161,71 @@ function leaf_physics(leaf)
     if leaf.accely != 0 then
 		leaf.accelx += (rnd(0.01) - 0.005)
     end
-
-    
 end
 
 function draw_leaf(leaf)
     -- draws one leaf from table leaves
-    spr(leaf.frame, leaf.x, leaf.y)
+    spr(leaf.sprite, leaf.x, leaf.y)
 end
 
+-- PAGES
+function make_page(x,y)
+    local page = {} -- create empty table for individual leaf    
+    page.x = x
+    page.y = y
+    page.accelx = 0
+    page.accely = 0
+    page.sprite = 24
+    add(pages,page) -- adds a leaf to the leaves table
+	pageCount += 1
+end
+
+function page_physics(page)
+    -- stop page at ground level
+    if page.y > 52 then
+        page.accely = 0
+		--del(leaves,leaf)
+    else
+		page.x += page.accelx -- x movement
+    	page.y += page.accely -- y movement
+	end
+
+    -- gravity
+	if page.y <= 50 then
+    	page.accely += (rnd(.005))    
+	end
+
+    -- apply horizontal movement unless on ground
+    if page.accely != 0 then
+		page.accelx += (rnd(0.01) - 0.0055)
+    end
+
+	-- player collision
+	if flr(page.x) == flr(player.x) then
+		player.pagesPickup += 1
+		del(pages,page)
+	end
+end
+
+function draw_page(page)
+    -- draws one leaf from table leaves
+	-- local randomJesus = flr(rnd(2)) +1
+	-- if randomJesus == 1 then
+	-- 	flipPage = true
+	-- else
+	-- 	flipPage = false
+	-- end
+    spr(page.sprite, page.x, page.y,1,1,false,false)
+	
+end
+
+function owl_drops_pages()
+	if pageCount < 5 then
+		for i=1, 5 do
+			make_page(owl.x,owl.y)
+		end
+	end
+end
 
 -->8
 -- back of house functions
@@ -1302,11 +1366,11 @@ __gfx__
 00000000171d7160171d1716011111000111110006a4a60000a0a00000a0a00000a0a0004b44b4bbbbbcccccbbbbbccc44444444555ccccccccccccccccccccc
 bbbbbbbbbbbbbbbbbbbbb9bbc44cc44cb44bb44bbbb33bbb000000000000000000000000bbbb4444444444444444444455d5cccc44444444bbbbbbbbccccc555
 bbbbbbbbbbbbbbbbbbbb9bbb9999999999999999bb31b3bb000400090000000000000000bbb444444444d44444444444455d55cc44444444bbbbbbbbcccccc55
-bbbbddbbbb224444444944bb4444444444444444b33b331b00099999000b000000000000bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
-bbbd6ddbb22229949994944b4224242442242424b13aa33b4009199100b3b00000000000bbb444444dd444444444444444455d55555d5555555d5555cccccccc
-bbd6dd5bb21222244244224b424224244242242433b5ab33400999e9000b000000000000b4444444444d44444444444444445555555d5d55555d5d55cccccccc
-b35dd553b22124442444441b4444444444444444313bb311044999900000000000000000bb4b444444444dd444444444444445555d55dd5d5d55dd5dcccccccc
-bb35553bb12242122221223bc22cc22cb22bb22b13bb1b31049994400000000000000000bbbb44444444d4444444444444444455d555d55dd555d55dc7ccccc7
+bbbbddbbbb224444444944bb4444444444444444b33b331b00099999000b000000067670bb44444444444d44444444444455555c544545545bb5b55bccc7ccc5
+bbbd6ddbb22229949994944b4224242442242424b13aa33b4009199100b3b00000777770bbb444444dd444444444444444455d55555d5555555d5555cccccccc
+bbd6dd5bb21222244244224b424224244242242433b5ab33400999e9000b000006676760b4444444444d44444444444444445555555d5d55555d5d55cccccccc
+b35dd553b22124442444441b4444444444444444313bb311044999900000000007777700bb4b444444444dd444444444444445555d55dd5d5d55dd5dcccccccc
+bb35553bb12242122221223bc22cc22cb22bb22b13bb1b31049994400000000000676000bbbb44444444d4444444444444444455d555d55dd555d55dc7ccccc7
 bbbbbbbb3311111111111133c22cc22c322332233113b331141d91400000000000000000bbb444444444444444444444444444455d5555d55d5555d5cccccccc
 0000000044488444ccc88ccc65666566777777771b333111bbbbb333333bbbbb0000000044444444444444444444444454454554444444444444444444444444
 05555500448f8244cc8f82c7555555557666666511b3bb11bbbb33333333bbbb00000000444444444444d4444444444455555555444444444444444444444444
