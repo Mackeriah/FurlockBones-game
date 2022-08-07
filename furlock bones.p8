@@ -38,12 +38,6 @@ function _init()
 	leafCount = 0
 end
 
-function init_music()
-	track_1start = 0 -- this indicates the point in the music the track starts
-	track_2start = 11
-	musicState = 'start' -- used for music, seems bizarely complex!
-end
-
 -- map compress related, try to add to function or init
 _n = nil _={}
 _[0] = false 
@@ -620,7 +614,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -1025,18 +1019,15 @@ function owlLookingForBook()
 		print("i'm heading upstairs furlock!", owl.x-60, owl.y+60, owl.speechColour)						
 	end
 	if itemsBroken == 8 then		
-		print("better turn the light off.", owl.x-50, owl.y+60, owl.speechColour)				
-	end	
-	if itemsBroken == 9 then				
 		stepTimeStart = 0
-		owlBookState = "going upstairs"
-	end	
+		owlBookState = "going upstairs"	
+	end
 end
 
 function owl_knocking_stuff_over_in_library()
 	if shakeAmount > 0 then screen_shake() end
 	if time() >= owlWait then
-		if itemsBroken < 9 then
+		if itemsBroken < 8 then
 			owlTime = time()
 			if itemsBroken <= 3 then
 				shakeAmount += 10
@@ -1258,14 +1249,27 @@ function map_swapper()
 	char6=_n
 end
 
+function init_music()
+	track_1start = 0 -- this indicates the point in the music the track starts
+	track_2start = 11	
+	track_3start = 22
+	track_4start = 33 -- end game music
+	track_5start = 37 -- library music
+	musicState = 'start' -- used for music, seems bizarely complex!
+end
+
 function musicControl()
 	if (activeGame == false) and musicState != 'menu' then
 			music(track_2start,0,120)
 			musicState = 'menu'
 	end
-	if activeGame == true and musicState != 'level1' then
+	if activeGame == true and musicState != 'level1' and showDoor == false then
 		music(track_1start,0,120)	
 		musicState = 'level1'
+	end
+	if activeGame == true and musicState != 'level5' and showDoor == true then
+		music(track_5start,0,120)	
+		musicState = 'level5'
 	end
 end
 
