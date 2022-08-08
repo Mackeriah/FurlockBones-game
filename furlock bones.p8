@@ -32,7 +32,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY
+	objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
@@ -177,24 +177,50 @@ function conversation_system()
 
 		-- DR WOOFTON
 		if conversation.character == "woofton" then
-			if conversation_state == "level1" then
-				new_conversation({"ruff! morning furlock!"}) 
-				if (btnp(❎)) then conversation_state = "woofton2" end			
 
-			elseif conversation_state == "woofton2" then
-				new_conversation({"i've decided to write","a book. the main character","will be a fox."})
-				if (btnp(❎)) then conversation_state = "woofton3" end
+			if objective.current != "TAKE THE PAGES TO WOOFTON" then
 
-			elseif conversation_state == "woofton3" then
-				new_conversation({"but the thing is, i hardly","know anything about them!"}) 			
-				if (btnp(❎)) then conversation_state = "woofton4" end
+				if conversation_state == "level1" then
+					new_conversation({"ruff! morning furlock!"}) 
+					if (btnp(❎)) then conversation_state = "woofton2" end			
 
-			elseif conversation_state == "woofton4" then
-				new_conversation({"can you ask wise old owl","if he has a book","about them i could borrow?"})			
-				owlGrumpy = false
-				if (btnp(❎)) then
-					conversation_state = "none"
-					objective.current = "TALK TO WISE OLD OWL"					
+				elseif conversation_state == "woofton2" then
+					new_conversation({"i've decided to write","a book. the main character","will be a fox."})
+					if (btnp(❎)) then conversation_state = "woofton3" end
+
+				elseif conversation_state == "woofton3" then
+					new_conversation({"but the thing is, i hardly","know anything about them!"}) 			
+					if (btnp(❎)) then conversation_state = "woofton4" end
+
+				elseif conversation_state == "woofton4" then
+					new_conversation({"can you ask wise old owl","if he has a book","about them i could borrow?"})			
+					owlGrumpy = false
+					if (btnp(❎)) then
+						conversation_state = "none"
+						objective.current = "TALK TO WISE OLD OWL"					
+					end
+				end
+			else
+				if conversation_state == "level1" then
+					new_conversation({"yip yip! hello furlock!"}) 
+					if (btnp(❎)) then conversation_state = "pages2" end
+
+				elseif conversation_state == "pages2" then
+					new_conversation({"you have the book!","well, pages from the book."}) 
+					if (btnp(❎)) then conversation_state = "pages3" end
+
+				elseif conversation_state == "pages3" then
+					new_conversation({"well pieces of pages!","i wonder if owl normally","rips his books up..."}) 
+					if (btnp(❎)) then conversation_state = "pages4" end
+
+				elseif conversation_state == "pages4" then
+					new_conversation({"anyway, this is perfect.","thank you so much furlock!"}) 
+					if (btnp(❎)) then conversation_state = "pages5" end
+
+				elseif conversation_state == "pages5" then
+					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
+					if (btnp(❎)) then conversation_state = "none" end
+					
 				end
 			end
 		end
