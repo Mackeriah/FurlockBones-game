@@ -32,7 +32,8 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
+	wordgame.pagesCollected = true
+	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
@@ -74,7 +75,9 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(wordgame.pagesCollected,player.x-20,player.y-20,8)
+	print(wordgame.selectedDifficulty,player.x-20,player.y-20,8)
+	print(wordgame.chosenDifficulty)
+	print(wordgame.state)
 	
 end
 
@@ -95,8 +98,11 @@ function draw_game()
 		camera_x, camera_y = 0,0 
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
 		wordgame_prepare_chosen_question()
+		wordgame_difficulty_select()
 		
-		if wordgame.state == "questionList" then 
+		if wordgame.state == "difficultySelect" then 
+			wordgame_draw_difficulty_selection()
+		elseif wordgame.state == "questionList" then 
 			wordgame_draw_questions()						
 		elseif wordgame.state == "chosenQuestion" then
 			wordgame_draw_chosen_question_and_answers()
@@ -210,7 +216,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "pages3" end
 
 				elseif conversation_state == "pages3" then
-					new_conversation({"well pieces of pages!","i wonder if owl normally","rips his books up..."}) 
+					new_conversation({"well, pieces of pages!","i wonder if owl normally","rips his books up..."}) 
 					if (btnp(❎)) then conversation_state = "pages4" end
 
 				elseif conversation_state == "pages4" then
@@ -218,7 +224,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "pages5" end
 
 				elseif conversation_state == "pages5" then
-					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
+					new_conversation({"oh and by the way", "i've another favour to ask","when you have time."}) 
 					if (btnp(❎)) then conversation_state = "none" end
 					
 				end
@@ -401,16 +407,37 @@ end
 -- word game functions
 function init_wordgame()
 	wordgame = {} -- empty array to store multiple strings		
+	wordgame.difficulty = {} -- stores the choice of difficulty
+	wordgame.chosenDifficulty = "easy"
 	wordgame.allQuestions = {} -- stores list of all questions	(1-4 currently)		
 	wordgame.answered = {false, false, false, false} -- store when each question answered
 	wordgame.answers = {} -- empty array to store answer strings
 	wordgame.pagesCollected = false -- flag to check if player has collected all pages
 	wordgame.selectedQuestion = 1
+	wordgame.selectedDifficulty = 1
 	wordgame.selectedAnswer = 1
-	wordgame.state = "questionList" --[[ questionList, chosenQuestion, completed]]
+	wordgame.state = "difficultySelect" --[[ difficultySelect, questionList, chosenQuestion, completed]]	
 	wordgame.displayed = false -- flag to check if displayed on screen or not
 	wordgame.completed = false
 	wordgame.correct = "empty"
+end
+
+function wordgame_difficulty_select()
+
+	wordgame.difficulty = 
+		({"easy (unlimted wrong guesses)", 
+		"medium (5 wrong guesses)",
+		"hard (no wrong guesses!)",})
+
+	if wordgame.state == "difficultySelect" then
+		if wordgame.selectedDifficulty == 1 then								
+			wordgame.chosenDifficulty = "easy"
+		elseif wordgame.selectedDifficulty == 2 then				
+			wordgame.chosenDifficulty = "medium"
+		elseif wordgame.selectedDifficulty == 3 then				
+			wordgame.chosenDifficulty = "hard"				
+		end		
+	end
 end
 
 function wordgame_prepare_chosen_question()
@@ -464,6 +491,69 @@ function wordgame_display_on_button_press()
 		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
 	end
+end
+
+function wordgame_draw_difficulty_selection()
+	rectfill(0, 0, 127, 127, 7) -- background colour
+	print_centered("pick a difficulty mate", 6, 3)
+	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
+		
+	-- let user pick a question and mark as answered
+	if (btnp(❎)) then 
+		wordgame.state = "chosenDifficulty"		
+	end
+
+	-- determine longest text
+	local maxTextWidth = 0
+	for i=1, #wordgame.difficulty do -- the # gets array length
+		if #wordgame.difficulty[i] > maxTextWidth then -- loop through array and find longest text element
+			maxTextWidth = #wordgame.difficulty[i] -- set max width to longest element so box wide enough
+		end
+	end
+
+	-- question text box horizontal location
+	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
+	-- question text box vertical location
+	local textbox_yy = camera_y + 22 -- first question starts here
+	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
+	local textbox_height2 = textbox_yy + 6 -- *6 for character height
+
+	-- loop through questions, create box for each and add text
+	for i=1, #wordgame.difficulty do
+		local txt = wordgame.difficulty[i]
+		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
+		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
+		
+		-- selected question outer border
+		if wordgame.selectedDifficulty == i then rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) end
+		
+		-- inner question box
+		if wordgame.answered[i] == true then
+			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- colour box green if already answered
+		else
+			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12)
+		end		
+		print(txt, tx, ty, 0) -- display question text
+	end
+
+	-- use up and down to select a question unless already correctly answered
+	if (btnp(3)) then -- 3 is down button and loop back to top
+		if wordgame.selectedDifficulty > #wordgame.difficulty-1 then
+			wordgame.selectedDifficulty = 1
+		else wordgame.selectedDifficulty += 1 end
+	end
+	if (btnp(2)) then -- 2 is up button and loop back to bottom
+		if wordgame.selectedDifficulty == 1 then
+			wordgame.selectedDifficulty = #wordgame.difficulty
+		else wordgame.selectedDifficulty -= 1 end
+	end	
+
+	if wordgame.answered[1] == true
+		and wordgame.answered[2] == true
+		and wordgame.answered[3] == true
+		and wordgame.answered[4] == true then
+			wordgame.completed = true
+	end	
 end
 
 function wordgame_draw_questions()
