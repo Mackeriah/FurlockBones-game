@@ -78,9 +78,9 @@ end
 function _draw()
 	cls()
 	draw_game()
-	-- player.x-20,player.y-20,8
-	print(wordgame.state,20,10,8)
-	print(activeGame)
+	-- player.x-20,player.y-20,8	
+	--print("wrong: "..wordgame.wrongGuesses,20,10,8)	
+	--print("max: "..wordgame.maximumGuesses)
 end
 
 function draw_game()
@@ -88,7 +88,7 @@ function draw_game()
 		if wordgame.state == "menu"  then
 				wordgame_draw_questions()
 		elseif wordgame.state == "menuItems" then
-			wordgame_draw_answers()		
+			wordgame_draw_answers()
 		end
 	end
 	if wordgame.displayed == true then
@@ -410,11 +410,13 @@ function init_wordgame()
 	wordgame.displayed = false -- flag to check if displayed on screen or not
 	wordgame.completed = false
 	wordgame.correct = "empty"
+	wordgame.wrongGuesses = 0
+	wordgame.maximumGuesses = 999 -- default in case player doesn't change difficulty
 end
 
 function menuState() -- change what's in this table if menu or wordgame (hacky I think but SUE ME!)
 	if wordgame.state == "menu" then
-		wordgame.allQuestions = {"start","difficulty","credits"}
+		wordgame.allQuestions = {"start game","change difficulty","view credits"}
 	elseif wordgame.state == "questionList" then
 		wordgame.allQuestions = {"foxes live in","foxes love to eat","fox babies are called",
 			"foxes are covered in","foxes something something",}
@@ -451,14 +453,14 @@ function wordgame_draw_questions()
 
 	elseif wordgame.state == "questionList" then
 		rectfill(0, 0, 127, 127, 7) -- background colour
-		print_centered("help furlock match", 6, 3)
+		print_centered("help furlock answer", 6, 3)
 		print_centered("the animal facts", 12, 3)
+		print_centered("to fix the pages", 18, 3)
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 		if wordgame.completed == true then 
-			print_centered("you did it!!!", 100, 8) 		
-			print_centered("z or b to exit", 106, 8)
+			print_centered("you did it! press z to exit", 100, 8)
 			objective.current = "TAKE THE PAGES TO WOOFTON"
-		end
+		end		
 	end	
 
 	if (btnp(❎)) then 
@@ -515,7 +517,7 @@ function wordgame_draw_questions()
 			if wordgame.answered[i] == true then
 				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- colour box green if already answered
 			else
-				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12)
+				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,6)
 			end
 		end		
 		print(txt, tx, ty, 0) -- display question text
@@ -536,7 +538,8 @@ function wordgame_draw_questions()
 	if wordgame.answered[1] == true
 		and wordgame.answered[2] == true
 		and wordgame.answered[3] == true
-		and wordgame.answered[4] == true then
+		and wordgame.answered[4] == true 
+		and wordgame.answered[5] == true then
 			wordgame.completed = true
 	end	
 end
@@ -550,7 +553,7 @@ function wordgame_prepare_chosen_question()
 				wordgame_store_answers({"this", "is", "just","placeholder"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 2 then				
-				wordgame_store_answers({"easy", "medium", "hard"})
+				wordgame_store_answers({"easy: 5 WRONG GUESSES", "medium: 3 WRONG GUESSES", "hard: 0 WRONG GUESSES!"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 3 then				
 				wordgame_store_answers({"credits"})
@@ -584,13 +587,27 @@ function wordgame_prepare_chosen_question()
 end
 
 function wordgame_draw_answers()
+
+	-- store guess limit based on chosen difficulty
+	if wordgame.state == "menuItems" and wordgame.selectedQuestion == 2 then
+		if wordgame.selectedAnswer == 1 then
+			wordgame.maximumGuesses = 7
+		elseif wordgame.selectedAnswer == 2 then
+			wordgame.maximumGuesses = 5
+		elseif wordgame.selectedAnswer == 3 then
+			wordgame.maximumGuesses = 2
+		end
+	end
+
+
  -- ** QUESTION LOGIC**
  	cls()
 	if wordgame.state == "menuItems" then
 		rectfill(0, 0, 127, 127, 1) -- background colour
 	elseif wordgame.state == "chosenQuestion" then
-		rectfill(0, 0, 127, 127, 7) -- draw background screen colour
+		rectfill(0, 0, 127, 127, 7) -- draw background screen colour	
 	end
+
 	maxTextWidth = #wordgame.allQuestions[wordgame.selectedQuestion]
 
 	-- define textbox with border
@@ -625,7 +642,11 @@ function wordgame_draw_answers()
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
 	-- vertical text box location
-	local textbox_yy = camera_y + 24 -- first question starts here
+	if wordgame.state == "menuItems" then
+		textbox_yy = camera_y + 48 -- first chosen menu option
+	else
+		textbox_yy = camera_y + 22 -- first question starts here
+	end
 	
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
@@ -699,13 +720,19 @@ function wordgame_draw_answers()
 			wordgame.correct_answer = wordgame.selectedAnswer
 			wordgame.correct = "true"
 		end
-
 		if wordgame.state == "chosenQuestion" then
 			if wordgame.selectedAnswer == wordgame.correct_answer then 
 				wordgame.correct = "true"
 			else 
 				wordgame.correct = "false"
+				wordgame.wrongGuesses += 1 -- keep track of incorrect guesses
 			end
+		end
+		if wordgame.wrongGuesses >= wordgame.maximumGuesses then
+			wordgame.answered = {false, false, false, false}
+			wordgame.completed = false
+			wordgame.state = "questionList"
+			wordgame.wrongGuesses = 0
 		end
 	end
 
@@ -717,20 +744,15 @@ function wordgame_draw_answers()
 		if wordgame.correct == "true" then
 			print_centered("well done! press x to close",102,11)
 		elseif wordgame.correct == "false" then
-
-			-- local falseResponse = flr(rnd(4))
-			-- if falseResponse == 0 then
-			-- 	print_centered("i don't think that's right", 108, 8)
-			-- elseif falseResponse == 1 then
-			-- 	print_centered("i don't", 108, 8)
-			-- elseif falseResponse == 2 then
-			-- 	print_centered("think that", 108, 8)
-			-- elseif falseResponse == 2 then
-		print_centered("that's NOT right!!!!", 108, 8)
-			--end
+			if wordgame.wrongGuesses == wordgame.maximumGuesses -1 then
+				print_centered("oh no! you got too many wrong!", 100, 11)
+				print_centered("please x to retry", 106, 11)
+			else
+				print_centered("hmm that doesn't seem right", 108, 8)
+			end			
 		end
 	end
-	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
+	print_centered("UP,DOWN AND X TO SELECT", 120, 13)	
 end
 
 
@@ -738,7 +760,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
