@@ -10,6 +10,8 @@ CONTROL +K +J = unfold all
 CONTROL +K +1 = fold at level 1 
 U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button) 
 CTRL + X deletes a line of code!
+(btnp(🅾️))
+(btnp(❎))
 
 --]]
 
@@ -32,7 +34,8 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0
-	objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
+	wordgame.pagesCollected = true
+	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
@@ -47,6 +50,7 @@ _[1] = true
 
 function _update60()
 	musicControl()
+	menuState()
 	if activeGame == true  then 
 		animate_player()
 		animate_owl()		
@@ -74,8 +78,12 @@ function _draw()
 	cls()
 	if activeGame == false then draw_menu() else draw_game() end
 	-- player.x-20,player.y-20,8
-	--print(wordgame.pagesCollected,player.x-20,player.y-20,8)
-	
+	print(wordgame.state,player.x-20,player.y-20,8)
+	--print(wordgame.answers)
+	-- for v in all(wordgame.answers) do
+  	-- 	print(v,8)
+	-- end
+	-- print(#wordgame.allQuestions)
 end
 
 function draw_menu()
@@ -96,10 +104,14 @@ function draw_game()
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
 		wordgame_prepare_chosen_question()
 		
-		if wordgame.state == "questionList" then 
-			wordgame_draw_questions()						
+		if wordgame.state == "menu" then
+			wordgame_draw_questions()
+		elseif wordgame.state == "questionList" then 
+			wordgame_draw_questions()				
 		elseif wordgame.state == "chosenQuestion" then
-			wordgame_draw_chosen_question_and_answers()
+			wordgame_draw_answers()
+		elseif wordgame.state == "menuItems" then
+			wordgame_draw_answers()
 		end
 	else
 		if shakeAmount < .3 then
@@ -401,53 +413,27 @@ end
 -- word game functions
 function init_wordgame()
 	wordgame = {} -- empty array to store multiple strings		
-	wordgame.allQuestions = {} -- stores list of all questions	(1-4 currently)		
+	wordgame.allQuestions = {}	
 	wordgame.answered = {false, false, false, false} -- store when each question answered
 	wordgame.answers = {} -- empty array to store answer strings
 	wordgame.pagesCollected = false -- flag to check if player has collected all pages
 	wordgame.selectedQuestion = 1
 	wordgame.selectedAnswer = 1
-	wordgame.state = "questionList" --[[ questionList, chosenQuestion, completed]]
+	wordgame.state = "menu" --[[ menu, questionList, chosenQuestion, completed]]
 	wordgame.displayed = false -- flag to check if displayed on screen or not
 	wordgame.completed = false
 	wordgame.correct = "empty"
 end
 
-function wordgame_prepare_chosen_question()
-
-	wordgame.allQuestions = 
-		({"foxes live in", 
-		"foxes love to eat", 
-		"fox babies are called", 
-		"foxes are covered in",
-		"foxes something something",})
-
-	lostAnimal = animal.list[animal.active]
-	if wordgame.state == "chosenQuestion" then
-		if lostAnimal == "fox" then			
-			if wordgame.selectedQuestion == 1 then				
-				wordgame_store_answers({"large dens", "hives", "a tree-house","very deep holes","a sausage factory"})
-				wordgame.correct_answer = 1
-			elseif wordgame.selectedQuestion == 2 then				
-				wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
-				wordgame.correct_answer = 4
-			elseif wordgame.selectedQuestion == 3 then				
-				wordgame_store_answers({"plugs", "rugs", "a kit or kitten","chubs","scrubs"})
-				wordgame.correct_answer = 3
-			elseif wordgame.selectedQuestion == 4 then				
-				wordgame_store_answers({"biscuits", "jam", "scales","snot","fur"})
-				wordgame.correct_answer = 5
-			elseif wordgame.selectedQuestion == 5 then				
-				wordgame_store_answers({"um", "maybe", "probably", "yes..?", "possibly"})
-				wordgame.correct_answer = 2
-			end
-		elseif lostAnimal == "red panda" then
-			--wordgame_store_questions({"red pandas live in a ?"})
-			wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-			wordgame.correct_answer = 3
-		end	
+function menuState() -- change what's in this table if menu or wordgame (hacky I think but SUE ME!)
+	if wordgame.state == "menu" then
+		wordgame.allQuestions = {"start","difficulty","credits"}
+	elseif wordgame.state == "questionList" then
+		wordgame.allQuestions = {"foxes live in","foxes love to eat","fox babies are called",
+			"foxes are covered in","foxes something something",}
 	end
 end
+
 
 function wordgame_store_answers(txt)
 	wordgame.answers = txt
@@ -467,19 +453,29 @@ function wordgame_display_on_button_press()
 end
 
 function wordgame_draw_questions()
-	rectfill(0, 0, 127, 127, 7) -- background colour
-	print_centered("help furlock match", 6, 3)
-	print_centered("the animal facts", 12, 3)
-	print_centered("UP,DOWN AND X TO SELECT", 120, 13)	
-	if wordgame.completed == true then 
-		print_centered("you did it!!!", 100, 8) 		
-		print_centered("z or b to exit", 106, 8)
-		objective.current = "TAKE THE PAGES TO WOOFTON"
+
+	if wordgame.state == "menu" then
+		rectfill(0, 0, 127, 127, 1) -- background colour
+		print_centered("menu stuff innit", 6, 3)
+		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
+	elseif wordgame.state == "questionList" then
+		rectfill(0, 0, 127, 127, 7) -- background colour
+		print_centered("help furlock match", 6, 3)
+		print_centered("the animal facts", 12, 3)
+		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
+		if wordgame.completed == true then 
+			print_centered("you did it!!!", 100, 8) 		
+			print_centered("z or b to exit", 106, 8)
+			objective.current = "TAKE THE PAGES TO WOOFTON"
+		end
 	end
-		
-	-- let user pick a question and mark as answered
+			
 	if (btnp(❎)) then 
-		wordgame.state = "chosenQuestion"		
+		if wordgame.state == "menu" then
+			wordgame.state = "menuItems"
+		elseif wordgame.state == "questionList" then
+			wordgame.state = "chosenQuestion"
+		end		
 		--[[ this updates the answered array using whatever the chosen question number
 			 was and sets it as true, so that when all questions are true we know
 			 the player has completed the wordgame ]]
@@ -539,11 +535,56 @@ function wordgame_draw_questions()
 	end	
 end
 
-function wordgame_draw_chosen_question_and_answers()
- -- ** QUESTION LOGIC**
- 	cls()	
-	rectfill(0, 0, 127, 127, 7) -- draw background screen colour
+function wordgame_prepare_chosen_question()
+	
+	lostAnimal = animal.list[animal.active]
 
+	if wordgame.state == "menuItems" then
+		if wordgame.selectedQuestion == 1 then				
+				wordgame_store_answers({"this", "is", "just","placeholder"})
+				wordgame.correct_answer = 1
+			elseif wordgame.selectedQuestion == 2 then				
+				wordgame_store_answers({"easy", "medium", "hard"})
+				wordgame.correct_answer = 1
+			elseif wordgame.selectedQuestion == 3 then				
+				wordgame_store_answers({"credits"})
+				wordgame.correct_answer = 1
+			end
+
+	elseif wordgame.state == "chosenQuestion" then
+		if lostAnimal == "fox" then			
+			if wordgame.selectedQuestion == 1 then				
+				wordgame_store_answers({"large dens", "hives", "a tree-house","very deep holes","a sausage factory"})
+				wordgame.correct_answer = 1
+			elseif wordgame.selectedQuestion == 2 then				
+				wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
+				wordgame.correct_answer = 4
+			elseif wordgame.selectedQuestion == 3 then				
+				wordgame_store_answers({"plugs", "rugs", "a kit or kitten","chubs","scrubs"})
+				wordgame.correct_answer = 3
+			elseif wordgame.selectedQuestion == 4 then				
+				wordgame_store_answers({"biscuits", "jam", "scales","snot","fur"})
+				wordgame.correct_answer = 5
+			elseif wordgame.selectedQuestion == 5 then				
+				wordgame_store_answers({"um", "maybe", "probably", "yes..?", "possibly"})
+				wordgame.correct_answer = 2
+			end
+		elseif lostAnimal == "red panda" then
+			--wordgame_store_questions({"red pandas live in a ?"})
+			wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
+			wordgame.correct_answer = 3
+		end	
+	end
+end
+
+function wordgame_draw_answers()
+ -- ** QUESTION LOGIC**
+ 	cls()
+	if wordgame.state == "menuItems" then
+		rectfill(0, 0, 127, 127, 1) -- background colour
+	elseif wordgame.state == "chosenQuestion" then
+		rectfill(0, 0, 127, 127, 7) -- draw background screen colour
+	end
 	maxTextWidth = #wordgame.allQuestions[wordgame.selectedQuestion]
 
 	-- define textbox with border
@@ -605,7 +646,12 @@ function wordgame_draw_chosen_question_and_answers()
 	if wordgame.correct == "true" then -- stop answer selection if already correct and return to questions on x button
 		if (btnp(❎)) then 
 			wordgame.correct = "empty"
-			wordgame.state = "questionList"
+			if wordgame.state == "menuItems" then
+				wordgame.state = "menu"
+			elseif wordgame.state == "chosenQuestion" then
+				wordgame.state = "questionList"
+			end
+			
 		wordgame.selectedAnswer = 1 -- reset to 1 for next question
 		return -- quit function
 		end -- return to list of questions		
@@ -632,26 +678,41 @@ function wordgame_draw_chosen_question_and_answers()
 
 	-- check if correct
 	if (btnp(❎)) then
-		if wordgame.selectedAnswer == wordgame.correct_answer then 
-			wordgame.correct = "true"	
-		else 
-			wordgame.correct = "false"
+		-- basically whatever user selects from menu is 'correct' 
+		if wordgame.state == "menuItems" then
+			wordgame.correct_answer = wordgame.selectedAnswer
+			wordgame.correct = "true"
+		end
+
+		if wordgame.state == "chosenQuestion" then
+			if wordgame.selectedAnswer == wordgame.correct_answer then 
+				wordgame.correct = "true"
+			else 
+				wordgame.correct = "false"
+			end
 		end
 	end
-	if wordgame.correct == "true" then
-		print_centered("well done! press x to close",102,11)
-	elseif wordgame.correct == "false" then
 
-		-- local falseResponse = flr(rnd(4))
-		-- if falseResponse == 0 then
-		-- 	print_centered("i don't think that's right", 108, 8)
-		-- elseif falseResponse == 1 then
-		-- 	print_centered("i don't", 108, 8)
-		-- elseif falseResponse == 2 then
-		-- 	print_centered("think that", 108, 8)
-		-- elseif falseResponse == 2 then
-	print_centered("that's NOT right!!!!", 108, 8)
-		--end
+	if wordgame.state == "menuItems" then
+		if wordgame.correct == "true" then
+			print_centered("press x to go back",102,11)
+		end
+	elseif wordgame.state == "chosenQuestion" then
+		if wordgame.correct == "true" then
+			print_centered("well done! press x to close",102,11)
+		elseif wordgame.correct == "false" then
+
+			-- local falseResponse = flr(rnd(4))
+			-- if falseResponse == 0 then
+			-- 	print_centered("i don't think that's right", 108, 8)
+			-- elseif falseResponse == 1 then
+			-- 	print_centered("i don't", 108, 8)
+			-- elseif falseResponse == 2 then
+			-- 	print_centered("think that", 108, 8)
+			-- elseif falseResponse == 2 then
+		print_centered("that's NOT right!!!!", 108, 8)
+			--end
+		end
 	end
 	print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 end
