@@ -29,12 +29,12 @@ function _init()
 	create_owl()
 	create_signs()	
 	init_conversation()
-	init_wordgame()
+	init_wordgame()	
 	poke(0x5f5c, 255) -- this means a held button (btnp) only registers once				
 	init_objective()
 	lost_animals()
-	shakeAmount = 0
-	wordgame.pagesCollected = true
+	shakeAmount = 0	
+	--wordgame.pagesCollected = true
 	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
@@ -49,9 +49,12 @@ _[0] = false
 _[1] = true
 
 function _update60()
-	musicControl()
 	menuState()
-	if activeGame == true  then 
+	musicControl()
+	if activeGame == false then		
+		wordgame.displayed = true -- this is the menu not the wordgame (#hackyreuseoffunction)
+	
+	elseif activeGame == true  then 
 		animate_player()
 		animate_owl()		
 		if wordgame.displayed == false then -- stop player moving if wordgame displayed
@@ -68,49 +71,33 @@ function _update60()
 			foreach(leaves, leaf_physics)
 			foreach(pages, page_physics)
 		end
-		if wordgame.pagesCollected == true then	wordgame_display_on_button_press() end
-	else -- if on menu then start game
-		if (btnp(❎)) or (btnp(🅾️)) then activeGame = true end
+		if wordgame.pagesCollected == true then	wordgame_display_on_button_press() end	
 	end	
 end
 
 function _draw()
 	cls()
-	if activeGame == false then draw_menu() else draw_game() end
+	draw_game()
 	-- player.x-20,player.y-20,8
-	print(wordgame.state,player.x-20,player.y-20,8)
-	--print(wordgame.answers)
-	-- for v in all(wordgame.answers) do
-  	-- 	print(v,8)
-	-- end
-	-- print(#wordgame.allQuestions)
-end
-
-function draw_menu()
-	height = 50
-	print_centered("furlock bones", height, 12)
-	height += 12
-	print_centered("the case of", height, 7)
-	height += 6
-	print_centered("dr woofton's mysterious book", height, 7)	
-
-	height += 6*8
-	print_centered("press x or a to start", height, 7)	
+	print(wordgame.state,20,10,8)
+	print(activeGame)
 end
 
 function draw_game()
+	if activeGame == false then		
+		if wordgame.state == "menu"  then
+				wordgame_draw_questions()
+		elseif wordgame.state == "menuItems" then
+			wordgame_draw_answers()		
+		end
+	end
 	if wordgame.displayed == true then
 		camera_x, camera_y = 0,0 
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
-		wordgame_prepare_chosen_question()
-		
-		if wordgame.state == "menu" then
-			wordgame_draw_questions()
-		elseif wordgame.state == "questionList" then 
+		wordgame_prepare_chosen_question()		
+		if wordgame.state == "questionList" then 
 			wordgame_draw_questions()				
 		elseif wordgame.state == "chosenQuestion" then
-			wordgame_draw_answers()
-		elseif wordgame.state == "menuItems" then
 			wordgame_draw_answers()
 		end
 	else
@@ -441,6 +428,7 @@ end
 function wordgame_display_on_button_press()
 	-- z to view wordgame
 	if (btnp(🅾️)) and wordgame.pagesCollected == true and wordgame.displayed == false then
+		wordgame.state = "questionList"
 		wordgame.displayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
@@ -455,8 +443,12 @@ function wordgame_draw_questions()
 
 	if wordgame.state == "menu" then
 		rectfill(0, 0, 127, 127, 1) -- background colour
-		print_centered("menu stuff innit", 6, 3)
+		print_centered("furlock bones:", 12, 12)
+		print_centered("consulting dogtective", 18, 12)
+		print_centered("the case of", 30, 7)
+		print_centered("dr woofton's mysterious book", 36, 7)	
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
+
 	elseif wordgame.state == "questionList" then
 		rectfill(0, 0, 127, 127, 7) -- background colour
 		print_centered("help furlock match", 6, 3)
@@ -467,24 +459,25 @@ function wordgame_draw_questions()
 			print_centered("z or b to exit", 106, 8)
 			objective.current = "TAKE THE PAGES TO WOOFTON"
 		end
-	end
-	
-	
+	end	
 
 	if (btnp(❎)) then 
-		if wordgame.selectedQuestion == 1 then
-			-- start game
-		else
 			if wordgame.state == "menu" then
-				wordgame.state = "menuItems"
+				if wordgame.selectedQuestion == 1 then
+					activeGame = true
+					wordgame.displayed = false					
+				else 
+					wordgame.state = "menuItems"
+				end				
 			elseif wordgame.state == "questionList" then
 				wordgame.state = "chosenQuestion"
 			end		
 			--[[ this updates the answered array using whatever the chosen question number
 				was and sets it as true, so that when all questions are true we know
 				the player has completed the wordgame ]]
-			wordgame.answered[wordgame.selectedQuestion] = true
-		end
+			if wordgame.state == "questionList" or wordgame.state == "chosenQuestion" then			
+				wordgame.answered[wordgame.selectedQuestion] = true
+			end		
 	end
 
 	-- determine longest question
@@ -498,7 +491,11 @@ function wordgame_draw_questions()
 	-- question text box horizontal location
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 	-- question text box vertical location
-	local textbox_yy = camera_y + 22 -- first question starts here
+	if wordgame.state == "menu" then
+		textbox_yy = camera_y + 48 -- first menu item location
+	elseif wordgame.state == "questionList" then
+		textbox_yy = camera_y + 22 -- first question location
+	end
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
 
@@ -741,7 +738,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
