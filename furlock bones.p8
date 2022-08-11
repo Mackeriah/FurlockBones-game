@@ -413,6 +413,7 @@ function init_wordgame()
 	wordgame.correct = "empty"
 	wordgame.wrongGuesses = 0
 	wordgame.maximumGuesses = 999 -- default in case player doesn't change difficulty
+	wordgame.tooManyWrong = false
 end
 
 function menuState() -- change what's in this table if menu or wordgame (hacky I think but SUE ME!)
@@ -612,9 +613,10 @@ function wordgame_draw_answers()
 	-- if using wordgame
 	elseif wordgame.state == "chosenQuestion" then
 		rectfill(0, 0, 127, 127, 7) -- draw background screen colour
-		print("wrong",2,2,13)
+		print("wrong",2,2,13) -- incorrect guesses counter
 		if wordgame.wrongGuesses >= wordgame.maximumGuesses -1 then
-			print(wordgame.wrongGuesses,2,8,8)
+			wordgame.tooManyWrong = true
+			print(wordgame.wrongGuesses,2,8,8) -- print in red
 		else
 			print(wordgame.wrongGuesses,2,8,13)
 		end
@@ -707,7 +709,7 @@ function wordgame_draw_answers()
 		return -- quit function
 		end -- return to list of questions		
 	else
-		if (btnp(3)) then -- 3 is down
+		if (btnp(3)) and wordgame.tooManyWrong == false then -- 3 is down
 			if wordgame.selectedAnswer > #wordgame.answers-1 then
 				wordgame.selectedAnswer = 1
 				wordgame.correct = "empty"
@@ -716,7 +718,7 @@ function wordgame_draw_answers()
 				wordgame.correct = "empty"
 			end
 		end
-		if (btnp(2)) then -- 2 is up
+		if (btnp(2)) and wordgame.tooManyWrong == false then -- 2 is up
 			if wordgame.selectedAnswer == 1 then
 				wordgame.selectedAnswer = #wordgame.answers
 				wordgame.correct = "empty"
@@ -748,6 +750,8 @@ function wordgame_draw_answers()
 			wordgame.state = "questionList"
 			wordgame.wrongGuesses = 0
 			wordgame.correct = "empty"
+			wordgame.selectedAnswer = 1 -- reset so next question selector at top
+			wordgame.tooManyWrong = false
 		end
 	end
 
