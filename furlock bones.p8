@@ -15,6 +15,12 @@ CTRL + X deletes a line of code!
 
 --]]
 
+-- map compress related, try to add to function or init
+_n = nil _={}
+_[0] = false 
+_[1] = true
+
+
 --init, update and draw functions
 function _init()
 	camera_x, camera_y = 0,0
@@ -34,7 +40,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0	
-	--wordgame.pagesCollected = true
+	wordgame.pagesCollected = true
 	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
@@ -42,11 +48,6 @@ function _init()
 	leafCount = 0
 	pageCount = 0
 end
-
--- map compress related, try to add to function or init
-_n = nil _={}
-_[0] = false 
-_[1] = true
 
 function _update60()
 	menuState()
@@ -434,7 +435,8 @@ function wordgame_display_on_button_press()
 		wordgame.displayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
-	elseif (btnp(🅾️)) and wordgame.pagesCollected == true and wordgame.displayed == true then
+	-- let player exit only when completed #TRAPPED!
+	elseif (btnp(🅾️)) and wordgame.displayed == true and wordgame.completed == true then
 		wordgame.displayed = false
 		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
@@ -453,9 +455,11 @@ function wordgame_draw_questions()
 
 	elseif wordgame.state == "questionList" then
 		rectfill(0, 0, 127, 127, 7) -- background colour
-		print_centered("help furlock answer", 6, 3)
-		print_centered("the animal facts", 12, 3)
-		print_centered("to fix the pages", 18, 3)
+		print_centered("help furlock match", camera_y+14, 3)
+		print_centered("the animal facts", camera_y+20, 3)
+		print("wrong",2,2,13)
+		print(wordgame.wrongGuesses,2,8,13)
+		print(" /"..wordgame.maximumGuesses-1,3,8,13)
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 		if wordgame.completed == true then 
 			print_centered("you did it! press z to exit", 100, 8)
@@ -553,7 +557,7 @@ function wordgame_prepare_chosen_question()
 				wordgame_store_answers({"this", "is", "just","placeholder"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 2 then				
-				wordgame_store_answers({"easy: 5 WRONG GUESSES", "medium: 3 WRONG GUESSES", "hard: 0 WRONG GUESSES!"})
+				wordgame_store_answers({"easy: 5 WRONG GUESSES", "medium: 3 WRONG GUESSES", "hard: 1 WRONG GUESS!"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 3 then				
 				wordgame_store_answers({"credits"})
@@ -591,9 +595,9 @@ function wordgame_draw_answers()
 	-- store guess limit based on chosen difficulty
 	if wordgame.state == "menuItems" and wordgame.selectedQuestion == 2 then
 		if wordgame.selectedAnswer == 1 then
-			wordgame.maximumGuesses = 7
+			wordgame.maximumGuesses = 6
 		elseif wordgame.selectedAnswer == 2 then
-			wordgame.maximumGuesses = 5
+			wordgame.maximumGuesses = 4
 		elseif wordgame.selectedAnswer == 3 then
 			wordgame.maximumGuesses = 2
 		end
@@ -602,10 +606,20 @@ function wordgame_draw_answers()
 
  -- ** QUESTION LOGIC**
  	cls()
+	-- if using menu
 	if wordgame.state == "menuItems" then
 		rectfill(0, 0, 127, 127, 1) -- background colour
+	-- if using wordgame
 	elseif wordgame.state == "chosenQuestion" then
-		rectfill(0, 0, 127, 127, 7) -- draw background screen colour	
+		rectfill(0, 0, 127, 127, 7) -- draw background screen colour
+		print("wrong",2,2,13)
+		if wordgame.wrongGuesses >= wordgame.maximumGuesses -1 then
+			print(wordgame.wrongGuesses,2,8,8)
+		else
+			print(wordgame.wrongGuesses,2,8,13)
+		end
+
+		print(" /"..wordgame.maximumGuesses-1,3,8,13)
 	end
 
 	maxTextWidth = #wordgame.allQuestions[wordgame.selectedQuestion]
@@ -733,22 +747,24 @@ function wordgame_draw_answers()
 			wordgame.completed = false
 			wordgame.state = "questionList"
 			wordgame.wrongGuesses = 0
+			wordgame.correct = "empty"
 		end
 	end
 
 	if wordgame.state == "menuItems" then
 		if wordgame.correct == "true" then
-			print_centered("press x to go back",102,11)
+			print_centered("difficulty chosen",102,11)
+			print_centered("press x to continue",108,11)	
 		end
 	elseif wordgame.state == "chosenQuestion" then
 		if wordgame.correct == "true" then
 			print_centered("well done! press x to close",102,11)
 		elseif wordgame.correct == "false" then
-			if wordgame.wrongGuesses == wordgame.maximumGuesses -1 then
-				print_centered("oh no! you got too many wrong!", 100, 11)
-				print_centered("please x to retry", 106, 11)
+			if wordgame.wrongGuesses >= wordgame.maximumGuesses -1 then
+				print_centered("oh no! you got too many wrong!", 100, 8)
+				print_centered("x to try again", 106, 8)
 			else
-				print_centered("hmm that doesn't seem right", 108, 8)
+				print_centered("hmm that doesn't seem right", 100, 8)		
 			end			
 		end
 	end
@@ -1346,7 +1362,7 @@ function page_physics(page)
 	if objective.current == "PICK UP THE TORN PAGES" then
 		if flr(page.x) == flr(player.x) then
 			wordgame.pagesCollected = true
-			objective.current = "PRESS Z OR B TO VIEW PAGES"
+			objective.current = "PRESS Z TO VIEW PAGES"
 			del(pages,page)
 		end
 	end
