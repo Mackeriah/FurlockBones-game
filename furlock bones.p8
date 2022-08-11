@@ -131,12 +131,28 @@ end
 function init_objective()
 	objective={}
 	objective.active = false
-	objective.current = "TALK TO DOCTOR WOOFTON"
+	objective.current = "TALK TO DOCTOR WOOFTON"	
+	objective.newObjective = true
+	animateObjective = true
+	slideObjective = 20
 end
 
-function draw_objective() -- draws current objective at top of screen (31 char limit)
-	rectfill(camera_x, camera_y, camera_x+127, camera_y+5, 6) -- heading
-	print(objective.current, camera_x+2, camera_y, 3)
+function draw_objective() -- draws current objective at top of screen (31 char limit)	
+	rectfill(camera_x, camera_y+slideObjective, camera_x+127, camera_y+slideObjective+5, 6) -- heading
+	print(objective.current, camera_x+2, camera_y+slideObjective, 3)
+
+	-- slide new objective from middle to top of screen
+	if objective.newObjective == true and animateObjective == false then
+		slideObjective = 20
+		animateObjective = true
+	end
+	if animateObjective == true and slideObjective != 0 then
+		slideObjective -= 0.5
+	end
+	if slideObjective == 0 then
+		objective.newObjective = false
+		animateObjective = false
+	end
 end
 
 
@@ -197,7 +213,8 @@ function conversation_system()
 					owlGrumpy = false
 					if (btnp(❎)) then
 						conversation_state = "none"
-						objective.current = "TALK TO WISE OLD OWL"					
+						objective.newObjective = true
+						objective.current = "TALK TO WISE OLD OWL"
 					end
 				end
 			else
