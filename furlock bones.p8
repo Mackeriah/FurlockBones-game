@@ -47,6 +47,7 @@ function _init()
 	pages = {}
 	leafCount = 0
 	pageCount = 0
+	credits = false
 end
 
 function _update60()
@@ -82,6 +83,7 @@ function _draw()
 	-- player.x-20,player.y-20,8	
 	--print("wrong: "..wordgame.wrongGuesses,20,10,8)	
 	--print("max: "..wordgame.maximumGuesses)
+	--print(credits)
 end
 
 function draw_game()
@@ -153,6 +155,28 @@ function draw_objective() -- draws current objective at top of screen (31 char l
 		objective.newObjective = false
 		animateObjective = false
 	end
+end
+
+function draw_credits()
+	rectfill(6, 4, 121, 100, 7) -- background colour
+	print_centered("music", 6,2)
+	print_centered("nine aongs in pico-8", 12,3)
+	print_centered("robby duguay",18 ,3)
+	print_centered("furlock and woofton sprites", 30,2)
+	print_centered("lexaloffle games",36,3)
+	print_centered("map compression code", 48,2)
+	print_centered("dw817",54,3)
+	print_centered("forest tileset", 66,2)
+	print_centered("cluly@itch.io",72,3)
+	print_centered("play testing", 84,2)
+	print_centered("eliza, imogen and carly", 90,3)
+	--print_centered("cluly@itch.io",96,3)
+	-- scrolling text
+	-- if vloc <= 25 then
+	-- 	vloc = 110
+	-- elseif vloc <=vloc then	
+	-- 	vloc -= 0.25
+	-- end
 end
 
 
@@ -464,6 +488,7 @@ end
 function wordgame_draw_questions()
 
 	if wordgame.state == "menu" then
+		credits = false
 		rectfill(0, 0, 127, 127, 1) -- background colour
 		print_centered("furlock bones:", 12, 12)
 		print_centered("consulting dogtective", 18, 12)
@@ -486,22 +511,25 @@ function wordgame_draw_questions()
 	end	
 
 	if (btnp(❎)) then 
-			if wordgame.state == "menu" then
-				if wordgame.selectedQuestion == 1 then
-					activeGame = true
-					wordgame.displayed = false					
-				else 
-					wordgame.state = "menuItems"
-				end				
-			elseif wordgame.state == "questionList" then
-				wordgame.state = "chosenQuestion"
-			end		
-			--[[ this updates the answered array using whatever the chosen question number
-				was and sets it as true, so that when all questions are true we know
-				the player has completed the wordgame ]]
-			if wordgame.state == "questionList" or wordgame.state == "chosenQuestion" then			
-				wordgame.answered[wordgame.selectedQuestion] = true
-			end		
+		if wordgame.state == "menu" then
+			if wordgame.selectedQuestion == 1 then
+				activeGame = true
+				wordgame.displayed = false
+			elseif wordgame.selectedQuestion == 3 then
+				credits = true
+				wordgame.state = "menuItems"		
+			else 
+				wordgame.state = "menuItems"
+			end				
+		elseif wordgame.state == "questionList" then
+			wordgame.state = "chosenQuestion"
+		end		
+		--[[ this updates the answered array using whatever the chosen question number
+			was and sets it as true, so that when all questions are true we know
+			the player has completed the wordgame ]]
+		if wordgame.state == "questionList" or wordgame.state == "chosenQuestion" then			
+			wordgame.answered[wordgame.selectedQuestion] = true
+		end		
 	end
 
 	-- determine longest question
@@ -557,6 +585,7 @@ function wordgame_draw_questions()
 		else wordgame.selectedQuestion -= 1 end
 	end	
 
+	-- check if all questions are answered correctly
 	if wordgame.answered[1] == true
 		and wordgame.answered[2] == true
 		and wordgame.answered[3] == true
@@ -621,12 +650,14 @@ function wordgame_draw_answers()
 		end
 	end
 
-
  -- ** QUESTION LOGIC**
  	cls()
 	-- if using menu
 	if wordgame.state == "menuItems" then
 		rectfill(0, 0, 127, 127, 1) -- background colour
+		if credits == true then
+			draw_credits()
+		end
 	-- if using wordgame
 	elseif wordgame.state == "chosenQuestion" then
 		rectfill(0, 0, 127, 127, 7) -- draw background screen colour
@@ -652,15 +683,22 @@ function wordgame_draw_answers()
 	local textbox_width = textbox_x+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height = textbox_y + 6
 
-	-- draw outer border text box	
-	rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 12)
+	-- draw outer border text box
+	if credits == true then
+		-- rectfill(textbox_x+8, textbox_y-12, textbox_width-8, textbox_height-6, 12)
+	else
+		rectfill(textbox_x-2, textbox_y-2, textbox_width+2, textbox_height+2, 12)
+	end
 	
 	-- write question at top of screen
 	local txt = wordgame.allQuestions[wordgame.selectedQuestion]		
 	local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 	local ty = textbox_y -5+(1*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
-	print(txt, tx, ty, 1)	
-	
+	if credits == true then 
+		--print_centered("credits", ty-9,7)
+	else
+		print(txt, tx, ty, 1)	
+	end
  -- ** ANSWER LOGIC ** 
 	-- #wordgame.answers this is how many answers there are and thus how many boxes we need
 	-- determine longest line of text
@@ -676,7 +714,11 @@ function wordgame_draw_answers()
 
 	-- vertical text box location
 	if wordgame.state == "menuItems" then
-		textbox_yy = camera_y + 48 -- first chosen menu option
+		if credits == true then
+			textbox_yy = camera_y + 100 -- first chosen menu option
+		else
+			textbox_yy = camera_y + 48
+		end
 	else
 		textbox_yy = camera_y + 22 -- first question starts here
 	end
@@ -694,22 +736,21 @@ function wordgame_draw_answers()
 		--rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12) -- this draws the box
 	end
-
-		if wordgame.selectedAnswer == i then
-			if wordgame.correct == "true" then 
-				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,11) -- colour green to indicate correct
-				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- this draws the box
-			else
-				if wordgame.state == "menuItems" then
-					rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
-					rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12) -- this draws the box
-				elseif wordgame.state == "chosenQuestion" then
-					rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
-					rectfill(tx-2,ty-2,tx+#txt*4,ty+6,7) -- this draws the box
-				end
+	if wordgame.selectedAnswer == i then
+		if wordgame.correct == "true" then 
+			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,11) -- colour green to indicate correct
+			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- this draws the box
+		else
+			if wordgame.state == "menuItems" then
+				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12) -- this draws the box
+			elseif wordgame.state == "chosenQuestion" then
+				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
+				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,7) -- this draws the box
 			end
 		end
-		print(txt, tx, ty, 0) -- print the answers in the boxes	
+	end
+	print(txt, tx, ty, 0) -- print the answers in the boxes	
 	end	
 
 	-- use up and down to select a question
