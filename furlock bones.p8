@@ -40,7 +40,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0	
-	wordgame.pagesCollected = true
+	--wordgame.pagesCollected = true
 	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	leaves = {} -- used to store leaves, obvs
@@ -493,7 +493,7 @@ function wordgame_draw_questions()
 		print_centered("furlock bones:", 12, 12)
 		print_centered("consulting dogtective", 18, 12)
 		print_centered("the case of", 30, 7)
-		print_centered("dr woofton's mysterious book", 36, 7)	
+		print_centered("dr woofton's mysterious book", 36, 7)
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 
 	elseif wordgame.state == "questionList" then
@@ -844,7 +844,7 @@ function wordgame_draw_answers()
 			end			
 		end
 	end
-	print_centered("UP,DOWN AND X TO SELECT", 120, 13)	
+	if credits == false then print_centered("UP,DOWN AND X TO SELECT", 120, 13)	end
 end
 
 
