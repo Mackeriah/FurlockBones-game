@@ -43,7 +43,7 @@ function _init()
 	--wordgame.pagesCollected = true
 	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
-	objective.current = "PRESS Z TO VIEW PAGES"
+	--objective.current = "PRESS Z TO VIEW PAGES"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
 	leafCount = 0
@@ -83,8 +83,7 @@ function _draw()
 	draw_game()
 	-- player.x-20,player.y-20,8	
 	--print("wrong: "..wordgame.wrongGuesses,20,10,8)	
-	--print("max: "..wordgame.maximumGuesses)
-	--print(credits)
+	--print("max: "..wordgame.maximumGuesses)	
 end
 
 function draw_game()
@@ -205,7 +204,6 @@ function conversation_system()
 	end
 
 	if conversation_state == "ready" then
-
 		if conversation.character == "sign1" or conversation.character == "sign2" then
 			new_conversation({"sign","PRESS X TO READ"}) -- player prompt
 			if (btnp(❎)) then conversation_state = "level1" end
@@ -272,26 +270,82 @@ function conversation_system()
 					new_conversation({"hey maybe you could","fix them for me?","try pressing z"}) 
 					if (btnp(❎)) then conversation_state = "none" end
 				end
+			else
+				--if conversation_state == "level1" then
+				new_conversation({"how's it going furlock?"}) 
+				if (btnp(❎)) then conversation_state = "none" end
 			end
 		end
 
 		-- WISE OLD OWL
 		if conversation.character == "wise old owl" then
 			if conversation_state == "level1" then
+
+				if owlGrumpy == true then
+					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
+					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
+				end
+
+				if owlGrumpy == false and objective.current != "TALK TO WISE OLD OWL" then
+					if owlAnnoyanceLevel <= 1 then
+						new_conversation({"sorry i'm a bit busy","right now. i'll talk","to you later furlock."})						
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel += 1
+						end
+						
+					elseif owlAnnoyanceLevel == 2 then
+						new_conversation({"yup, still busy furlock","like i keep saying..."})
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel += 1
+						end
+					elseif owlAnnoyanceLevel >2 and owlAnnoyanceLevel <6 then
+						new_conversation({"are you trying to","annoy me furlock?"})
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel += 1
+						end
+					elseif owlAnnoyanceLevel == 6 or owlAnnoyanceLevel <9 then
+						new_conversation({"it wont work"})
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel += 1
+						end
+					elseif owlAnnoyanceLevel == 9 or owlAnnoyanceLevel < 15 then
+						new_conversation({"it.","wont.","work."})
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel += 1
+						end
+					elseif owlAnnoyanceLevel == 15 or owlAnnoyanceLevel < 20 then
+						new_conversation({"la la la","im not listening", "doo dee doo."})
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel += 1
+						end
+					elseif owlAnnoyanceLevel == 20 then
+						new_conversation({"ok you win!!!","agggh!","you're so annoying!"})
+						if (btnp(❎)) then 
+							conversation_state = "none" 
+							owlAnnoyanceLevel = 0							
+						end
+					end				
+				end
+
+
 				if objective.current == "TALK TO WISE OLD OWL" then
 					new_conversation({"hello furlock!"})
 					if (btnp(❎)) then			
 						conversation_state = "owllibrary1"
 					end
+				elseif objective.current == "PRESS Z TO VIEW PAGES" then
+					new_conversation({"press z to fix up","the pages furlock"})
+					if (btnp(❎)) then			
+						conversation_state = "none"
+					end
 				end
-				if owlGrumpy == true then
-					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
-					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
-				end
-				if owlGrumpy == false and objective.current != "TALK TO WISE OLD OWL" then
-					new_conversation({"sorry i'm a bit busy","right now. i'll talk","to you later furlock."})
-					if (btnp(❎)) then conversation_state = "none" end	
-				end
+				
 
 			elseif conversation_state == "owllibrary1" then
 				new_conversation({"so woofton wants to know", "about foxes eh?", "let me see what i can find."})
@@ -462,7 +516,7 @@ function init_wordgame()
 	wordgame.completed = false
 	wordgame.correct = "empty"
 	wordgame.wrongGuesses = 0
-	wordgame.maximumGuesses = 999 -- default in case player doesn't change difficulty
+	wordgame.maximumGuesses = 6 -- default in case player doesn't change difficulty
 	wordgame.tooManyWrong = false
 end
 
@@ -861,7 +915,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -1144,7 +1198,8 @@ function create_owl()
 	owlBookState = "none"
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library	
 	owl.speechColour = 2
-	owlGrumpy = true	
+	owlGrumpy = true
+	owlAnnoyanceLevel = 0	
 end
 
 function owl_collision(playerx,playery,charx,chary)
