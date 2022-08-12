@@ -160,7 +160,7 @@ end
 function draw_credits()
 	rectfill(6, 4, 121, 100, 7) -- background colour
 	print_centered("music", 6,2)
-	print_centered("nine aongs in pico-8", 12,3)
+	print_centered("\"nine songs in pico-8\"", 12,3)
 	print_centered("robby duguay",18 ,3)
 	print_centered("furlock and woofton sprites", 30,2)
 	print_centered("lexaloffle games",36,3)
@@ -168,7 +168,7 @@ function draw_credits()
 	print_centered("dw817",54,3)
 	print_centered("forest tileset", 66,2)
 	print_centered("cluly@itch.io",72,3)
-	print_centered("play testing", 84,2)
+	print_centered("playtesting", 84,2)
 	print_centered("eliza, imogen and carly", 90,3)
 	--print_centered("cluly@itch.io",96,3)
 	-- scrolling text
@@ -532,6 +532,12 @@ function wordgame_draw_questions()
 		end		
 	end
 
+	if credits == true then
+		if (btnp(❎)) then
+			--wordgame.state = "questionList"
+		end
+	end
+
 	-- determine longest question
 	local maxTextWidth = 0
 	for i=1, #wordgame.allQuestions do -- the # gets array length
@@ -715,7 +721,7 @@ function wordgame_draw_answers()
 	-- vertical text box location
 	if wordgame.state == "menuItems" then
 		if credits == true then
-			textbox_yy = camera_y + 100 -- first chosen menu option
+			textbox_yy = camera_y + 1000 -- first chosen menu option
 		else
 			textbox_yy = camera_y + 48
 		end
@@ -794,6 +800,11 @@ function wordgame_draw_answers()
 			wordgame.correct_answer = wordgame.selectedAnswer
 			wordgame.correct = "true"
 		end
+		if wordgame.state == "menuItems" and credits == true then
+			wordgame.state = "menu"
+			credits = false
+			wordgame.correct = false
+		end
 		if wordgame.state == "chosenQuestion" then
 			if wordgame.selectedAnswer == wordgame.correct_answer then 
 				wordgame.correct = "true"
@@ -817,6 +828,9 @@ function wordgame_draw_answers()
 		if wordgame.correct == "true" then
 			print_centered("difficulty chosen",102,11)
 			print_centered("press x to continue",108,11)	
+		end
+		if credits == true then
+			print_centered("press x to return",108,8)	
 		end
 	elseif wordgame.state == "chosenQuestion" then
 		if wordgame.correct == "true" then
