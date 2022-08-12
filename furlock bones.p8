@@ -43,6 +43,7 @@ function _init()
 	--wordgame.pagesCollected = true
 	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
+	objective.current = "PRESS Z TO VIEW PAGES"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
 	leafCount = 0
@@ -218,8 +219,7 @@ function conversation_system()
 		-- DR WOOFTON
 		if conversation.character == "woofton" then
 
-			if objective.current != "TAKE THE PAGES TO WOOFTON" then
-
+			if objective.current == "TALK TO DOCTOR WOOFTON" then
 				if conversation_state == "level1" then
 					new_conversation({"ruff! morning furlock!"}) 
 					if (btnp(❎)) then conversation_state = "woofton2" end			
@@ -241,7 +241,7 @@ function conversation_system()
 						objective.current = "TALK TO WISE OLD OWL"
 					end
 				end
-			else
+			elseif objective.current == "TAKE THE PAGES TO WOOFTON" then
 				if conversation_state == "level1" then
 					new_conversation({"yip yip! hello furlock!"}) 
 					if (btnp(❎)) then conversation_state = "pages2" end
@@ -262,6 +262,15 @@ function conversation_system()
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
 					if (btnp(❎)) then conversation_state = "none" end
 					
+				end
+			elseif objective.current == "PRESS Z TO VIEW PAGES" then
+				if conversation_state == "level1" then
+					new_conversation({"ooh you have the pages","but what happened?!", "they're torn to shreds."}) 
+					if (btnp(❎)) then conversation_state = "notReady1" end
+
+				elseif conversation_state == "notReady1" then
+					new_conversation({"hey maybe you could","fix them for me?","try pressing z"}) 
+					if (btnp(❎)) then conversation_state = "none" end
 				end
 			end
 		end
