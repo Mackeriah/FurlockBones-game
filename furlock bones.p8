@@ -694,8 +694,8 @@ function menuState() -- change what's in this table if menu or wordgame (hacky I
 	elseif wordgame.state == "questionList" then
 		-- FOX QUESTIONS
 		if animal.list[animal.active] == "red foxes" then
-			wordgame.allQuestions = {"they live in","they love to eat","their babies are called",
-				"they are covered in","a group of foxes is called a",}
+			wordgame.allQuestions = {"live in","are awake in night or day","their babies are called",
+				"can run up to","a group of foxes is called a",}
 
 		-- RED PANDA QUESTIONS
 		elseif animal.list[animal.active] == "red pandas" then
@@ -723,7 +723,7 @@ function wordgame_prepare_chosen_question()
 		-- FOX ANSWERS
 		if animal.list[animal.active] == "red foxes" then
 			if wordgame.selectedQuestion == 1 then				
-				wordgame_store_answers({"large dens", "bee hives", "tree-houses","your bedroom","a sausage factory"})
+				wordgame_store_answers({"large dens", "bee hives", "tree-houses","high in trees","muddy riverbanks"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 2 then				
 				wordgame_store_answers({"pizza", "cheese sandwiches", "children","chickens","sausages"})
@@ -732,8 +732,8 @@ function wordgame_prepare_chosen_question()
 				wordgame_store_answers({"cubs", "cats", "kits","kit kats","pups"})
 				wordgame.correct_answer = 3
 			elseif wordgame.selectedQuestion == 4 then				
-				wordgame_store_answers({"scales", "jam", "marshmallow","snot","fur"})
-				wordgame.correct_answer = 5
+				wordgame_store_answers({"100 km/h", "5 km/h", "10 km/h","50 km/h","1,000 km/h"})
+				wordgame.correct_answer = 4
 			elseif wordgame.selectedQuestion == 5 then				
 				wordgame_store_answers({"posse", "gang", "foxtrot", "skulk", "pack"})
 				wordgame.correct_answer = 4
@@ -751,7 +751,7 @@ function wordgame_prepare_chosen_question()
 				wordgame_store_answers({"washing in a stream", "having a shower", "licking themselves","rolling in dust","rubbing against trees"})
 				wordgame.correct_answer = 3
 			elseif wordgame.selectedQuestion == 4 then				
-				wordgame_store_answers({"exactly 5", "about 5,000", "about 20,000","100-200","zero"})
+				wordgame_store_answers({"exactly 5", "about 5,000", "up to 20,000","100-200","zero"})
 				wordgame.correct_answer = 3
 			elseif wordgame.selectedQuestion == 5 then				
 				wordgame_store_answers({"in the bath", "in burrows", "under houses", "inside bushes", "high in trees"})
