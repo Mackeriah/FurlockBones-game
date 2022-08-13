@@ -43,7 +43,7 @@ function _init()
 	lost_animals()
 	shakeAmount = 0	
 	wordgame.pagesCollected = true
-	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
+	objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	--objective.current = "PRESS Z TO VIEW PAGES"
 	leaves = {} -- used to store leaves, obvs
@@ -289,8 +289,10 @@ function conversation_system()
 
 				elseif conversation_state == "pages5" then
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
-					if (btnp(❎)) then conversation_state = "none" end
-					
+					if (btnp(❎)) then 
+					conversation_state = "none" 
+					objective.current = "TALK TO WOOFTON AGAIN"
+					end					
 				end
 			elseif objective.current == "PRESS Z TO VIEW PAGES" then
 				if conversation_state == "level1" then
@@ -301,12 +303,31 @@ function conversation_system()
 					new_conversation({"hey maybe you could","fix them for me?","try pressing z"}) 
 					if (btnp(❎)) then conversation_state = "none" end
 				end
+			elseif objective.current == "TALK TO WOOFTON AGAIN" then
+				if conversation_state == "level1" then
+					new_conversation({"hey furlock, thanks again.","another character for","my book is a red panda."}) 
+					if (btnp(❎)) then conversation_state = "2ndanimal1" end
+
+				elseif conversation_state == "2ndanimal1" then
+					new_conversation({"any chance you could ask owl","if he has a book on them too?","i'd really appreciate it"}) 
+					if (btnp(❎)) then 
+						conversation_state = "none"
+						objective.current = "TALK TO WISE OLD OWL AGAIN"
+					end
+				end
+
 			else
 				--if conversation_state == "level1" then
 				new_conversation({"how's it going furlock?"}) 
 				if (btnp(❎)) then conversation_state = "none" end
 			end
 		end
+
+
+
+		
+
+
 
 		-- WISE OLD OWL
 		if conversation.character == "wise old owl" then
