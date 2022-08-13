@@ -23,9 +23,11 @@ _[1] = true
 
 --init, update and draw functions
 function _init()
+	timeStart = 0
+	displayDev = false
 	camera_x, camera_y = 0,0
 	tmp_camera_x, tmp_camera_y = 0,0 -- don't remove this
-	activeGame = false	
+	activeGame = false
 	current_map_maximum_x = 624
 	current_map_maximum_y = 248
 	init_music()	
@@ -40,7 +42,7 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0	
-	--wordgame.pagesCollected = true
+	wordgame.pagesCollected = true
 	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--owlBookState = "going upstairs"
 	--objective.current = "PRESS Z TO VIEW PAGES"
@@ -51,9 +53,32 @@ function _init()
 	credits = false
 end
 
+function displayDevName()
+	rectfill(0, 0, 127, 127, 0) -- background colour
+	if timeStart == 0 then
+		timeStart = time()
+	end
+	if timeStart <= time() - 0 then
+		print_centered("awopi developments", 44, 12)
+		print_centered("presents", 56, 12)
+	end	
+	-- if timeStart <= time() - 3 then
+	-- 	print_centered("furlock bones:", 54, 7)
+	-- 	print_centered("consulting dogtective", 60, 7)
+	-- end		
+	if timeStart == 0 then
+		timeStart = time()
+	end
+	if timeStart <= time() - 4 then
+		displayDev = false
+	end	
+end
+
 function _update60()
-	menuState()
-	musicControl()
+	if displayDev == false then
+		menuState()
+		musicControl()
+	end	
 	if activeGame == false then		
 		wordgame.displayed = true -- this is the menu not the wordgame (#hackyreuseoffunction)
 	
@@ -80,14 +105,17 @@ end
 
 function _draw()
 	cls()
-	draw_game()
+	displayDevName()
+	if displayDev == false then
+		draw_game()
+	end
 	-- player.x-20,player.y-20,8	
 	--print("wrong: "..wordgame.wrongGuesses,20,10,8)	
-	--print("max: "..wordgame.maximumGuesses)	
+	--print(animal.list[animal.active])	
 end
 
-function draw_game()
-	if activeGame == false then		
+function draw_game()	
+	if activeGame == false then
 		if wordgame.state == "menu"  then
 				wordgame_draw_questions()
 		elseif wordgame.state == "menuItems" then
@@ -126,8 +154,8 @@ end
 
 function lost_animals()
 	animal = {}	
-	animal.list = {"fox", "red panda"}
-	animal.active = 1
+	animal.list = {"red foxes", "red pandas"}
+	animal.active = 2
 end
 
 function init_objective()
@@ -254,7 +282,10 @@ function conversation_system()
 
 				elseif conversation_state == "pages4" then
 					new_conversation({"anyway, this is perfect.","thank you so much furlock!"}) 
-					if (btnp(❎)) then conversation_state = "pages5" end
+					if (btnp(❎)) then 
+						conversation_state = "pages5" 
+						animal.active += 1
+					end
 
 				elseif conversation_state == "pages5" then
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
@@ -520,15 +551,6 @@ function init_wordgame()
 	wordgame.tooManyWrong = false
 end
 
-function menuState() -- change what's in this table if menu or wordgame (hacky I think but SUE ME!)
-	if wordgame.state == "menu" then
-		wordgame.allQuestions = {"start game","change difficulty","view credits"}
-	elseif wordgame.state == "questionList" then
-		wordgame.allQuestions = {"foxes live in","foxes love to eat","fox babies are called",
-			"foxes are covered in","foxes something something",}
-	end
-end
-
 function wordgame_store_answers(txt)
 	wordgame.answers = txt
 end
@@ -561,8 +583,10 @@ function wordgame_draw_questions()
 
 	elseif wordgame.state == "questionList" then
 		rectfill(0, 0, 127, 127, 7) -- background colour
-		print_centered("help furlock match", camera_y+14, 3)
-		print_centered("the animal facts", camera_y+20, 3)
+		--print_centered("help furlock match", camera_y+14, 3)		
+		--print_centered("answer animal facts for", camera_y+6, 3)
+		print_centered(animal.list[animal.active], camera_y+6, 3)
+		
 		print("wrong",2,2,13)
 		print(wordgame.wrongGuesses,2,8,13)
 		print(" /"..wordgame.maximumGuesses-1,3,8,13)
@@ -615,7 +639,7 @@ function wordgame_draw_questions()
 	if wordgame.state == "menu" then
 		textbox_yy = camera_y + 48 -- first menu item location
 	elseif wordgame.state == "questionList" then
-		textbox_yy = camera_y + 22 -- first question location
+		textbox_yy = camera_y + 8 -- first question location
 	end
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
 	local textbox_height2 = textbox_yy + 6 -- *6 for character height
@@ -664,9 +688,23 @@ function wordgame_draw_questions()
 	end	
 end
 
+function menuState() -- change what's in this table if menu or wordgame (hacky I think but SUE ME!)
+	if wordgame.state == "menu" then
+		wordgame.allQuestions = {"start game","change difficulty","view credits"}
+	elseif wordgame.state == "questionList" then
+		-- FOX QUESTIONS
+		if animal.list[animal.active] == "red foxes" then
+			wordgame.allQuestions = {"they live in","they love to eat","their babies are called",
+				"they are covered in","a group of foxes is called a",}
+
+		-- RED PANDA QUESTIONS
+		elseif animal.list[animal.active] == "red pandas" then
+			wordgame.allQuestions = {"are related to","keep themselves warm by","keep clean by","eat ? bamboo leaves every day","spend most of their time",}
+		end
+	end
+end
+
 function wordgame_prepare_chosen_question()
-	
-	lostAnimal = animal.list[animal.active]
 
 	if wordgame.state == "menuItems" then
 		if wordgame.selectedQuestion == 1 then				
@@ -681,27 +719,44 @@ function wordgame_prepare_chosen_question()
 			end
 
 	elseif wordgame.state == "chosenQuestion" then
-		if lostAnimal == "fox" then			
+
+		-- FOX ANSWERS
+		if animal.list[animal.active] == "red foxes" then
 			if wordgame.selectedQuestion == 1 then				
-				wordgame_store_answers({"large dens", "hives", "a tree-house","very deep holes","a sausage factory"})
+				wordgame_store_answers({"large dens", "bee hives", "tree-houses","your bedroom","a sausage factory"})
 				wordgame.correct_answer = 1
 			elseif wordgame.selectedQuestion == 2 then				
-				wordgame_store_answers({"leaves", "bees", "people","chickens","sausages"})
+				wordgame_store_answers({"pizza", "cheese sandwiches", "children","chickens","sausages"})
 				wordgame.correct_answer = 4
 			elseif wordgame.selectedQuestion == 3 then				
-				wordgame_store_answers({"plugs", "rugs", "a kit or kitten","chubs","scrubs"})
+				wordgame_store_answers({"cubs", "cats", "kits","kit kats","pups"})
 				wordgame.correct_answer = 3
 			elseif wordgame.selectedQuestion == 4 then				
-				wordgame_store_answers({"biscuits", "jam", "scales","snot","fur"})
+				wordgame_store_answers({"scales", "jam", "marshmallow","snot","fur"})
 				wordgame.correct_answer = 5
 			elseif wordgame.selectedQuestion == 5 then				
-				wordgame_store_answers({"um", "maybe", "probably", "yes..?", "possibly"})
-				wordgame.correct_answer = 2
+				wordgame_store_answers({"posse", "gang", "foxtrot", "skulk", "pack"})
+				wordgame.correct_answer = 4
 			end
-		elseif lostAnimal == "red panda" then
-			--wordgame_store_questions({"red pandas live in a ?"})
-			wordgame_store_answers({"large den", "hive", "tree-house","very deep hole","sausage factory"})
-			wordgame.correct_answer = 3
+
+		-- RED PANDA ANSWERS
+		elseif animal.list[animal.active] == "red pandas" then
+			if wordgame.selectedQuestion == 1 then				
+				wordgame_store_answers({"red foxes","pandas","bears","racoons","koalas"})
+				wordgame.correct_answer = 4
+			elseif wordgame.selectedQuestion == 2 then				
+				wordgame_store_answers({"jumping", "wrapping their tail around", "putting on a scarf","rolling in mud","dancing"})
+				wordgame.correct_answer = 2
+			elseif wordgame.selectedQuestion == 3 then				
+				wordgame_store_answers({"washing in a stream", "having a shower", "licking themselves","rolling in dust","rubbing against trees"})
+				wordgame.correct_answer = 3
+			elseif wordgame.selectedQuestion == 4 then				
+				wordgame_store_answers({"exactly 5", "about 5,000", "about 20,000","100-200","zero"})
+				wordgame.correct_answer = 3
+			elseif wordgame.selectedQuestion == 5 then				
+				wordgame_store_answers({"in the bath", "in burrows", "under houses", "inside bushes", "high in trees"})
+				wordgame.correct_answer = 5
+			end
 		end	
 	end
 end
@@ -766,7 +821,8 @@ function wordgame_draw_answers()
 	if credits == true then 
 		--print_centered("credits", ty-9,7)
 	else
-		print(txt, tx, ty, 1)	
+		print_centered(animal.list[animal.active], camera_y+6, 3)
+		print(txt, tx, ty, 1)		
 	end
  -- ** ANSWER LOGIC ** 
 	-- #wordgame.answers this is how many answers there are and thus how many boxes we need
@@ -915,7 +971,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -1641,7 +1697,6 @@ function screen_shake()
 	shakeAmount *= .9
 	if shakeAmount < .3 then shakeAmount = 0 end
 end
-
 
 
 -- map strings
