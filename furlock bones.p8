@@ -353,7 +353,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "owllibrary1" end
 
 				elseif conversation_state == "owllibrary1" then
-					new_conversation({"so woofton wants to know", "about foxes eh?", "let me see what i can find."})
+					new_conversation({"so woofton wants to know", "about red foxes eh?", "let me see what i can find."})
 					if (btnp(❎)) then conversation_state = "owllibrary2" end
 
 				elseif conversation_state == "owllibrary2" then
@@ -491,7 +491,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "owlLibraryPart2_3" end
 
 				elseif conversation_state == "owlLibraryPart2_3" then
-					new_conversation({"so won't be smashing","everything and ripping the","pages in the dark!"})
+					new_conversation({"so i won't be smashing","everything and ripping the","pages in the dark!"})
 					if (btnp(❎)) then conversation_state = "owlLibraryPart2_4" end
 
 				elseif conversation_state == "owlLibraryPart2_4" then
