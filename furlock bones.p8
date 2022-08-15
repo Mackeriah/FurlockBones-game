@@ -117,10 +117,9 @@ function _draw()
 		draw_game()
 	end
 	-- player.x-20,player.y-20,8
-	
-	print("1: "..stepTimeStart,player.x-20,player.y-20,8)
+	--print("1: "..stepTimeStart,player.x-20,player.y-20,8)
 	--print("2: "..stepTimeStart2)
-	print("time: "..time())
+	--print("time: "..time())
 end
 
 function draw_game()	
@@ -1428,44 +1427,49 @@ function owlGoingDownstairsPart2() -- duplicating in interest of CS50 submission
 
 	if time() >= stepTimeStart +6 and time() <= stepTimeStart +9 then		
 		test = false
-		print("right!", owl.x-50, owl.y+60, 0)
-		print("time to turn my torch on.", owl.x-50, owl.y+66, 0)		
+		print("right!", owl.x-50, owl.y+60, owl.speechColour)
+		print("time to turn my torch on.", owl.x-50, owl.y+66, owl.speechColour)
 	end
-	if time() >= stepTimeStart +10 and time() <= stepTimeStart +12 then		
+	if time() >= stepTimeStart +10 and time() <= stepTimeStart +11 then		
 		print("click", owl.x-50, owl.y+60, 0)	
 	end	
-	if time() >= stepTimeStart +13 and time() <= stepTimeStart +15 then		
+	if time() >= stepTimeStart +12 and time() <= stepTimeStart +13 then		
 		print("click", owl.x-50, owl.y+60, 0)
 	end
-	if time() >= stepTimeStart +16 and time() <= stepTimeStart +19 then		
+	if time() >= stepTimeStart +14 and time() <= stepTimeStart +17 then		
 		print("click", owl.x-50, owl.y+60, 0)
 	end
-	if time() >= stepTimeStart +17 and time() <= stepTimeStart +19 then		
+	if time() >= stepTimeStart +15 and time() <= stepTimeStart +17 then		
 		print("click!", owl.x-45, owl.y+66, 0)
 	end
-	if time() >= stepTimeStart +18 and time() <= stepTimeStart +19 then		
+	if time() >= stepTimeStart +16 and time() <= stepTimeStart +17 then		
 		print("click!!", owl.x-40, owl.y+72, 0)
 	end
-	if time() >= stepTimeStart +20 and time() <= stepTimeStart +23 then
-		print("click, click, click!!", owl.x-50, owl.y+60, 0)		
+	if time() >= stepTimeStart +18 and time() <= stepTimeStart +20 then
+		print("sigh", owl.x-50, owl.y+60, owl.speechColour)
 	end
-	if time() >= stepTimeStart +21 and time() <= stepTimeStart +23 then		
-		print("click, click, click!!", owl.x-45, owl.y+66, 0)
-	end
-	if time() >= stepTimeStart +25 and time() <= stepTimeStart +27 then
-		print("sigh", owl.x-50, owl.y+60, 0)
-	end
-	if time() >= stepTimeStart +28 and time() <= stepTimeStart +32 then
-		print("must be the batteries!", owl.x-50, owl.y+60, 0)
+	if time() >= stepTimeStart +21 and time() <= stepTimeStart +25 then
+		print("must be the batteries!", owl.x-50, owl.y+60, owl.speechColour)
 	end	
-	if time() >= stepTimeStart +33 and time() then
+	if time() >= stepTimeStart +26 and time() <= stepTimeStart +29 then
+		print("well, i'll just have", owl.x-60, owl.y+60, owl.speechColour)
+		print("to be very careful.", owl.x-55, owl.y+66, owl.speechColour)
+	end	
+	if time() >= stepTimeStart +30 and time() <= stepTimeStart +34 then
+		print("hang on, my rollerskates", owl.x-60, owl.y+60, owl.speechColour)
+		print("are glow in the dark!", owl.x-55, owl.y+66, owl.speechColour)		
+	end	
+	if time() >= stepTimeStart +35 and time() <= stepTimeStart +36 then		
+		print("this will be easy...", owl.x-60, owl.y+60, owl.speechColour)
+	end	
+	if time() >= stepTimeStart +37 and time() then
 		owlBookState = "owl in library part 2"
 	end	
 end
 
 function owlLookingForBook()
 	if itemsBroken == 1 then
-		print("snap", owl.x-15, owl.y+60, 0)
+		print("crash", owl.x-15, owl.y+60, 0)
 		print("whoops!", owl.x-15, owl.y+66, owl.speechColour)
 		if leafCount < 5 then
 			for i=1, 5 do
@@ -1524,8 +1528,8 @@ end
 
 function owlLookingForBookPart2() -- duplicating in interest of CS50 submission deadline only!
 	if itemsBroken == 1 then
-		print("snap", owl.x-15, owl.y+60, 0)
-		print("&%^!!", owl.x-15, owl.y+66, owl.speechColour)
+		print("smash", owl.x-60, owl.y+60, 0)
+		print("whoooa!", owl.x-60, owl.y+66, owl.speechColour)
 		if leafCount < 5 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -1533,9 +1537,8 @@ function owlLookingForBookPart2() -- duplicating in interest of CS50 submission 
 		end
 	end
 	if itemsBroken == 2 then
-		print("crunch", owl.x-60, owl.y+60, 0)
-		print("ah &%^!, dind't", owl.x-60, owl.y+66, owl.speechColour)
-		print("need that anyway.", owl.x-60, owl.y+72, owl.speechColour)
+		print("crash", owl.x-60, owl.y+60, 0)
+		print("oh goodness", owl.x-60, owl.y+66, owl.speechColour)		
 		if leafCount < 10 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -1543,39 +1546,22 @@ function owlLookingForBookPart2() -- duplicating in interest of CS50 submission 
 		end
 	end
 	if itemsBroken == 3 then
-		print("whack", owl.x-35, owl.y+60, 0)
-		print("ouch! my wing!", owl.x-35, owl.y+66, owl.speechColour)		
+		print("wallop", owl.x-60, owl.y+60, 0)
+		print("well at least i'm sitting down now", owl.x-60, owl.y+66, owl.speechColour)
 		if leafCount < 15 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
 			end
 		end
-	end
-	if itemsBroken == 4 then
-		print("thud", owl.x-30, owl.y+60, 0)
-		print("oh...that's not good.", owl.x-40, owl.y+66, owl.speechColour)		
-		if leafCount < 20 then
-			for i=1, 5 do
-				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
-			end
-		end
-	end
-	if itemsBroken == 5 then
-		print("craaack", owl.x-50, owl.y+60, 0)
-		print("aggh! not my fish tank!", owl.x-50, owl.y+66, owl.speechColour)		
-		if leafCount < 40 then
-			for i=1, 5 do
-				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10)-5)
-			end
-		end		
 	end	
-	if itemsBroken == 6 then		
-		print("aha, here's the book.", owl.x-60, owl.y+60, owl.speechColour)		
+	if itemsBroken == 4 then		
+		print("ooh, here we are", owl.x-60, owl.y+60, owl.speechColour)
+		print("\"the big book about red foxes\", perfect. ", owl.x-60, owl.y+66, owl.speechColour)
 	end
-	if itemsBroken == 7 then		
-		print("i'm heading upstairs furlock!", owl.x-65, owl.y+60, owl.speechColour)						
+	if itemsBroken == 5 then		
+		print("furlock, i'm on the way up!", owl.x-60, owl.y+60, owl.speechColour)						
 	end
-	if itemsBroken == 8 then
+	if itemsBroken == 6 then
 		stepTimeStart = 0
 		owlBookState = "going upstairs2"
 	end
@@ -1601,16 +1587,13 @@ end
 function owl_knocking_stuff_over_in_libraryPart2()
 	if shakeAmount > 0 then screen_shake() end
 	if time() >= owlWait then
-		if itemsBroken < 8 then
+		if itemsBroken < 7 then
 			owlTime = time()
-			if itemsBroken <= 3 then
+			if itemsBroken < 3 then
 				shakeAmount += 10
-			elseif itemsBroken == 4 then
-				shakeAmount += 50						
-			end			
+			end
 			owlWait = time() + 6 -- 6 is what I want		
-			itemsBroken += 1
-		elseif itemsBroken == 5 then
+			itemsBroken += 1		
 		end
 	end
 end
