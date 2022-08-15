@@ -5,9 +5,11 @@ __lua__
 
 CS50 Final Project for Owen FitzGerald 2022: Furlock Bones: Consulting Dogtective
 
-** REMINDERS **
-CONTROL +K +J = unfold all
+-VS Code shortcuts-
+CONTROL +K +J = unfold all code
 CONTROL +K +1 = fold at level 1 
+
+-PICO-8-
 U, D, L, R, O, and X are the buttons (up, down, left, right, o-button, x-button) 
 CTRL + X deletes a line of code!
 (btnp(🅾️))
@@ -42,12 +44,12 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0	
-	--wordgame.pagesCollected = true
-	--objective.current = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
-	--objective.current = "TALK TO WISE OLD OWL AGAIN"	-- TESTING ONLY	
-	--objective.current = "TALK TO WISE OLD OWL"	-- TESTING ONLY	
-	--owlBookState = "going upstairs2"
-	--objective.current = "PRESS Z TO VIEW PAGES"
+	--wordgamePagesCollected = true
+	--objectiveCurrent = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
+	--objectiveCurrent = "TALK TO WISE OLD OWL AGAIN"	-- TESTING ONLY	
+	--objectiveCurrent = "TALK TO WISE OLD OWL"	-- TESTING ONLY	
+	owlBookState = "going downstairs part 2"
+	--objectiveCurrent = "PRESS Z TO VIEW PAGES"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
 	leafCount = 0
@@ -82,12 +84,12 @@ function _update60()
 		musicControl()
 	end	
 	if activeGame == false then		
-		wordgame.displayed = true -- this is the menu not the wordgame (#hackyreuseoffunction)
+		wordgameDisplayed = true -- this is the menu not the wordgame (#hackyreuseoffunction)
 	
 	elseif activeGame == true  then 
 		animate_player()
 		animate_owl()		
-		if wordgame.displayed == false then -- stop player moving if wordgame displayed
+		if wordgameDisplayed == false then -- stop player moving if wordgame displayed
 			move_player() -- MUST be before camera_follow_player
 			camera_follow_player() -- MUST be after move_player
 			conversation_system()
@@ -104,7 +106,7 @@ function _update60()
 			foreach(leaves, leaf_physics)
 			foreach(pages, page_physics)
 		end
-		if wordgame.pagesCollected == true then	wordgame_display_on_button_press() end	
+		if wordgamePagesCollected == true then	wordgame_display_on_button_press() end	
 	end	
 end
 
@@ -115,24 +117,27 @@ function _draw()
 		draw_game()
 	end
 	-- player.x-20,player.y-20,8
-	--print("convo state: "..conversation_state,player.x-20,player.y-20,8)
+	
+	print("1: "..stepTimeStart,player.x-20,player.y-20,8)
+	--print("2: "..stepTimeStart2)
+	print("time: "..time())
 end
 
 function draw_game()	
 	if activeGame == false then
-		if wordgame.state == "menu"  then
+		if wordgameState == "menu"  then
 				wordgame_draw_questions()
-		elseif wordgame.state == "menuItems" then
+		elseif wordgameState == "menuItems" then
 			wordgame_draw_answers()
 		end
 	end
-	if wordgame.displayed == true then
+	if wordgameDisplayed == true then
 		camera_x, camera_y = 0,0 
 		camera(camera_x,camera_y) --0,0 as I draw wordgame in top left
 		wordgame_prepare_chosen_question()		
-		if wordgame.state == "questionList" then 
+		if wordgameState == "questionList" then 
 			wordgame_draw_questions()				
-		elseif wordgame.state == "chosenQuestion" then
+		elseif wordgameState == "chosenQuestion" then
 			wordgame_draw_answers()
 		end
 	else
@@ -144,7 +149,7 @@ function draw_game()
 		foreach(leaves, draw_leaf) -- drop leaves when Owl in library
 		foreach(pages, draw_page)
 		draw_characters()
-		if conversation.active == true then draw_conversation()	end
+		if conversationActive == true then draw_conversation()	end
 		if owlBookState == "going downstairs" then owlGoingDownstairs() end
 		if owlBookState == "going downstairs part 2" then owlGoingDownstairsPart2() end
 		if owlBookState == "owl in library" then owlLookingForBook() end
@@ -153,12 +158,12 @@ function draw_game()
 		if owlBookState == "going upstairs2" then owlGoingUpstairs2() end
 		if owlBookState == "owl outside" then 
 			conversation_state = "owllibrary3"
-			conversation.character = "wise old owl"
+			conversationCharacter = "wise old owl"
 			owlBookState = "none"			
 		end		
 		if owlBookState == "owl outside2" then 
 			conversation_state = "owlLibraryPart2_5"
-			conversation.character = "wise old owl"
+			conversationCharacter = "wise old owl"
 			owlBookState = "none"			
 		end		
 	end
@@ -171,20 +176,19 @@ function lost_animals()
 end
 
 function init_objective()
-	objective={}
-	objective.active = false
-	objective.current = "TALK TO DOCTOR WOOFTON"	
-	objective.newObjective = true
+	--objective={}	
+	objectiveCurrent = "TALK TO DOCTOR WOOFTON"	
+	objectiveNewObjective = true
 	animateObjective = true
 	slideObjective = 20
 end
 
 function draw_objective() -- draws current objective at top of screen (31 char limit)	
 	rectfill(camera_x, camera_y+slideObjective, camera_x+127, camera_y+slideObjective+5, 6) -- heading
-	print(objective.current, camera_x+2, camera_y+slideObjective, 3)
+	print(objectiveCurrent, camera_x+2, camera_y+slideObjective, 3)
 
 	-- slide new objective from middle to top of screen
-	if objective.newObjective == true and animateObjective == false then
+	if objectiveNewObjective == true and animateObjective == false then
 		slideObjective = 20
 		animateObjective = true
 	end
@@ -192,7 +196,7 @@ function draw_objective() -- draws current objective at top of screen (31 char l
 		slideObjective -= 0.5
 	end
 	if slideObjective == 0 then
-		objective.newObjective = false
+		objectiveNewObjective = false
 		animateObjective = false
 	end
 end
@@ -223,41 +227,43 @@ end
 -->8
 -- conversation and menu functions
 function init_conversation()
-	conversation = {} -- create empty array to store multiple strings
-	conversation.active = false -- initialise to false	
-	conversation.string = {} -- empty array to store individual string?
-	conversation.character = "nobody"
+	--conversation = {} -- create empty array to store multiple strings
+	conversationActive = false -- initialise to false	
+	conversationString = {} -- empty array to store individual string?
+	conversationCharacter = "nobody"
 	conversation_state = "none" -- initialising to none (not done elsewhere)
+	conversationColour = 0
 end
 
 function new_conversation(txt)
 	-- function called if conversation_state is a certain value and when called
-	-- predefined text is stored in the conversation.string array and can handle multiple strings
+	-- predefined text is stored in the conversationString array and can handle multiple strings
 	-- being passed to it and stores each in their own array element
-	conversation.string = txt
-	conversation.active = true -- draw game displays conversation if this is true
+	conversationString = txt
+	conversationActive = true -- draw game displays conversation if this is true
 end
 
 function conversation_system()
-	if wordgame.displayed == true then
+	--[[ Plan is to functionise this system but not yet. "Get it working, get it right, get it fast". ]]
+	if wordgameDisplayed == true then
 		if (btnp(🅾️)) then	conversation_state = "none"	end -- reset conversation if wordgame shown (#hackyfix)
 	end
 
 	if conversation_state == "ready" then
-		if conversation.character == "sign1" or conversation.character == "sign2" then
+		if conversationCharacter == "sign1" or conversationCharacter == "sign2" then
 			new_conversation({"sign","PRESS X TO READ"}) -- player prompt
 			if (btnp(❎)) then conversation_state = "level1" end
 		else
-			new_conversation({conversation.character,"PRESS X TO TALK"}) -- player prompt
+			new_conversation({conversationCharacter,"PRESS X TO TALK"}) -- player prompt
 			if (btnp(❎)) then conversation_state = "level1" end
 		end
 
 	elseif conversation_state != "ready" then
 
 		-- DR WOOFTON
-		if conversation.character == "woofton" then
+		if conversationCharacter == "woofton" then
 
-			if objective.current == "TALK TO DOCTOR WOOFTON" then
+			if objectiveCurrent == "TALK TO DOCTOR WOOFTON" then
 				if conversation_state == "level1" then
 					new_conversation({"ruff! morning furlock!"}) 
 					if (btnp(❎)) then conversation_state = "woofton2" end			
@@ -274,13 +280,13 @@ function conversation_system()
 					new_conversation({"can you ask wise old owl","if he has a book","about them i could borrow?"})					
 					if (btnp(❎)) then
 						conversation_state = "none"
-						objective.newObjective = true
-						objective.current = "TALK TO WISE OLD OWL"
+						objectiveNewObjective = true
+						objectiveCurrent = "TALK TO WISE OLD OWL"
 						owlGrumpy = false
 					end
 				end
 
-			elseif objective.current == "TAKE THE PAGES TO WOOFTON" then
+			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" then
 				if conversation_state == "level1" then
 					new_conversation({"yip yip! hello furlock!"}) 
 					if (btnp(❎)) then conversation_state = "pages2" end
@@ -298,18 +304,18 @@ function conversation_system()
 					if (btnp(❎)) then 
 						conversation_state = "pages5" 
 						animal.active += 1
-						wordgame.pagesCollected = false
-						wordgame.completed = false
+						wordgamePagesCollected = false
+						wordgameCompleted = false
 					end
 
 				elseif conversation_state == "pages5" then
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
 					if (btnp(❎)) then 
 					conversation_state = "none" 
-					objective.current = "TALK TO WOOFTON AGAIN"
+					objectiveCurrent = "TALK TO WOOFTON AGAIN"
 					end					
 				end
-			elseif objective.current == "PRESS Z TO VIEW PAGES" then
+			elseif objectiveCurrent == "PRESS Z TO VIEW PAGES" then
 				if conversation_state == "level1" then
 					new_conversation({"ooh you have the pages","but what happened?!", "they're torn to shreds."}) 
 					if (btnp(❎)) then conversation_state = "notReady1" end
@@ -319,7 +325,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "none" end
 				end
 
-			elseif objective.current == "TALK TO WOOFTON AGAIN" then
+			elseif objectiveCurrent == "TALK TO WOOFTON AGAIN" then
 				if conversation_state == "level1" then
 					new_conversation({"hey furlock, thanks again.","another character for","my book is a red panda."}) 
 					if (btnp(❎)) then conversation_state = "2ndanimal1" end
@@ -328,7 +334,7 @@ function conversation_system()
 					new_conversation({"any chance you could ask owl","if he has a book on them too?","i'd really appreciate it"}) 
 					if (btnp(❎)) then 
 						conversation_state = "none"
-						objective.current = "TALK TO WISE OLD OWL AGAIN"
+						objectiveCurrent = "TALK TO WISE OLD OWL AGAIN"
 					end
 				end
 
@@ -339,9 +345,9 @@ function conversation_system()
 		end
 
 		-- WISE OLD OWL
-		if conversation.character == "wise old owl" then
+		if conversationCharacter == "wise old owl" then
 
-			if objective.current == "TALK TO WISE OLD OWL" then
+			if objectiveCurrent == "TALK TO WISE OLD OWL" then
 				if conversation_state == "level1" then
 					new_conversation({"hello furlock!"})
 					if (btnp(❎)) then conversation_state = "owllibrary1" end
@@ -351,7 +357,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "owllibrary2" end
 
 				elseif conversation_state == "owllibrary2" then
-					new_conversation({"i'll go downstairs to","my library and look.","just a moment please."})
+					new_conversation({"i'll go downstairs to","my secret library.","just a moment please."})
 					if (btnp(❎)) then 					
 						showDoor = true -- replace Owl sprite with door sprite		
 						owlBookState = "going downstairs"
@@ -391,24 +397,23 @@ function conversation_system()
 					new_conversation({"i'll throw the pages down.","catch!"})
 					if (btnp(❎)) then					
 						owl_drops_pages()
-						conversation_state = "none"	
-						firstTime = false				
+						conversation_state = "none"							
 					end
 				end	
 
-			elseif objective.current == "PRESS Z TO VIEW PAGES" then
+			elseif objectiveCurrent == "PRESS Z TO VIEW PAGES" then
 				if conversation_state == "level1" then
 					new_conversation({"press z to fix up","the pages furlock"})
 					if (btnp(❎)) then conversation_state = "none" end
 				end
 
-			elseif objective.current == "TAKE THE PAGES TO WOOFTON" then
+			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" then
 				if conversation_state == "level1" then
 					new_conversation({"great work furlock","now take them to","doctor woofton"})
 					if (btnp(❎)) then conversation_state = "none" end
 				end
 		
-			elseif objective.current == "TALK TO DOCTOR WOOFTON" and owlGrumpy == true then
+			elseif objectiveCurrent == "TALK TO DOCTOR WOOFTON" and owlGrumpy == true then
 				if conversation_state == "level1" then					
 					new_conversation({"hurrumph!","can't you see i was","doing my exercises?"}) 			
 					if (btnp(❎)) then conversation_state = "owl_grumpy_1" end	
@@ -425,7 +430,7 @@ function conversation_system()
 					end
 				end
 			
-			elseif objective.current == "TALK TO DOCTOR WOOFTON" and owlGrumpy == false then
+			elseif objectiveCurrent == "TALK TO DOCTOR WOOFTON" and owlGrumpy == false then
 				if owlAnnoyanceLevel <= 1 then
 					new_conversation({"sorry i'm a bit busy","right now. i'll talk","to you later furlock."})						
 					if (btnp(❎)) then 
@@ -472,7 +477,7 @@ function conversation_system()
 					end
 				end
 			
-			elseif objective.current == "TALK TO WISE OLD OWL AGAIN" then
+			elseif objectiveCurrent == "TALK TO WISE OLD OWL AGAIN" then
 				if conversation_state == "level1" then
 					new_conversation({"hello again furlock!!!"})
 					if (btnp(❎)) then conversation_state = "owlLibraryPart2_1" end
@@ -490,7 +495,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "owlLibraryPart2_4" end
 
 				elseif conversation_state == "owlLibraryPart2_4" then
-					new_conversation({"i'll pop down to my","secret library now.","back in a min!"})
+					new_conversation({"i'll pop down to my","library now.","back in a min!"})
 					if (btnp(❎)) then 					
 						showDoor = true -- replace Owl sprite with door sprite
 						stepTimeStart = 0 -- reset from previous library trip
@@ -513,6 +518,7 @@ function conversation_system()
 					new_conversation({"anyway","you know how this works","catch!"})
 					if (btnp(❎)) then					
 						owl_drops_pages()
+						wordgame.answered = {false, false, false, false}
 						conversation_state = "none"							
 					end				
 				end
@@ -525,20 +531,20 @@ function conversation_system()
 		
 
 		-- SIGNS
-		if conversation.character == "sign1" then
+		if conversationCharacter == "sign1" then
 			if conversation_state == "level1" then
 				new_conversation({"it says: "," \"owl's house this way\" "})
 				if (btnp(❎)) then conversation_state = "none" end
 			end
 		end		
-		if conversation.character == "sign2" then
+		if conversationCharacter == "sign2" then
 			if conversation_state == "level1" then
 				new_conversation({"it says: "," \"i'm very busy you know\" ","hmm..."})
 				if (btnp(❎)) then conversation_state = "none" end
 			end
 		end
 		-- not yet in use!
-		if conversation.character == "sign3" then
+		if conversationCharacter == "sign3" then
 			if conversation_state == "level1" then
 				new_conversation({"it says: "," \"you are reading","these signs aren't you?!\" "})
 				if (btnp(❎)) then conversation_state = "none" end
@@ -549,11 +555,11 @@ function conversation_system()
 end
 
 function draw_conversation() 
-	-- this runs if conversation.active is true and determines longest sentence length	
+	-- this runs if conversationActive is true and determines longest sentence length	
 	local maxSentenceWidth = 19
-	for i=1, #conversation.string do -- the # gets array length
-		if #conversation.string[i] > maxSentenceWidth then -- loop through array and find longest text element
-			maxSentenceWidth = #conversation.string[i] -- set max width to longest element so box wide enough
+	for i=1, #conversationString do -- the # gets array length
+		if #conversationString[i] > maxSentenceWidth then -- loop through array and find longest text element
+			maxSentenceWidth = #conversationString[i] -- set max width to longest element so box wide enough
 		end
 	end
 
@@ -568,7 +574,7 @@ function draw_conversation()
 	end	
 	
 	local conversationBox_width = conversationBox_x+(maxSentenceWidth*4)  -- *4 to account for character width
-	local conversationBox_height = conversationBox_y + #conversation.string * 6 -- *6 for character height
+	local conversationBox_height = conversationBox_y + #conversationString * 6 -- *6 for character height
 
 	-- draw outer border text box
 	if conversation_state == "ready" then -- allow "press x to talk" text
@@ -583,21 +589,21 @@ function draw_conversation()
 	end
 
 	-- write text
-	for i=1, #conversation.string do  -- the # gets the legnth of the array 'text'		
-		local txt = conversation.string[i]
+	for i=1, #conversationString do  -- the # gets the legnth of the array 'text'		
+		local txt = conversationString[i]
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = conversationBox_y -5+(i*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5			
-		if i == #conversation.string then -- if we're on last line	
+		if i == #conversationString then -- if we're on last line	
 			if conversation_state == "ready" then
 				print(txt, tx, ty, 6)			
 			elseif conversation_state == "sign" then
 				print(txt, tx, ty, 6)
 			else
-				print(txt, tx, ty, conversation.colour)
+				print(txt, tx, ty, conversationColour)
 				print("PRESS X TO CONTINUE", camera_x+64-38, ty+8, 6) -- -64-38 is to centre
 			end
 		else
-			print(txt, tx, ty, conversation.colour)
+			print(txt, tx, ty, conversationColour)
 		end		
 	end		
 end
@@ -610,16 +616,16 @@ function init_wordgame()
 	wordgame.allQuestions = {}	
 	wordgame.answered = {false, false, false, false} -- store when each question answered
 	wordgame.answers = {} -- empty array to store answer strings
-	wordgame.pagesCollected = false -- flag to check if player has collected all pages
-	wordgame.selectedQuestion = 1
-	wordgame.selectedAnswer = 1
-	wordgame.state = "menu" --[[ menu, questionList, chosenQuestion, completed]]
-	wordgame.displayed = false -- flag to check if displayed on screen or not
-	wordgame.completed = false
-	wordgame.correct = "empty"
-	wordgame.wrongGuesses = 0
-	wordgame.maximumGuesses = 6 -- default in case player doesn't change difficulty
-	wordgame.tooManyWrong = false
+	wordgamePagesCollected = false -- flag to check if player has collected all pages
+	wordgameSelectedQuestion = 1
+	wordgameSelectedAnswer = 1
+	wordgameState = "menu" --[[ menu, questionList, chosenQuestion, completed]]
+	wordgameDisplayed = false -- flag to check if displayed on screen or not
+	wordgameCompleted = false
+	wordgameCorrect = "empty"
+	wordgameWrongGuesses = 0
+	wordgameMaxGuesses = 6 -- default in case player doesn't change difficulty
+	wordgameTooManyWrong = false
 end
 
 function wordgame_store_answers(txt)
@@ -628,14 +634,14 @@ end
 
 function wordgame_display_on_button_press()
 	-- z to view wordgame
-	if (btnp(🅾️)) and wordgame.pagesCollected == true and wordgame.displayed == false then
-		wordgame.state = "questionList"
-		wordgame.displayed = true
+	if (btnp(🅾️)) and wordgamePagesCollected == true and wordgameDisplayed == false then
+		wordgameState = "questionList"
+		wordgameDisplayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
 	-- let player exit only when completed #TRAPPED!
-	elseif (btnp(🅾️)) and wordgame.displayed == true and wordgame.completed == true then
-		wordgame.displayed = false
+	elseif (btnp(🅾️)) and wordgameDisplayed == true and wordgameCompleted == true then
+		wordgameDisplayed = false
 		camera_x = tmp_camera_x -- return camera to previous position
 		camera_y = tmp_camera_y
 	end
@@ -643,7 +649,7 @@ end
 
 function wordgame_draw_questions()
 
-	if wordgame.state == "menu" then
+	if wordgameState == "menu" then
 		credits = false
 		rectfill(0, 0, 127, 127, 1) -- background colour
 		print_centered("furlock bones:", 12, 12)
@@ -652,47 +658,47 @@ function wordgame_draw_questions()
 		print_centered("dr woofton's mysterious book", 36, 7)
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 
-	elseif wordgame.state == "questionList" then
+	elseif wordgameState == "questionList" then
 		rectfill(0, 0, 127, 127, 7) -- background colour
 		--print_centered("help furlock match", camera_y+14, 3)		
 		--print_centered("answer animal facts for", camera_y+6, 3)
 		print_centered(animal.list[animal.active], camera_y+6, 3)
 		
 		print("wrong",2,2,13)
-		print(wordgame.wrongGuesses,2,8,13)
-		print(" /"..wordgame.maximumGuesses-1,3,8,13)
+		print(wordgameWrongGuesses,2,8,13)
+		print(" /"..wordgameMaxGuesses-1,3,8,13)
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
-		if wordgame.completed == true then 
+		if wordgameCompleted == true then 
 			print_centered("you did it! press z to exit", 100, 8)
-			objective.current = "TAKE THE PAGES TO WOOFTON"
+			objectiveCurrent = "TAKE THE PAGES TO WOOFTON"
 		end		
 	end	
 
 	if (btnp(❎)) then 
-		if wordgame.state == "menu" then
-			if wordgame.selectedQuestion == 1 then
+		if wordgameState == "menu" then
+			if wordgameSelectedQuestion == 1 then
 				activeGame = true
-				wordgame.displayed = false
-			elseif wordgame.selectedQuestion == 3 then
+				wordgameDisplayed = false
+			elseif wordgameSelectedQuestion == 3 then
 				credits = true
-				wordgame.state = "menuItems"		
+				wordgameState = "menuItems"		
 			else 
-				wordgame.state = "menuItems"
+				wordgameState = "menuItems"
 			end				
-		elseif wordgame.state == "questionList" then
-			wordgame.state = "chosenQuestion"
+		elseif wordgameState == "questionList" then
+			wordgameState = "chosenQuestion"
 		end		
 		--[[ this updates the answered array using whatever the chosen question number
 			was and sets it as true, so that when all questions are true we know
 			the player has completed the wordgame ]]
-		if wordgame.state == "questionList" or wordgame.state == "chosenQuestion" then			
-			wordgame.answered[wordgame.selectedQuestion] = true
+		if wordgameState == "questionList" or wordgameState == "chosenQuestion" then			
+			wordgame.answered[wordgameSelectedQuestion] = true
 		end		
 	end
 
 	if credits == true then
 		if (btnp(❎)) then
-			--wordgame.state = "questionList"
+			--wordgameState = "questionList"
 		end
 	end
 
@@ -707,9 +713,9 @@ function wordgame_draw_questions()
 	-- question text box horizontal location
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 	-- question text box vertical location
-	if wordgame.state == "menu" then
+	if wordgameState == "menu" then
 		textbox_yy = camera_y + 48 -- first menu item location
-	elseif wordgame.state == "questionList" then
+	elseif wordgameState == "questionList" then
 		textbox_yy = camera_y + 8 -- first question location
 	end
 	local textbox_width2 = textbox_xx+(maxTextWidth*4)  -- *4 to account for character width
@@ -722,12 +728,12 @@ function wordgame_draw_questions()
 		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
 		
 		-- selected question outer border
-		if wordgame.selectedQuestion == i then rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) end
+		if wordgameSelectedQuestion == i then rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) end
 		
 		-- inner question box
-		if wordgame.state == "menu" then
+		if wordgameState == "menu" then
 			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12)
-		elseif wordgame.state == "questionList" then
+		elseif wordgameState == "questionList" then
 			if wordgame.answered[i] == true then
 				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- colour box green if already answered
 			else
@@ -739,14 +745,14 @@ function wordgame_draw_questions()
 
 	-- use up and down to select a question unless already correctly answered
 	if (btnp(3)) then -- 3 is down button and loop back to top
-		if wordgame.selectedQuestion > #wordgame.allQuestions-1 then
-			wordgame.selectedQuestion = 1
-		else wordgame.selectedQuestion += 1 end
+		if wordgameSelectedQuestion > #wordgame.allQuestions-1 then
+			wordgameSelectedQuestion = 1
+		else wordgameSelectedQuestion += 1 end
 	end
 	if (btnp(2)) then -- 2 is up button and loop back to bottom
-		if wordgame.selectedQuestion == 1 then
-			wordgame.selectedQuestion = #wordgame.allQuestions
-		else wordgame.selectedQuestion -= 1 end
+		if wordgameSelectedQuestion == 1 then
+			wordgameSelectedQuestion = #wordgame.allQuestions
+		else wordgameSelectedQuestion -= 1 end
 	end	
 
 	-- check if all questions are answered correctly
@@ -755,14 +761,14 @@ function wordgame_draw_questions()
 		and wordgame.answered[3] == true
 		and wordgame.answered[4] == true 
 		and wordgame.answered[5] == true then
-			wordgame.completed = true
+			wordgameCompleted = true
 	end	
 end
 
 function menuState() -- change what's in this table if menu or wordgame (hacky I think but SUE ME!)
-	if wordgame.state == "menu" then
+	if wordgameState == "menu" then
 		wordgame.allQuestions = {"start game","change difficulty","view credits"}
-	elseif wordgame.state == "questionList" then
+	elseif wordgameState == "questionList" then
 		-- FOX QUESTIONS
 		if animal.list[animal.active] == "red foxes" then
 			wordgame.allQuestions = {"raise their babies in","the females are called","babies are called",
@@ -777,56 +783,56 @@ end
 
 function wordgame_prepare_chosen_question()
 
-	if wordgame.state == "menuItems" then
-		if wordgame.selectedQuestion == 1 then				
+	if wordgameState == "menuItems" then
+		if wordgameSelectedQuestion == 1 then				
 				wordgame_store_answers({"this", "is", "just","placeholder"})
-				wordgame.correct_answer = 1
-			elseif wordgame.selectedQuestion == 2 then				
+				wordgameCorrect_answer = 1
+			elseif wordgameSelectedQuestion == 2 then				
 				wordgame_store_answers({"easy: 5 WRONG GUESSES", "medium: 3 WRONG GUESSES", "hard: 1 WRONG GUESS!"})
-				wordgame.correct_answer = 1
-			elseif wordgame.selectedQuestion == 3 then				
+				wordgameCorrect_answer = 1
+			elseif wordgameSelectedQuestion == 3 then				
 				wordgame_store_answers({"credits"})
-				wordgame.correct_answer = 1
+				wordgameCorrect_answer = 1
 			end
 
-	elseif wordgame.state == "chosenQuestion" then
+	elseif wordgameState == "chosenQuestion" then
 
 		-- FOX ANSWERS
 		if animal.list[animal.active] == "red foxes" then
-			if wordgame.selectedQuestion == 1 then				
+			if wordgameSelectedQuestion == 1 then				
 				wordgame_store_answers({"large dens", "bee hives", "treehouses","high trees","muddy riverbanks"})
-				wordgame.correct_answer = 1
-			elseif wordgame.selectedQuestion == 2 then				
+				wordgameCorrect_answer = 1
+			elseif wordgameSelectedQuestion == 2 then				
 				wordgame_store_answers({"foxette", "vexxed", "vera","fexen","vixen"})
-				wordgame.correct_answer = 5
-			elseif wordgame.selectedQuestion == 3 then				
+				wordgameCorrect_answer = 5
+			elseif wordgameSelectedQuestion == 3 then				
 				wordgame_store_answers({"foxies", "cats", "kits","kit kats","grubs"})
-				wordgame.correct_answer = 3
-			elseif wordgame.selectedQuestion == 4 then				
+				wordgameCorrect_answer = 3
+			elseif wordgameSelectedQuestion == 4 then				
 				wordgame_store_answers({"100 km/h", "5 km/h", "10 km/h","50 km/h","1,000 km/h"})
-				wordgame.correct_answer = 4
-			elseif wordgame.selectedQuestion == 5 then				
+				wordgameCorrect_answer = 4
+			elseif wordgameSelectedQuestion == 5 then				
 				wordgame_store_answers({"a posse", "a gang", "a foxtrot", "a skulk", "a pack"})
-				wordgame.correct_answer = 4
+				wordgameCorrect_answer = 4
 			end
 
 		-- RED PANDA ANSWERS
 		elseif animal.list[animal.active] == "red pandas" then
-			if wordgame.selectedQuestion == 1 then				
+			if wordgameSelectedQuestion == 1 then				
 				wordgame_store_answers({"red foxes","pandas","bears","racoons","koalas"})
-				wordgame.correct_answer = 4
-			elseif wordgame.selectedQuestion == 2 then				
+				wordgameCorrect_answer = 4
+			elseif wordgameSelectedQuestion == 2 then				
 				wordgame_store_answers({"jumping", "wrapping their tail around", "putting on a scarf","rolling in mud","dancing"})
-				wordgame.correct_answer = 2
-			elseif wordgame.selectedQuestion == 3 then				
+				wordgameCorrect_answer = 2
+			elseif wordgameSelectedQuestion == 3 then				
 				wordgame_store_answers({"washing in a stream", "having a shower", "licking themselves","rolling in dust","rubbing against trees"})
-				wordgame.correct_answer = 3
-			elseif wordgame.selectedQuestion == 4 then				
+				wordgameCorrect_answer = 3
+			elseif wordgameSelectedQuestion == 4 then				
 				wordgame_store_answers({"exactly 5", "about 5,000", "up to 20,000","between 100-200","zero"})
-				wordgame.correct_answer = 3
-			elseif wordgame.selectedQuestion == 5 then				
+				wordgameCorrect_answer = 3
+			elseif wordgameSelectedQuestion == 5 then				
 				wordgame_store_answers({"in the bath", "in burrows", "under houses", "inside bushes", "high in trees"})
-				wordgame.correct_answer = 5
+				wordgameCorrect_answer = 5
 			end
 		end	
 	end
@@ -835,39 +841,39 @@ end
 function wordgame_draw_answers()
 
 	-- store guess limit based on chosen difficulty
-	if wordgame.state == "menuItems" and wordgame.selectedQuestion == 2 then
-		if wordgame.selectedAnswer == 1 then
-			wordgame.maximumGuesses = 6
-		elseif wordgame.selectedAnswer == 2 then
-			wordgame.maximumGuesses = 4
-		elseif wordgame.selectedAnswer == 3 then
-			wordgame.maximumGuesses = 2
+	if wordgameState == "menuItems" and wordgameSelectedQuestion == 2 then
+		if wordgameSelectedAnswer == 1 then
+			wordgameMaxGuesses = 6
+		elseif wordgameSelectedAnswer == 2 then
+			wordgameMaxGuesses = 4
+		elseif wordgameSelectedAnswer == 3 then
+			wordgameMaxGuesses = 2
 		end
 	end
 
  -- ** QUESTION LOGIC**
  	cls()
 	-- if using menu
-	if wordgame.state == "menuItems" then
+	if wordgameState == "menuItems" then
 		rectfill(0, 0, 127, 127, 1) -- background colour
 		if credits == true then
 			draw_credits()
 		end
 	-- if using wordgame
-	elseif wordgame.state == "chosenQuestion" then
+	elseif wordgameState == "chosenQuestion" then
 		rectfill(0, 0, 127, 127, 7) -- draw background screen colour
 		print("wrong",2,2,13) -- incorrect guesses counter
-		if wordgame.wrongGuesses >= wordgame.maximumGuesses -1 then
-			wordgame.tooManyWrong = true
-			print(wordgame.wrongGuesses,2,8,8) -- print in red
+		if wordgameWrongGuesses >= wordgameMaxGuesses -1 then
+			wordgameTooManyWrong = true
+			print(wordgameWrongGuesses,2,8,8) -- print in red
 		else
-			print(wordgame.wrongGuesses,2,8,13)
+			print(wordgameWrongGuesses,2,8,13)
 		end
 
-		print(" /"..wordgame.maximumGuesses-1,3,8,13)
+		print(" /"..wordgameMaxGuesses-1,3,8,13)
 	end
 
-	maxTextWidth = #wordgame.allQuestions[wordgame.selectedQuestion]
+	maxTextWidth = #wordgame.allQuestions[wordgameSelectedQuestion]
 
 	-- define textbox with border
 	textbox_x = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
@@ -886,7 +892,7 @@ function wordgame_draw_answers()
 	end
 	
 	-- write question at top of screen
-	local txt = wordgame.allQuestions[wordgame.selectedQuestion]		
+	local txt = wordgame.allQuestions[wordgameSelectedQuestion]		
 	local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 	local ty = textbox_y -5+(1*6) -- padding for top of box but because for loop starts at 1 we need to subtract 5		
 	if credits == true then 
@@ -909,7 +915,7 @@ function wordgame_draw_answers()
 	local textbox_xx = camera_x + 64 - maxTextWidth *2 -1 -- -1 for border and centred
 
 	-- vertical text box location
-	if wordgame.state == "menuItems" then
+	if wordgameState == "menuItems" then
 		if credits == true then
 			textbox_yy = camera_y + 1000 -- first chosen menu option
 		else
@@ -928,19 +934,19 @@ function wordgame_draw_answers()
 		local tx = camera_x + 64 - #txt * 2 -- centre text based on length of string txt
 		local ty = textbox_yy - 5 +(i*14) -- padding for top of box but as loop starts at 1 we subtract 5
 		
-	if wordgame.state == "menuItems" then
+	if wordgameState == "menuItems" then
 		--rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 		rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12) -- this draws the box
 	end
-	if wordgame.selectedAnswer == i then
-		if wordgame.correct == "true" then 
+	if wordgameSelectedAnswer == i then
+		if wordgameCorrect == "true" then 
 			rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,11) -- colour green to indicate correct
 			rectfill(tx-2,ty-2,tx+#txt*4,ty+6,11) -- this draws the box
 		else
-			if wordgame.state == "menuItems" then
+			if wordgameState == "menuItems" then
 				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,12) -- this draws the box
-			elseif wordgame.state == "chosenQuestion" then
+			elseif wordgameState == "chosenQuestion" then
 				rectfill(tx-4,ty-4,tx+#txt*4+2,ty+6+2,8) -- this draws the border (to select answer)
 				rectfill(tx-2,ty-2,tx+#txt*4,ty+6,7) -- this draws the box
 			end
@@ -950,35 +956,35 @@ function wordgame_draw_answers()
 	end	
 
 	-- use up and down to select a question
-	if wordgame.correct == "true" then -- stop answer selection if already correct and return to questions on x button
+	if wordgameCorrect == "true" then -- stop answer selection if already correct and return to questions on x button
 		if (btnp(❎)) then 
-			wordgame.correct = "empty"
-			if wordgame.state == "menuItems" then
-				wordgame.state = "menu"
-			elseif wordgame.state == "chosenQuestion" then
-				wordgame.state = "questionList"
+			wordgameCorrect = "empty"
+			if wordgameState == "menuItems" then
+				wordgameState = "menu"
+			elseif wordgameState == "chosenQuestion" then
+				wordgameState = "questionList"
 			end
 			
-		wordgame.selectedAnswer = 1 -- reset to 1 for next question
+		wordgameSelectedAnswer = 1 -- reset to 1 for next question
 		return -- quit function
 		end -- return to list of questions		
 	else
-		if (btnp(3)) and wordgame.tooManyWrong == false then -- 3 is down
-			if wordgame.selectedAnswer > #wordgame.answers-1 then
-				wordgame.selectedAnswer = 1
-				wordgame.correct = "empty"
+		if (btnp(3)) and wordgameTooManyWrong == false then -- 3 is down
+			if wordgameSelectedAnswer > #wordgame.answers-1 then
+				wordgameSelectedAnswer = 1
+				wordgameCorrect = "empty"
 			else
-				wordgame.selectedAnswer += 1
-				wordgame.correct = "empty"
+				wordgameSelectedAnswer += 1
+				wordgameCorrect = "empty"
 			end
 		end
-		if (btnp(2)) and wordgame.tooManyWrong == false then -- 2 is up
-			if wordgame.selectedAnswer == 1 then
-				wordgame.selectedAnswer = #wordgame.answers
-				wordgame.correct = "empty"
+		if (btnp(2)) and wordgameTooManyWrong == false then -- 2 is up
+			if wordgameSelectedAnswer == 1 then
+				wordgameSelectedAnswer = #wordgame.answers
+				wordgameCorrect = "empty"
 			else
-				wordgame.selectedAnswer -= 1
-				wordgame.correct = "empty"
+				wordgameSelectedAnswer -= 1
+				wordgameCorrect = "empty"
 			end
 		end
 	end
@@ -986,47 +992,47 @@ function wordgame_draw_answers()
 	-- check if correct
 	if (btnp(❎)) then
 		-- basically whatever user selects from menu is 'correct' 
-		if wordgame.state == "menuItems" then
-			wordgame.correct_answer = wordgame.selectedAnswer
-			wordgame.correct = "true"
+		if wordgameState == "menuItems" then
+			wordgameCorrect_answer = wordgameSelectedAnswer
+			wordgameCorrect = "true"
 		end
-		if wordgame.state == "menuItems" and credits == true then
-			wordgame.state = "menu"
+		if wordgameState == "menuItems" and credits == true then
+			wordgameState = "menu"
 			credits = false
-			wordgame.correct = false
+			wordgameCorrect = false
 		end
-		if wordgame.state == "chosenQuestion" then
-			if wordgame.selectedAnswer == wordgame.correct_answer then 
-				wordgame.correct = "true"
+		if wordgameState == "chosenQuestion" then
+			if wordgameSelectedAnswer == wordgameCorrect_answer then 
+				wordgameCorrect = "true"
 			else 
-				wordgame.correct = "false"
-				wordgame.wrongGuesses += 1 -- keep track of incorrect guesses
+				wordgameCorrect = "false"
+				wordgameWrongGuesses += 1 -- keep track of incorrect guesses
 			end
 		end
-		if wordgame.wrongGuesses >= wordgame.maximumGuesses then
+		if wordgameWrongGuesses >= wordgameMaxGuesses then
 			wordgame.answered = {false, false, false, false}
-			wordgame.completed = false
-			wordgame.state = "questionList"
-			wordgame.wrongGuesses = 0
-			wordgame.correct = "empty"
-			wordgame.selectedAnswer = 1 -- reset so next question selector at top
-			wordgame.tooManyWrong = false
+			wordgameCompleted = false
+			wordgameState = "questionList"
+			wordgameWrongGuesses = 0
+			wordgameCorrect = "empty"
+			wordgameSelectedAnswer = 1 -- reset so next question selector at top
+			wordgameTooManyWrong = false
 		end
 	end
 
-	if wordgame.state == "menuItems" then
-		if wordgame.correct == "true" then
+	if wordgameState == "menuItems" then
+		if wordgameCorrect == "true" then
 			print_centered("difficulty chosen",102,11)
 			print_centered("press x to continue",108,11)	
 		end
 		if credits == true then
 			print_centered("press x to return",108,8)	
 		end
-	elseif wordgame.state == "chosenQuestion" then
-		if wordgame.correct == "true" then
+	elseif wordgameState == "chosenQuestion" then
+		if wordgameCorrect == "true" then
 			print_centered("well done! press x to close",102,11)
-		elseif wordgame.correct == "false" then
-			if wordgame.wrongGuesses >= wordgame.maximumGuesses -1 then
+		elseif wordgameCorrect == "false" then
+			if wordgameWrongGuesses >= wordgameMaxGuesses -1 then
 				print_centered("oh no! you got too many wrong!", 100, 8)
 				print_centered("x to try again", 106, 8)
 			else
@@ -1042,7 +1048,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -1292,21 +1298,21 @@ end
 function woofton_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
 	woofton.speed = 0
-		if wordgame.displayed == false then
+		if wordgameDisplayed == false then
 			if conversation_state == "none" then			
 				conversation_state = "ready"
-				conversation.character = "woofton"
-				conversation.colour = woofton.speechColour
+				conversationCharacter = "woofton"
+				conversationColour = woofton.speechColour
 				woofton.wait = true
 				woofton.waitTime = time()
 			end 
 		end
 	else
-		if conversation.character == "woofton" then -- if player walks away instead of starting conversation			
+		if conversationCharacter == "woofton" then -- if player walks away instead of starting conversation			
 			woofton.speed = 0.2	 	
 			conversation_state = "none"
-			conversation.character = "nobody"
-			conversation.active = false
+			conversationCharacter = "nobody"
+			conversationActive = false
 		end
  	end
 end
@@ -1321,13 +1327,13 @@ function create_owl()
 	showDoor = false
 	owlTime = 0
 	owlWait = 2
-	stepTimeStart = 0	
+	stepTimeStart = 0
+	--stepTimeStart2 = 0
 	owlBookState = "none"
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library	
 	owl.speechColour = 2
 	owlGrumpy = true
-	owlAnnoyanceLevel = 0
-	firstTime = true	
+	owlAnnoyanceLevel = 0	
 end
 
 function owl_collision(playerx,playery,charx,chary)
@@ -1335,20 +1341,20 @@ function owl_collision(playerx,playery,charx,chary)
 		if charx +10 > playerx and charx < playerx +18 and chary +56 > playery and chary < playery +10 then
 			if conversation_state == "none" then			
 				conversation_state = "ready"
-				conversation.character = "wise old owl"
-				conversation.colour = owl.speechColour
+				conversationCharacter = "wise old owl"
+				conversationColour = owl.speechColour
 			end 
 		else
-			if conversation.character == "wise old owl" then -- if player walks away instead of starting conversation			
+			if conversationCharacter == "wise old owl" then -- if player walks away instead of starting conversation			
 				conversation_state = "none"
-				conversation.character = "nobody"
-				conversation.active = false
+				conversationCharacter = "nobody"
+				conversationActive = false
 			end
 		end
 	else
 		conversation_state = "waiting"
-		conversation.character = "nobody"
-		conversation.active = false
+		conversationCharacter = "nobody"
+		conversationActive = false
 	end
 end
 
@@ -1363,7 +1369,7 @@ function animate_owl()
 				owl.sprite = 6
 			end
 		end			
-		if conversation.character == "wise old owl" and conversation_state != "ready" then
+		if conversationCharacter == "wise old owl" and conversation_state != "ready" then
 			owl.sprite = 5 -- owl sits down when talking
 		end
 	end
@@ -1399,23 +1405,60 @@ end
 function owlGoingDownstairsPart2() -- duplicating in interest of CS50 submission deadline only!
 	if stepTimeStart == 0 then
 		stepTimeStart = time()
+		test = true
 	end
-	if stepTimeStart <= time() - 1 then
-		print("clomp", owl.x+12, owl.y+20, 0)
+
+	if test == true then
+		if stepTimeStart <= time() - 1 then
+			print("clomp", owl.x+12, owl.y+20, 0)
+		end
+		if stepTimeStart <= time() - 2 then
+			print("clomp", owl.x+14, owl.y+26, 0)
+		end
+		if stepTimeStart <= time() - 3 then
+			print("creeeak", owl.x+16, owl.y+32, 0)
+		end
+		if stepTimeStart <= time() - 4 then
+			print("clomp", owl.x+18, owl.y+38, 0)
+		end
+		if stepTimeStart <= time() -5 then
+			print("clomp", owl.x+20, owl.y+44, 0)			
+		end
 	end
-	if stepTimeStart <= time() - 2 then
-		print("clomp", owl.x+14, owl.y+26, 0)
+
+	if time() >= stepTimeStart +6 and time() <= stepTimeStart +9 then		
+		test = false
+		print("right!", owl.x-50, owl.y+60, 0)
+		print("time to turn my torch on.", owl.x-50, owl.y+66, 0)		
 	end
-	if stepTimeStart <= time() - 3 then
-		print("creeeak", owl.x+16, owl.y+32, 0)
+	if time() >= stepTimeStart +10 and time() <= stepTimeStart +12 then		
+		print("click", owl.x-50, owl.y+60, 0)	
+	end	
+	if time() >= stepTimeStart +13 and time() <= stepTimeStart +15 then		
+		print("click", owl.x-50, owl.y+60, 0)
 	end
-	if stepTimeStart <= time() - 4 then
-		print("clomp", owl.x+18, owl.y+38, 0)
+	if time() >= stepTimeStart +16 and time() <= stepTimeStart +19 then		
+		print("click", owl.x-50, owl.y+60, 0)
 	end
-	if stepTimeStart <= time() - 5 then
-		print("clomp", owl.x+20, owl.y+44, 0)		
+	if time() >= stepTimeStart +17 and time() <= stepTimeStart +19 then		
+		print("click!", owl.x-45, owl.y+66, 0)
 	end
-	if stepTimeStart <= time() - 8 then			
+	if time() >= stepTimeStart +18 and time() <= stepTimeStart +19 then		
+		print("click!!", owl.x-40, owl.y+72, 0)
+	end
+	if time() >= stepTimeStart +20 and time() <= stepTimeStart +23 then
+		print("click, click, click!!", owl.x-50, owl.y+60, 0)		
+	end
+	if time() >= stepTimeStart +21 and time() <= stepTimeStart +23 then		
+		print("click, click, click!!", owl.x-45, owl.y+66, 0)
+	end
+	if time() >= stepTimeStart +25 and time() <= stepTimeStart +27 then
+		print("sigh", owl.x-50, owl.y+60, 0)
+	end
+	if time() >= stepTimeStart +28 and time() <= stepTimeStart +32 then
+		print("must be the batteries!", owl.x-50, owl.y+60, 0)
+	end	
+	if time() >= stepTimeStart +33 and time() then
 		owlBookState = "owl in library part 2"
 	end	
 end
@@ -1642,20 +1685,20 @@ function newsigncollision()
 	if sign1.x +10 > player.x and sign1.x < player.x +10 and sign1.y +10 > player.y and sign1.y < player.y +10 then
 		if conversation_state == "none" then			
 			conversation_state = "ready"
-			conversation.character = "sign1"
-			conversation.colour = 0
+			conversationCharacter = "sign1"
+			conversationColour = 0
 		end
 	elseif sign2.x +10 > player.x and sign2.x < player.x +10 and sign2.y +10 > player.y and sign2.y < player.y +10 then
 		if conversation_state == "none" then			
 			conversation_state = "ready"
-			conversation.character = "sign2"
-			conversation.colour = 0
+			conversationCharacter = "sign2"
+			conversationColour = 0
 		end
 	else 
-		if conversation.character == 'sign1' or conversation.character == 'sign2' then
+		if conversationCharacter == 'sign1' or conversationCharacter == 'sign2' then
 			conversation_state = "none"
-			conversation.character = "nobody"
-			conversation.active = false
+			conversationCharacter = "nobody"
+			conversationActive = false
 		end
 	end
 end
@@ -1742,7 +1785,7 @@ function page_physics(page)
 	if page.y <= 40 then
     	page.accely += (rnd(.01))		
 	else
-		objective.current = "PICK UP THE TORN PAGES"
+		objectiveCurrent = "PICK UP THE TORN PAGES"
 	end
 
     -- apply horizontal movement unless on ground
@@ -1751,10 +1794,10 @@ function page_physics(page)
     end
 
 	-- player collision
-	if objective.current == "PICK UP THE TORN PAGES" then
+	if objectiveCurrent == "PICK UP THE TORN PAGES" then
 		if flr(page.x) == flr(player.x) then
-			wordgame.pagesCollected = true
-			objective.current = "PRESS Z TO VIEW PAGES"
+			wordgamePagesCollected = true
+			objectiveCurrent = "PRESS Z TO VIEW PAGES"
 			del(pages,page)
 		end
 	end
