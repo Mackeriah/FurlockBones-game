@@ -25,14 +25,14 @@ _[1] = true
 
 --init, update and draw functions
 function _init()
-	timeStart = 0
+	musicState = 'start'
+	timeStart = 0 -- used for Dev credits
 	displayDev = false
 	camera_x, camera_y = 0,0
 	tmp_camera_x, tmp_camera_y = 0,0 -- don't remove this
 	activeGame = false
 	current_map_maximum_x = 624
 	current_map_maximum_y = 248
-	init_music()	
 	map_swapper()
 	create_player()
 	create_woofton()
@@ -48,7 +48,7 @@ function _init()
 	--objectiveCurrent = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--objectiveCurrent = "TALK TO WISE OLD OWL AGAIN"	-- TESTING ONLY	
 	--objectiveCurrent = "TALK TO WISE OLD OWL"	-- TESTING ONLY	
-	owlBookState = "going downstairs part 2"
+	--owlBookState = "going downstairs part 2"
 	--objectiveCurrent = "PRESS Z TO VIEW PAGES"
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
@@ -93,7 +93,6 @@ function _update60()
 			move_player() -- MUST be before camera_follow_player
 			camera_follow_player() -- MUST be after move_player
 			conversation_system()
-			move_woofton()
 			check_character_collision()
 			doMapStuff()
 			newsigncollision()
@@ -1267,32 +1266,6 @@ function create_woofton()
 	woofton.speechColour = 9
 end
 
-function move_woofton()
-	if (woofton_collision(player.x,player.y,woofton.x,woofton.y)) == true then 
-		-- this just stops woofton moving any closer and stops him pestering for a while		
-	-- else		
-	-- 	if woofton.wait == true then -- wait if woofton's recently pestered player
-	-- 		if (time() >= woofton.waitTime +5 ) then
-	-- 			woofton.wait = false
-	-- 		else return end
-	-- 	else
-	-- 		if player.x < woofton.x then
-	-- 			woofton.x -= woofton.speed
-	-- 			woofton.direction = -1
-	-- 		end 
-	-- 		if player.x > woofton.x then	 	
-	-- 			woofton.x += woofton.speed
-	-- 			woofton.direction = 1
-	-- 		end 
-	-- 		if player.y < woofton.y then
-	-- 			woofton.y -= woofton.speed
-	-- 		end 
-	-- 		if player.y > woofton.y then
-	-- 			woofton.y += woofton.speed
-	-- 		end
-	-- 	end
-	end
-end
 
 function woofton_collision(playerx,playery,charx,chary)
 	if charx +10 > playerx and charx < playerx +10 and chary +10 > playery and chary < playery +10 then
@@ -1327,7 +1300,6 @@ function create_owl()
 	owlTime = 0
 	owlWait = 2
 	stepTimeStart = 0
-	--stepTimeStart2 = 0
 	owlBookState = "none"
 	itemsBroken = 0 -- used when owl is shaking screen brekaing stuff in library	
 	owl.speechColour = 2
@@ -1385,7 +1357,7 @@ function owlGoingDownstairs()
 		print("clomp", owl.x+14, owl.y+26, 0)
 	end
 	if stepTimeStart <= time() - 3 then
-		print("creeeak", owl.x+16, owl.y+32, 0)
+		print("creak", owl.x+16, owl.y+32, 0)
 	end
 	if stepTimeStart <= time() - 4 then
 		print("clomp", owl.x+18, owl.y+38, 0)
@@ -1415,7 +1387,7 @@ function owlGoingDownstairsPart2() -- duplicating in interest of CS50 submission
 			print("clomp", owl.x+14, owl.y+26, 0)
 		end
 		if stepTimeStart <= time() - 3 then
-			print("creeeak", owl.x+16, owl.y+32, 0)
+			print("creeak", owl.x+16, owl.y+32, 0)
 		end
 		if stepTimeStart <= time() - 4 then
 			print("clomp", owl.x+18, owl.y+38, 0)
@@ -1804,10 +1776,6 @@ function print_centered(str, height, colour)
 	print(str, 64 - (#str * 2), height, colour)	
 end
 
-function log(text,overwrite) -- external logging file
-		printh(text, "log", overwrite)
-end
-
 function doMapStuff()
 	-- if (btnp(🅾️)) then
 	-- 	--squish=compressmap(0,0,128,16) -- compress current map 128x16 into squish
@@ -1884,16 +1852,13 @@ function map_swapper()
 	char6=_n
 end
 
-function init_music()
-	track_1start = 0 -- this indicates the point in the music the track starts
-	track_2start = 11	
-	track_3start = 22
-	track_4start = 33 -- end game music
-	track_5start = 37 -- library music
-	musicState = 'start' -- used for music, seems bizarely complex!
-end
-
 function musicControl()
+	local track_1start = 0 -- this indicates the point in the music the track starts
+	--local track_2start = 11	
+	--local track_3start = 22
+	local track_4start = 33 -- end game music
+	local track_5start = 37 -- library music
+
 	if (activeGame == false) and musicState != 'menu' then
 			music(track_2start,0,120)
 			musicState = 'menu'
