@@ -5,6 +5,10 @@ __lua__
 
 CS50 Final Project for Owen FitzGerald 2022: Furlock Bones: Consulting Dogtective
 
+Note to anyone reading this: Yes there are lazy corners cut (I'm looking at you duplicating functions). But my
+excuse is that I was under a tight deadline to complete this. However I do intend to revisit this after submission
+and address those issues. if only because I'm very close to the token and char limit!  :|
+
 -VS Code shortcuts-
 CONTROL +K +J = unfold all code
 CONTROL +K +1 = fold at level 1 
@@ -44,17 +48,21 @@ function _init()
 	init_objective()
 	lost_animals()
 	shakeAmount = 0	
-	--wordgamePagesCollected = true
-	--objectiveCurrent = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
+	wordgamePagesCollected = true
+	objectiveCurrent = "TAKE THE PAGES TO WOOFTON"	-- TESTING ONLY
 	--objectiveCurrent = "TALK TO WISE OLD OWL AGAIN"	-- TESTING ONLY	
 	--objectiveCurrent = "TALK TO WISE OLD OWL"	-- TESTING ONLY	
 	--owlBookState = "going downstairs part 2"
+	--owlBookState = "owl in library part 2"
+	--conversation_state = "owlLibraryPart2_5"
 	--objectiveCurrent = "PRESS Z TO VIEW PAGES"
+	animal.active = 2
 	leaves = {} -- used to store leaves, obvs
 	pages = {}
 	leafCount = 0
 	pageCount = 0
 	credits = false
+	gameCompleted = false
 end
 
 function displayDevName()
@@ -119,6 +127,8 @@ function _draw()
 	--print("1: "..stepTimeStart,player.x-20,player.y-20,8)
 	--print("2: "..stepTimeStart2)
 	--print("time: "..time())
+	--print(conversation_state)
+	--print(conversationCharacter)
 end
 
 function draw_game()	
@@ -183,7 +193,11 @@ end
 
 function draw_objective() -- draws current objective at top of screen (31 char limit)	
 	rectfill(camera_x, camera_y+slideObjective, camera_x+127, camera_y+slideObjective+5, 6) -- heading
-	print(objectiveCurrent, camera_x+2, camera_y+slideObjective, 3)
+	if gameCompleted == false then
+		print(objectiveCurrent, camera_x+2, camera_y+slideObjective, 3)
+	else
+		print(objectiveCurrent, camera_x+2, camera_y+slideObjective, 8)
+	end
 
 	-- slide new objective from middle to top of screen
 	if objectiveNewObjective == true and animateObjective == false then
@@ -284,7 +298,8 @@ function conversation_system()
 					end
 				end
 
-			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" then
+			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" and
+			animal.list[animal.active] == "red foxes" then
 				if conversation_state == "level1" then
 					new_conversation({"yip yip! hello furlock!"}) 
 					if (btnp(❎)) then conversation_state = "pages2" end
@@ -305,7 +320,6 @@ function conversation_system()
 						wordgamePagesCollected = false
 						wordgameCompleted = false
 					end
-
 				elseif conversation_state == "pages5" then
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
 					if (btnp(❎)) then 
@@ -313,6 +327,47 @@ function conversation_system()
 					objectiveCurrent = "TALK TO WOOFTON AGAIN"
 					end					
 				end
+
+			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" and
+			animal.list[animal.active] == "red pandas" then
+				if conversation_state == "level1" then
+					new_conversation({"rrruff! furlock,","good to see you!"}) 
+					if (btnp(❎)) then conversation_state = "pages2" end
+
+				elseif conversation_state == "pages2" then
+					new_conversation({"ooh are these the","red panda pages?","amazing!"}) 
+					if (btnp(❎)) then conversation_state = "pages3" end
+
+				elseif conversation_state == "pages3" then
+					new_conversation({"goodness, they're pretty","torn up like before."}) 
+					if (btnp(❎)) then conversation_state = "pages4" end
+
+				elseif conversation_state == "pages4" then
+					new_conversation({"maybe owl buys his","books from crocodiles?"}) 
+					if (btnp(❎)) then conversation_state = "pages5" end
+
+				elseif conversation_state == "pages5" then
+					new_conversation({"anyway, this is just","what i needed.","thank you so much again!"}) 
+					if (btnp(❎)) then 
+						conversation_state = "pages6" 
+					end
+
+				elseif conversation_state == "pages6" then
+					new_conversation({"i can carry on with my","book now but"}) 
+					if (btnp(❎)) then conversation_state = "pages7" end
+
+				elseif conversation_state == "pages7" then
+					new_conversation({"when i need more help","i'll let you know..."}) 
+					if (btnp(❎)) then 
+						animal.active += 1
+						wordgamePagesCollected = false
+						wordgameCompleted = false
+						conversation_state = "none" 
+						objectiveCurrent = "GAME COMPLETED - FOR NOW!"
+						gameCompleted = true					
+					end
+				end
+
 			elseif objectiveCurrent == "PRESS Z TO VIEW PAGES" then
 				if conversation_state == "level1" then
 					new_conversation({"ooh you have the pages","but what happened?!", "they're torn to shreds."}) 
@@ -521,12 +576,15 @@ function conversation_system()
 					end				
 				end
 			
+			elseif objectiveCurrent == "PICK UP THE TORN PAGES" then		
+				new_conversation({"grab the pages furlock.","just over there on the ground."})
+				if (btnp(❎)) then conversation_state = "none" end
+
 			else				
 				new_conversation({"how's it going furlock?"}) 
 				if (btnp(❎)) then conversation_state = "none" end
 			end
 		end
-		
 
 		-- SIGNS
 		if conversationCharacter == "sign1" then
@@ -769,8 +827,8 @@ function menuState() -- change what's in this table if menu or wordgame (hacky I
 	elseif wordgameState == "questionList" then
 		-- FOX QUESTIONS
 		if animal.list[animal.active] == "red foxes" then
-			wordgame.allQuestions = {"raise their babies in","the females are called","babies are called",
-				"can run up to","a group of them is called",}
+			wordgame.allQuestions = {"the babies are raised in","females are called","babies are called",
+				"can run how fast?","in a group are called",}
 
 		-- RED PANDA QUESTIONS
 		elseif animal.list[animal.active] == "red pandas" then
@@ -1046,7 +1104,7 @@ end
 --player functions
 function create_player() 
 	player={}  --create empty table -- this means we're creating the player as an object!
-	player.x = 432 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
+	player.x = 16 -- 16 = house, 432 = owl (map location x8 for exact pixel location)
 	player.y = 32
 	player.direction = 1
 	player.velocity_x = 0
@@ -1397,44 +1455,44 @@ function owlGoingDownstairsPart2() -- duplicating in interest of CS50 submission
 		end
 	end
 
-	if time() >= stepTimeStart +6 and time() <= stepTimeStart +9 then		
+	if time() >= stepTimeStart +6 and time() <= stepTimeStart +11 then		
 		test = false
 		print("right!", owl.x-50, owl.y+60, owl.speechColour)
 		print("time to turn my torch on.", owl.x-50, owl.y+66, owl.speechColour)
 	end
-	if time() >= stepTimeStart +10 and time() <= stepTimeStart +11 then		
+	if time() >= stepTimeStart +11 and time() <= stepTimeStart +12 then		
 		print("click", owl.x-50, owl.y+60, 0)	
 	end	
-	if time() >= stepTimeStart +12 and time() <= stepTimeStart +13 then		
+	if time() >= stepTimeStart +13 and time() <= stepTimeStart +14 then		
 		print("click", owl.x-50, owl.y+60, 0)
 	end
-	if time() >= stepTimeStart +14 and time() <= stepTimeStart +17 then		
+	if time() >= stepTimeStart +15 and time() <= stepTimeStart +18 then		
 		print("click", owl.x-50, owl.y+60, 0)
 	end
-	if time() >= stepTimeStart +15 and time() <= stepTimeStart +17 then		
+	if time() >= stepTimeStart +16 and time() <= stepTimeStart +18 then		
 		print("click!", owl.x-45, owl.y+66, 0)
 	end
-	if time() >= stepTimeStart +16 and time() <= stepTimeStart +17 then		
+	if time() >= stepTimeStart +17 and time() <= stepTimeStart +18 then		
 		print("click!!", owl.x-40, owl.y+72, 0)
 	end
-	if time() >= stepTimeStart +18 and time() <= stepTimeStart +20 then
+	if time() >= stepTimeStart +19 and time() <= stepTimeStart +21 then
 		print("sigh", owl.x-50, owl.y+60, owl.speechColour)
 	end
-	if time() >= stepTimeStart +21 and time() <= stepTimeStart +25 then
+	if time() >= stepTimeStart +22 and time() <= stepTimeStart +26 then
 		print("must be the batteries!", owl.x-50, owl.y+60, owl.speechColour)
 	end	
-	if time() >= stepTimeStart +26 and time() <= stepTimeStart +29 then
+	if time() >= stepTimeStart +27 and time() <= stepTimeStart +31 then
 		print("well, i'll just have", owl.x-60, owl.y+60, owl.speechColour)
 		print("to be very careful.", owl.x-55, owl.y+66, owl.speechColour)
 	end	
-	if time() >= stepTimeStart +30 and time() <= stepTimeStart +34 then
+	if time() >= stepTimeStart +32 and time() <= stepTimeStart +36 then
 		print("hang on, my rollerskates", owl.x-60, owl.y+60, owl.speechColour)
 		print("are glow in the dark!", owl.x-55, owl.y+66, owl.speechColour)		
 	end	
-	if time() >= stepTimeStart +35 and time() <= stepTimeStart +36 then		
+	if time() >= stepTimeStart +37 and time() <= stepTimeStart +40 then		
 		print("this will be easy...", owl.x-60, owl.y+60, owl.speechColour)
 	end	
-	if time() >= stepTimeStart +37 and time() then
+	if time() >= stepTimeStart +42 and time() then
 		owlBookState = "owl in library part 2"
 	end	
 end
@@ -1510,7 +1568,7 @@ function owlLookingForBookPart2() -- duplicating in interest of CS50 submission 
 	end
 	if itemsBroken == 2 then
 		print("crash", owl.x-60, owl.y+60, 0)
-		print("oh goodness", owl.x-60, owl.y+66, owl.speechColour)		
+		print("oh goodness!", owl.x-60, owl.y+66, owl.speechColour)		
 		if leafCount < 10 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -1518,8 +1576,9 @@ function owlLookingForBookPart2() -- duplicating in interest of CS50 submission 
 		end
 	end
 	if itemsBroken == 3 then
-		print("wallop", owl.x-60, owl.y+60, 0)
-		print("well at least i'm sitting down now", owl.x-60, owl.y+66, owl.speechColour)
+		print("wallop", owl.x-65, owl.y+60, 0)
+		print("well at least i'm", owl.x-65, owl.y+66, owl.speechColour)
+		print("sitting down now.", owl.x-65, owl.y+72, owl.speechColour)
 		if leafCount < 15 then
 			for i=1, 5 do
 				make_leaf(owl.x+5+rnd(30)-15,owl.y+rnd(10))
@@ -1528,12 +1587,21 @@ function owlLookingForBookPart2() -- duplicating in interest of CS50 submission 
 	end	
 	if itemsBroken == 4 then		
 		print("ooh, here we are", owl.x-60, owl.y+60, owl.speechColour)
-		print("\"the big book about red foxes\", perfect. ", owl.x-60, owl.y+66, owl.speechColour)
+		print("\"the big book of red foxes\".", owl.x-65, owl.y+66, owl.speechColour)
 	end
-	if itemsBroken == 5 then		
+	if itemsBroken == 5 then
+		print("i just need to be careful", owl.x-60, owl.y+60, owl.speechColour)
+		print("not to rip it.", owl.x-60, owl.y+66, owl.speechColour)
+	end
+		if itemsBroken == 6 then
+		print("crash bang wallop", owl.x-60, owl.y+60, 0)
+		print("oh rats!", owl.x-60, owl.y+66, owl.speechColour)
+	end
+
+	if itemsBroken == 7 then		
 		print("furlock, i'm on the way up!", owl.x-60, owl.y+60, owl.speechColour)						
 	end
-	if itemsBroken == 6 then
+	if itemsBroken == 8 then
 		stepTimeStart = 0
 		owlBookState = "going upstairs2"
 	end
@@ -1559,9 +1627,11 @@ end
 function owl_knocking_stuff_over_in_libraryPart2()
 	if shakeAmount > 0 then screen_shake() end
 	if time() >= owlWait then
-		if itemsBroken < 7 then
+		if itemsBroken < 9 then
 			owlTime = time()
 			if itemsBroken < 3 then
+				shakeAmount += 10
+			elseif itemsBroken == 5 then
 				shakeAmount += 10
 			end
 			owlWait = time() + 6 -- 6 is what I want		
@@ -1632,6 +1702,8 @@ end
 function check_character_collision()
 	--check if next to Wise Old Owl
 	if (owl_collision(player.x,player.y,owl.x,owl.y)) == true then
+	end
+	if (woofton_collision(player.x,player.y,woofton.x,woofton.y)) == true then
 	end
 end
 
