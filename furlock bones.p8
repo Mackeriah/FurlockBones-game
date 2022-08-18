@@ -1,8 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
---[[  
+-- Furlock Bones
+-- Consulting Dogtective
 
+--[[  
 CS50 Final Project for Owen FitzGerald 2022: Furlock Bones: Consulting Dogtective
 
 Note to anyone reading this: Yes there are lazy corners cut (I'm looking at you duplicating functions). But my
