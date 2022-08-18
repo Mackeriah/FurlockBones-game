@@ -57,9 +57,10 @@ function _init()
 	gameCompleted = false
 	--owlBookState = "going downstairs"
 	--objectiveCurrent = "TAKE THE PAGES TO WOOFTON"
-	wordgamePagesCollected = true
-
+	--wordgamePagesCollected = true
 end
+
+
 
 function displayDevName()
 	rectfill(0, 0, 127, 127, 0) -- background colour
@@ -330,7 +331,7 @@ function conversation_system()
 			animal.list[animal.active] == "red pandas" then
 				if conversation_state == "level1" then
 					new_conversation({"rrruff! furlock,","good to see you!"}) 
-					if (btnp(❎)) then conversation_state = "pages2" end
+					if (btnp(❎)) then conversation_state = "pandaPages2" end
 
 				elseif conversation_state == "pandaPages2" then
 					new_conversation({"ooh are these the","red panda pages?","amazing!"}) 
@@ -1577,7 +1578,7 @@ function owlLookingForBookPart2() -- duplicating in interest of CS50 submission 
 	end	
 	if itemsBroken == 4 then		
 		print("ooh, here we are", owl.x-60, owl.y+60, owl.speechColour)
-		print("\"the big book of red foxes\".", owl.x-65, owl.y+66, owl.speechColour)
+		print("\"the big book of red pandas\".", owl.x-65, owl.y+66, owl.speechColour)
 	end
 	if itemsBroken == 5 then
 		print("i just need to be careful", owl.x-60, owl.y+60, owl.speechColour)
