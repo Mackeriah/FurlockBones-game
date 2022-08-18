@@ -26,7 +26,6 @@ _n = nil _={}
 _[0] = false 
 _[1] = true
 
-
 --init, update and draw functions
 function _init()
 	musicState = 'start'
@@ -54,6 +53,10 @@ function _init()
 	pageCount = 0
 	credits = false
 	gameCompleted = false
+	--owlBookState = "going downstairs"
+	--objectiveCurrent = "TAKE THE PAGES TO WOOFTON"
+	wordgamePagesCollected = true
+
 end
 
 function displayDevName()
@@ -114,12 +117,15 @@ function _draw()
 	if displayDev == false then
 		draw_game()
 	end
-	-- player.x-20,player.y-20,8
+	--player.x-20,player.y-20,8
 	--print("1: "..stepTimeStart,player.x-20,player.y-20,8)
 	--print("2: "..stepTimeStart2)
 	--print("time: "..time())
 	--print(conversation_state)
 	--print(conversationCharacter)
+	-- if (btnp(🅾️)) then 
+	-- 	print(tmp,player.x-20,player.y-20,8)
+	-- end
 end
 
 function draw_game()	
@@ -305,17 +311,16 @@ function conversation_system()
 
 				elseif conversation_state == "pages4" then
 					new_conversation({"anyway, this is perfect.","thank you so much furlock!"}) 
-					if (btnp(❎)) then 
-						conversation_state = "pages5" 
-						animal.active += 1
-						wordgamePagesCollected = false
-						wordgameCompleted = false
-					end
+					if (btnp(❎)) then conversation_state = "pages5" end
+
 				elseif conversation_state == "pages5" then
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
 					if (btnp(❎)) then 
 					conversation_state = "none" 
 					objectiveCurrent = "TALK TO WOOFTON AGAIN"
+					animal.active += 1
+					wordgamePagesCollected = false
+					wordgameCompleted = false
 					end					
 				end
 
@@ -325,29 +330,29 @@ function conversation_system()
 					new_conversation({"rrruff! furlock,","good to see you!"}) 
 					if (btnp(❎)) then conversation_state = "pages2" end
 
-				elseif conversation_state == "pages2" then
+				elseif conversation_state == "pandaPages2" then
 					new_conversation({"ooh are these the","red panda pages?","amazing!"}) 
-					if (btnp(❎)) then conversation_state = "pages3" end
+					if (btnp(❎)) then conversation_state = "pandaPages3" end
 
-				elseif conversation_state == "pages3" then
+				elseif conversation_state == "pandaPages3" then
 					new_conversation({"goodness, they're pretty","torn up like before."}) 
-					if (btnp(❎)) then conversation_state = "pages4" end
+					if (btnp(❎)) then conversation_state = "pandaPages4" end
 
-				elseif conversation_state == "pages4" then
+				elseif conversation_state == "pandaPages4" then
 					new_conversation({"maybe owl buys his","books from crocodiles?"}) 
-					if (btnp(❎)) then conversation_state = "pages5" end
+					if (btnp(❎)) then conversation_state = "pandaPages5" end
 
-				elseif conversation_state == "pages5" then
+				elseif conversation_state == "pandaPages5" then
 					new_conversation({"anyway, this is just","what i needed.","thank you so much again!"}) 
 					if (btnp(❎)) then 
-						conversation_state = "pages6" 
+						conversation_state = "pandaPages6" 
 					end
 
-				elseif conversation_state == "pages6" then
+				elseif conversation_state == "pandaPages6" then
 					new_conversation({"i can carry on with my","book now but"}) 
-					if (btnp(❎)) then conversation_state = "pages7" end
+					if (btnp(❎)) then conversation_state = "pandaPages7" end
 
-				elseif conversation_state == "pages7" then
+				elseif conversation_state == "pandaPages7" then
 					new_conversation({"when i need more help","i'll let you know..."}) 
 					if (btnp(❎)) then 
 						animal.active += 1
@@ -1744,9 +1749,9 @@ function make_leaf(x,y)
 	leafCount += 1
 end
 
-function leaf_physics(leaf)
-    -- delete leaf if drops off screen
-    if leaf.y > 52 then
+function leaf_physics(leaf) 
+	tmp = leaf.y
+    if leaf.y > 156 then
         leaf.accely = 0
 		--del(leaves,leaf)
     else
@@ -1755,7 +1760,7 @@ function leaf_physics(leaf)
 	end
 
     -- gravity
-	if leaf.y <= 50 then
+	if leaf.y <= 155 then
     	leaf.accely += (rnd(.005))    
 	end
 
@@ -1784,7 +1789,7 @@ end
 
 function page_physics(page)
     -- stop page at ground level
-    if page.y > 52 then
+    if page.y > 156 then
         page.accely = 0
 		--del(leaves,leaf)
     else
@@ -1793,7 +1798,7 @@ function page_physics(page)
 	end
 
     -- gravity
-	if page.y <= 40 then
+	if page.y <= 155 then
     	page.accely += (rnd(.01))		
 	else
 		objectiveCurrent = "PICK UP THE TORN PAGES"
