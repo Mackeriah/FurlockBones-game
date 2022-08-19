@@ -296,7 +296,7 @@ function conversation_system()
 					end
 				end
 
-			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" and
+			elseif objectiveCurrent == "TAKE THE PAGES TO DOCTOR WOOFTON" and
 			animal.list[animal.active] == "red foxes" then
 				if conversation_state == "level1" then
 					new_conversation({"yip yip! hello furlock!"}) 
@@ -681,6 +681,7 @@ function wordgame_display_on_button_press()
 	-- z to view wordgame
 	if (btnp(🅾️)) and wordgamePagesCollected == true and wordgameDisplayed == false then
 		wordgameState = "questionList"
+		wordgameSelectedQuestion = 1
 		wordgameDisplayed = true
 		tmp_camera_x = camera_x -- store current camera x,y so we can return to it later
 		tmp_camera_y = camera_y
