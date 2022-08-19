@@ -944,7 +944,9 @@ function wordgame_draw_answers()
 	if credits == true then 
 		--print_centered("credits", ty-9,7)
 	else
-		print_centered(animal.list[animal.active], camera_y+6, 3)
+		if wordgameState != "menuItems" then
+			print_centered(animal.list[animal.active], camera_y+6, 3)
+		end
 		print(txt, tx, ty, 1)		
 	end
  -- ** ANSWER LOGIC ** 
