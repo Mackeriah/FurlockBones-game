@@ -60,8 +60,6 @@ function _init()
 	--wordgamePagesCollected = true
 end
 
-
-
 function displayDevName()
 	rectfill(0, 0, 127, 127, 0) -- background colour
 	if timeStart == 0 then
@@ -273,7 +271,7 @@ function conversation_system()
 	elseif conversation_state != "ready" then
 
 		-- DR WOOFTON
-		if conversationCharacter == "woofton" then
+		if conversationCharacter == "doctor woofton" then
 
 			if objectiveCurrent == "TALK TO DOCTOR WOOFTON" then
 				if conversation_state == "level1" then
@@ -320,14 +318,14 @@ function conversation_system()
 					new_conversation({"oh and by the way", "i have another favour to ask","when you have time."}) 
 					if (btnp(❎)) then 
 					conversation_state = "none" 
-					objectiveCurrent = "TALK TO WOOFTON AGAIN"
+					objectiveCurrent = "TALK TO DOCTOR WOOFTON AGAIN"
 					animal.active += 1
 					wordgamePagesCollected = false
 					wordgameCompleted = false
 					end					
 				end
 
-			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" and
+			elseif objectiveCurrent == "TAKE THE PAGES TO DOCTOR WOOFTON" and
 			animal.list[animal.active] == "red pandas" then
 				if conversation_state == "level1" then
 					new_conversation({"rrruff! furlock,","good to see you!"}) 
@@ -377,7 +375,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "none" end
 				end
 
-			elseif objectiveCurrent == "TALK TO WOOFTON AGAIN" then
+			elseif objectiveCurrent == "TALK TO DOCTOR WOOFTON AGAIN" then
 				if conversation_state == "level1" then
 					new_conversation({"hey furlock, thanks again.","another character for","my book is a red panda."}) 
 					if (btnp(❎)) then conversation_state = "2ndanimal1" end
@@ -459,7 +457,7 @@ function conversation_system()
 					if (btnp(❎)) then conversation_state = "none" end
 				end
 
-			elseif objectiveCurrent == "TAKE THE PAGES TO WOOFTON" then
+			elseif objectiveCurrent == "TAKE THE PAGES TO DOCTOR WOOFTON" then
 				if conversation_state == "level1" then
 					new_conversation({"great work furlock","now take them to","doctor woofton"})
 					if (btnp(❎)) then conversation_state = "none" end
@@ -717,7 +715,7 @@ function wordgame_draw_questions()
 		print_centered("UP,DOWN AND X TO SELECT", 120, 13)
 		if wordgameCompleted == true then 
 			print_centered("you did it! press z to exit", 100, 8)
-			objectiveCurrent = "TAKE THE PAGES TO WOOFTON"
+			objectiveCurrent = "TAKE THE PAGES TO DOCTOR WOOFTON"
 		end		
 	end	
 
@@ -1322,14 +1320,14 @@ function woofton_collision(playerx,playery,charx,chary)
 		if wordgameDisplayed == false then
 			if conversation_state == "none" then			
 				conversation_state = "ready"
-				conversationCharacter = "woofton"
+				conversationCharacter = "doctor woofton"
 				conversationColour = woofton.speechColour
 				woofton.wait = true
 				woofton.waitTime = time()
 			end 
 		end
 	else
-		if conversationCharacter == "woofton" then -- if player walks away instead of starting conversation			
+		if conversationCharacter == "doctor woofton" then -- if player walks away instead of starting conversation			
 			woofton.speed = 0.2	 	
 			conversation_state = "none"
 			conversationCharacter = "nobody"
